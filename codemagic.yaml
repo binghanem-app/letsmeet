@@ -29,6 +29,9 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Set export compliance
+        script: |
+          plutil -replace ITSAppUsesNonExemptEncryption -bool NO ios/App/App/Info.plist
       - name: Build IPA
         script: |
           xcode-project build-ipa \
