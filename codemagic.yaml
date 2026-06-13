@@ -8,6 +8,8 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.binghanem.letsmeet
+        certificate_reference: RUUjJ28M
+        provisioning_profile_reference: Lets Meet App Store
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
