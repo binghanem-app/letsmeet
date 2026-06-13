@@ -116,6 +116,7 @@ export default function App() {
         checkOnboarding(s.user.id)
         loadPendingCount(s.user.id)
         subscribeFriendRequests(s.user.id)
+        if (_e === 'SIGNED_IN') setScreen('home')
       } else {
         setNeedsOnboarding(false)
         setPendingCount(0)

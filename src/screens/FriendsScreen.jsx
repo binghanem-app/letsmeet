@@ -148,7 +148,23 @@ function AddFriendSheet({ session, onClose, onRequestAccepted }) {
       .ilike('username', `%${clean}%`)
       .neq('id', session.user.id)
       .limit(8)
-    setResults(data || [])
+    const users = data || []
+    setResults(users)
+    if (users.length > 0) {
+      const ids = users.map(u => u.id)
+      const { data: fships } = await supabase
+        .from('friendships')
+        .select('requester, addressee, status')
+        .or(`and(requester.eq.${session.user.id},addressee.in.(${ids.join(',')})),and(requester.in.(${ids.join(',')}),addressee.eq.${session.user.id})`)
+      if (fships?.length) {
+        const statusMap = {}
+        fships.forEach(f => {
+          const otherId = f.requester === session.user.id ? f.addressee : f.requester
+          statusMap[otherId] = f.status === 'accepted' ? 'already' : 'pending'
+        })
+        setSent(s => ({ ...s, ...statusMap }))
+      }
+    }
     setSearching(false)
   }
 
