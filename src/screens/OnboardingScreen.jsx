@@ -99,7 +99,7 @@ export default function OnboardingScreen({ session, onDone }) {
               placeholder="choose_username"
               autoCapitalize="none"
               autoCorrect="off"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
             />
           </div>
           <div style={{ fontSize: 12, color: '#B6ADA4', marginTop: 6, paddingLeft: 2 }}>

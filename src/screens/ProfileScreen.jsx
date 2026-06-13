@@ -78,7 +78,7 @@ function TextInput({ value, onChange, placeholder, prefix, type = 'text', autoFo
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
+        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
       />
     </div>
   )

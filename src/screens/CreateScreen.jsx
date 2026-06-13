@@ -103,7 +103,7 @@ function StepName({ value, onChange, onVibeChange }) {
           value={value}
           onChange={e => { onChange(e.target.value); onVibeChange?.(null) }}
           placeholder="e.g. Friday night dinner"
-          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '14px 0' }}
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
         />
         {value && <span onClick={() => { onChange(''); onVibeChange?.(null) }} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
       </div>
@@ -247,7 +247,7 @@ function StepPlace({ value, onChange }) {
               value={query}
               onChange={e => handleSearch(e.target.value)}
               placeholder="Search restaurants, bars, parks…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933', padding: '12px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}
             />
             {searching && <div className="spin" style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
             {query && !searching && <span onClick={() => { setQuery(''); setResults([]) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
@@ -302,7 +302,7 @@ function StepPlace({ value, onChange }) {
               value={typedName}
               onChange={e => { setTypedName(e.target.value); onChange(e.target.value.trim() ? { name: e.target.value.trim(), typed: true } : null) }}
               placeholder="e.g. My place, The usual spot…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
             />
             {typedName && <span onClick={() => { setTypedName(''); onChange(null) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
           </div>

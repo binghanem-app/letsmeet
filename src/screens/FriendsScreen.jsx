@@ -228,7 +228,7 @@ function AddFriendSheet({ session, onClose, onRequestAccepted }) {
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             placeholder="search by username"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '9px 0' }}
           />
           {searching && <div className="spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
           {query && !searching && <span onClick={() => { setQuery(''); setResults([]) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
@@ -441,7 +441,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
             value={nickname}
             onChange={e => setNickname(e.target.value)}
             placeholder={`e.g. "Alex from work"`}
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '9px 0' }}
           />
           {nickname.trim() && (
             <span onClick={() => setNickname('')} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer', lineHeight: 1 }}>×</span>
@@ -549,7 +549,7 @@ function CreateCircleSheet({ session, onClose, onCreated }) {
           autoFocus value={name} onChange={e => setName(e.target.value)}
           placeholder="e.g. Close Friends, Work, Family…"
           onKeyDown={e => e.key === 'Enter' && create()}
-          style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '14px 15px', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', outline: 'none', background: '#fff', marginBottom: 18 }}
+          style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 15px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', outline: 'none', background: '#fff', marginBottom: 18 }}
         />
 
         <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginBottom: 10, letterSpacing: .3 }}>COLOUR</div>
