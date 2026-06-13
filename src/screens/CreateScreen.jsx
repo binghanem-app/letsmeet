@@ -56,7 +56,7 @@ function WheelPicker({ items, value, onChange, width = 56 }) {
   }
 
   return (
-    <div style={{ position: 'relative', width, height: ITEM_H * 3, overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width, height: ITEM_H * 3, overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)' }}>
       {/* selection band — behind scroll items */}
       <div style={{ position: 'absolute', top: ITEM_H, left: 0, right: 0, height: ITEM_H, background: '#F5F2EE', borderRadius: 10, pointerEvents: 'none', zIndex: 0 }}/>
       {/* fade top */}
