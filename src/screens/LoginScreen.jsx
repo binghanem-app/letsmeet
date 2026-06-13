@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 // ─── icon helpers ──────────────────────────────────────────────────────────
@@ -178,6 +178,17 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
   const [loadingGoogle, setLoadingGoogle] = useState(false)
   const [loadingApple, setLoadingApple] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const reset = () => {
+      if (document.visibilityState === 'visible') {
+        setLoadingGoogle(false)
+        setLoadingApple(false)
+      }
+    }
+    document.addEventListener('visibilitychange', reset)
+    return () => document.removeEventListener('visibilitychange', reset)
+  }, [])
 
   const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'letsmeet:'
   const redirectTo = isNative ? 'letsmeet://localhost' : window.location.origin
