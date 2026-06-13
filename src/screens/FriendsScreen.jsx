@@ -541,7 +541,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
 }
 
 // ─── CreateCircleSheet ────────────────────────────────────────────────────────
-function CreateCircleSheet({ session, onClose, onCreated }) {
+export function CreateCircleSheet({ session, onClose, onCreated }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(CIRCLE_COLORS[0])
   const [saving, setSaving] = useState(false)

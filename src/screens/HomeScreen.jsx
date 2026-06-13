@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { CreateCircleSheet } from './FriendsScreen'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -252,10 +253,11 @@ function FeedCard({ plan, onOpen }) {
 
 // ─── HomeScreen ──────────────────────────────────────────────────────────────
 export default function HomeScreen({ session, refreshTrigger, onStartCreate, onGoFriends, onOpenPlan, onOpenAddFriend, requestCount }) {
-  const [profile, setProfile]   = useState(null)
-  const [circles, setCircles]   = useState([])
-  const [feed, setFeed]         = useState([])
-  const [loading, setLoading]   = useState(true)
+  const [profile, setProfile]         = useState(null)
+  const [circles, setCircles]         = useState([])
+  const [feed, setFeed]               = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [createCircleOpen, setCreateCircleOpen] = useState(false)
   const [notifs, setNotifs]     = useState([])
   const [showSheet, setShowSheet] = useState(false)
   const pushOn = getPref('notif_push', false)
@@ -571,7 +573,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           </div>
         ) : circles.length === 0 ? (
           <div
-            onClick={onGoFriends}
+            onClick={() => setCreateCircleOpen(true)}
             style={{
               background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 16,
               padding: '14px 16px', cursor: 'pointer', textAlign: 'center',
@@ -596,6 +598,12 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
                 </div>
               </div>
             ))}
+            <div
+              onClick={() => setCreateCircleOpen(true)}
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '11px 16px', background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 16, cursor: 'pointer' }}
+            >
+              <span style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: '#9A9087', whiteSpace: 'nowrap' }}>+ New</span>
+            </div>
           </div>
         )}
 
@@ -636,6 +644,14 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           onClose={() => setShowSheet(false)}
           onClearAll={clearAll}
           onDismiss={dismissOne}
+        />
+      )}
+
+      {createCircleOpen && (
+        <CreateCircleSheet
+          session={session}
+          onClose={() => setCreateCircleOpen(false)}
+          onCreated={() => { setCreateCircleOpen(false); loadCircles() }}
         />
       )}
     </div>
