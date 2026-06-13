@@ -163,6 +163,15 @@ export default function App() {
         subscribeFriendRequests(data.session.user.id)
       }
     })
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().then(({ data }) => {
+          if (data.session) setSession(data.session)
+        })
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
       if (s) {
