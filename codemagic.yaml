@@ -28,7 +28,7 @@ workflows:
       - name: Set build number
         script: |
           cd ios/App
-          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" 2>/dev/null || echo 0) + 1))
+          agvtool new-version -all $CM_BUILD_NUMBER
       - name: Build IPA
         script: |
           xcode-project build-ipa \
