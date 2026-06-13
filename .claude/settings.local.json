@@ -38,7 +38,13 @@
       "Bash(git remote *)",
       "Bash(git branch *)",
       "Bash(git config *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebFetch(domain:docs.codemagic.io)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@capacitor/cli/package.json'\\).version\\)\")",
+      "Bash(npm install *)",
+      "Bash(del \"C:\\\\Users\\\\BinGhanem-PC\\\\Desktop\\\\Lets Meet\\\\generate-apple-secret.mjs\")",
+      "Bash(npm show *)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const v=JSON.parse\\(d\\); console.log\\(v.slice\\(-5\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }

@@ -179,16 +179,12 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
   const [loadingApple, setLoadingApple] = useState(false)
   const [error, setError] = useState('')
 
-  const redirectTo = window.location.protocol === 'capacitor:'
-    ? 'letsmeet://login-callback'
-    : window.location.origin
-
   async function handleGoogle() {
     setError('')
     setLoadingGoogle(true)
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo: window.location.origin },
     })
     if (err) { setError(err.message); setLoadingGoogle(false) }
   }
@@ -198,7 +194,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
     setLoadingApple(true)
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo },
+      options: { redirectTo: window.location.origin },
     })
     if (err) { setError(err.message); setLoadingApple(false) }
   }
