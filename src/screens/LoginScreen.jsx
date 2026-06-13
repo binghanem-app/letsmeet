@@ -168,7 +168,7 @@ const btnOutline = {
 }
 const inputStyle = {
   width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14,
-  padding: '14px 15px', font: "500 15px 'Plus Jakarta Sans'",
+  padding: '13px 15px', font: "500 16px 'Plus Jakarta Sans'",
   color: '#1F2933', outline: 'none', background: '#fff',
 }
 

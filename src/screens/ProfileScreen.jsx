@@ -376,7 +376,7 @@ function BioSheet({ current, onClose, onSaved }) {
           maxLength={80}
           placeholder="e.g. Always up for tacos 🌮"
           rows={3}
-          style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933', resize: 'none', lineHeight: 1.5 }}
+          style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', resize: 'none', lineHeight: 1.5 }}
         />
         <div style={{ textAlign: 'right', fontSize: 11.5, color: '#C4BBB2', marginTop: 4 }}>{val.length}/80</div>
       </div>
@@ -406,7 +406,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
         const pushOn = !prev.push
         const next = { push: pushOn, planResponses: pushOn, friendRequests: pushOn, reminders: pushOn }
         Object.entries(keyMap).forEach(([k, lk]) => localStorage.setItem(lk, String(next[k])))
-        if (pushOn) Notification?.requestPermission?.()
+        if (pushOn) { try { Notification?.requestPermission?.() } catch (_) {} }
         return next
       }
       if (!prev.push) return prev // sub-prefs locked while push is off

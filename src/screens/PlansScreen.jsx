@@ -45,7 +45,7 @@ function PlaceSearchMini({ value, onChange }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: results.length ? 0 : 14 }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
         <input value={query} onChange={e => handleType(e.target.value)} placeholder="Search a place…"
-          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 14px 'Plus Jakarta Sans'", color: '#1F2933', padding: '12px 0' }}/>
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}/>
         {query && <span onClick={clear} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer', lineHeight: 1 }}>×</span>}
       </div>
       {results.length > 0 && !isSelected && (
@@ -129,7 +129,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
           <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TITLE</div>
           <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Plan name"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}/>
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}/>
           </div>
 
           <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>PLACE</div>
@@ -139,12 +139,12 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 13.5px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none' }}/>
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none' }}/>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
               <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 13.5px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none' }}>
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none' }}>
                 <option value="">No time</option>
                 {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -165,7 +165,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
               </div>
             ) : (
               <button onClick={() => setShowCancelConfirm(true)}
-                style={{ marginTop: 12, width: '100%', padding: '11px', border: '1px solid #FAD5CF', borderRadius: 16, background: '#FEF0EE', color: '#E14F2E', font: "600 13.5px 'Plus Jakarta Sans'", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ marginTop: 12, width: '100%', padding: '11px', border: '1px solid #FAD5CF', borderRadius: 16, background: '#FEF0EE', color: '#E14F2E', font: "600 16px 'Plus Jakarta Sans'", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
                 </svg>
@@ -763,7 +763,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             </div>
             {plan.place ? (
               <>
-                <div style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: '#1F2933', lineHeight: 1.35, marginBottom: 3 }}>{plan.place}</div>
+                <div style={{ font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', lineHeight: 1.35, marginBottom: 3 }}>{plan.place}</div>
                 {addrShort && <div style={{ fontSize: 11.5, color: '#9A9087', lineHeight: 1.4, marginBottom: 8 }}>{addrShort}</div>}
               </>
             ) : (
@@ -945,7 +945,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             onChange={e => setMsgBody(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
             placeholder="Message the group…"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 14px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}
           />
         </div>
         <button
@@ -1144,7 +1144,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
               const active = tab === t.key
               return (
                 <div key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 10px', borderRadius: 11, background: active ? '#fff' : 'transparent', cursor: 'pointer', boxShadow: active ? '0 1px 4px rgba(0,0,0,.08)' : 'none', transition: 'all .15s' }}>
-                  <span style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: active ? '#1F2933' : '#9A9087' }}>
+                  <span style={{ font: "600 16px 'Plus Jakarta Sans'", color: active ? '#1F2933' : '#9A9087' }}>
                     {t.label}
                   </span>
                 </div>
