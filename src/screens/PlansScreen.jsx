@@ -132,23 +132,18 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
               style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}/>
           </div>
 
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>PLACE</div>
-          <PlaceSearchMini value={place} onChange={setPlace}/>
-
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none' }}/>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
-              <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none' }}>
-                <option value="">No time</option>
-                {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
+            <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
+              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
+              <option value="">No time</option>
+              {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
 
           <button onClick={save} disabled={saving || !title.trim()}
@@ -734,40 +729,40 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       </div>
 
       {/* ── scrollable body ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 20px' }} className="no-scrollbar">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px 16px' }} className="no-scrollbar">
 
         {/* ── host row ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 2px 14px' }}>
-          <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor} size={42}/>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 2px 10px' }}>
+          <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor} size={36}/>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11.5, color: '#9A9087', fontWeight: 500, marginBottom: 1 }}>
+            <div style={{ fontSize: 11, color: '#9A9087', fontWeight: 500, marginBottom: 1 }}>
               {isHost ? "You're hosting" : 'Invited by'}
             </div>
-            <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>
+            <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>
               {isHost ? 'You' : plan.hostName || 'Unknown'}
             </div>
           </div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '4px 12px', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '3px 10px', flexShrink: 0 }}>
             {isHost ? 'Hosting' : 'Invited'}
           </span>
         </div>
 
         {/* ── 2-column WHERE / WHEN grid ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
 
           {/* WHERE card */}
-          <div style={{ background: '#fff', borderRadius: 18, padding: '13px 13px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 9 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHERE</span>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHERE</span>
             </div>
             {plan.place ? (
               <>
-                <div style={{ font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', lineHeight: 1.35, marginBottom: 3 }}>{plan.place}</div>
-                {addrShort && <div style={{ fontSize: 11.5, color: '#9A9087', lineHeight: 1.4, marginBottom: 8 }}>{addrShort}</div>}
+                <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', lineHeight: 1.3, marginBottom: 2 }}>{plan.place}</div>
+                {addrShort && <div style={{ fontSize: 11, color: '#9A9087', lineHeight: 1.4, marginBottom: 6 }}>{addrShort}</div>}
               </>
             ) : (
-              <div style={{ font: "600 13px 'Plus Jakarta Sans'", color: '#B6ADA4', marginBottom: 8 }}>TBD</div>
+              <div style={{ font: "600 13px 'Plus Jakarta Sans'", color: '#B6ADA4', marginBottom: 6 }}>TBD</div>
             )}
             {mapsUrl && plan.place && (
               <a href={mapsUrl} target="_blank" rel="noreferrer"
@@ -779,26 +774,26 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           </div>
 
           {/* WHEN card */}
-          <div style={{ background: '#fff', borderRadius: 18, padding: '13px 13px 12px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 9 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5B7CFA" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHEN</span>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '10px 11px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5B7CFA" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHEN</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <span style={{ font: "600 13px 'Plus Jakarta Sans'", color: '#1F2933' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+              <span style={{ font: "600 12px 'Plus Jakarta Sans'", color: '#1F2933' }}>
                 {plan.date ? shortDate(plan.date) : 'TBD'}
               </span>
               {relBadge && (
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#0E9C6B' : '#5B7CFA', background: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#E4F6EE' : '#EEF2FF', borderRadius: 20, padding: '2px 7px' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#0E9C6B' : '#5B7CFA', background: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#E4F6EE' : '#EEF2FF', borderRadius: 20, padding: '2px 6px' }}>
                   {relBadge}
                 </span>
               )}
             </div>
             {plan.time_label && (
-              <div style={{ font: "700 22px 'Fredoka'", color: '#1F2933', lineHeight: 1.1, marginBottom: 2 }}>{plan.time_label}</div>
+              <div style={{ font: "700 18px 'Fredoka'", color: '#1F2933', lineHeight: 1.15, marginBottom: 1 }}>{plan.time_label}</div>
             )}
             {dayName && (
-              <div style={{ fontSize: 12, color: '#9A9087', marginTop: 1 }}>{dayName}</div>
+              <div style={{ fontSize: 11, color: '#9A9087', marginTop: 1 }}>{dayName}</div>
             )}
           </div>
         </div>
@@ -808,13 +803,13 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           <a
             href={`data:text/calendar;charset=utf8,BEGIN:VCALENDAR%0ABEGIN:VEVENT%0ASUMMARY:${encodeURIComponent(plan.title || 'Plan')}%0ADTSTART:${plan.date.replace(/-/g,'').slice(0,8)}%0AEND:VEVENT%0AEND:VCALENDAR`}
             download="event.ics"
-            style={{ display: 'flex', alignItems: 'center', gap: 11, background: '#fff', borderRadius: 14, padding: '12px 14px', textDecoration: 'none', marginBottom: 10 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', textDecoration: 'none', marginBottom: 8 }}
           >
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#FFF4E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E8922A" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12 14v4M10 16h4"/></svg>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FFF4E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8922A" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12 14v4M10 16h4"/></svg>
             </div>
-            <span style={{ flex: 1, font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>Add to calendar</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round"><path d="m9 6 6 6-6 6"/></svg>
+            <span style={{ flex: 1, font: "600 13px 'Plus Jakarta Sans'", color: '#1F2933' }}>Add to calendar</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round"><path d="m9 6 6 6-6 6"/></svg>
           </a>
         )}
 
@@ -870,7 +865,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         )}
 
         {/* ── WHO'S COMING ── */}
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px 10px' }}>
             <span style={{ font: "700 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>Who's coming</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
