@@ -182,9 +182,10 @@ function CategoryIconBadge({ type, color, bg }) {
 }
 
 // ─── FeedCard ────────────────────────────────────────────────────────────────
-function FeedCard({ plan, onOpen }) {
+function FeedCard({ plan, onOpen, onDelete }) {
   const cat = CATEGORY_CONFIG[plan.vibe]
   const past = plan.starts_at && new Date(plan.starts_at) < new Date(new Date().toDateString())
+  const [showDelConfirm, setShowDelConfirm] = useState(false)
 
   const RSVP_BADGE = {
     going:   { label: "You're in",     color: '#0E9C6B', bg: '#E4F6EE' },
@@ -224,6 +225,23 @@ function FeedCard({ plan, onOpen }) {
           </div>
         </div>
 
+        {/* host delete */}
+        {plan.isHost && (
+          showDelConfirm ? (
+            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, padding: '10px 12px', marginBottom: 10 }}>
+              <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan?</span>
+              <button onClick={() => onDelete?.()} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
+              <button onClick={() => setShowDelConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+              <div onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }} style={{ padding: '4px 8px', cursor: 'pointer', borderRadius: 8 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </div>
+            </div>
+          )
+        )}
+
         {/* LOCATION */}
         {plan.place_name && (
           <div style={{ fontSize: 13, color: '#7B7268', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -258,6 +276,9 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   const [feed, setFeed]               = useState([])
   const [loading, setLoading]         = useState(true)
   const [createCircleOpen, setCreateCircleOpen] = useState(false)
+  const [viewCircle, setViewCircle] = useState(null) // { id, name, color }
+  const [circleMembers, setCircleMembers] = useState([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
   const [notifs, setNotifs]     = useState([])
   const [showSheet, setShowSheet] = useState(false)
   const pushOn = getPref('notif_push', false)
@@ -379,6 +400,24 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     })))
   }
 
+  async function loadCircleMembers(circleId) {
+    setLoadingMembers(true)
+    const { data: members } = await supabase
+      .from('group_members')
+      .select('member')
+      .eq('group_id', circleId)
+    if (!members?.length) { setCircleMembers([]); setLoadingMembers(false); return }
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, username, avatar_color')
+      .in('id', members.map(m => m.member))
+    setCircleMembers((profiles || []).map(p => ({
+      ...p,
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username,
+    })))
+    setLoadingMembers(false)
+  }
+
   async function loadFeed() {
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
     const now = todayStart.toISOString()
@@ -465,6 +504,11 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         myRsvp: isHost ? 'going' : (myRsvpByPlan[plan.id] || null),
       }
     }))
+  }
+
+  async function deletePlan(planId) {
+    await supabase.from('plans').update({ cancelled: true }).eq('id', planId)
+    setFeed(f => f.filter(p => p.id !== planId))
   }
 
   const greeting = profile?.first_name
@@ -585,11 +629,11 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         ) : (
           <div style={{ display: 'flex', gap: 11, overflowX: 'auto', margin: '0 -22px', padding: '2px 22px 4px' }}>
             {circles.map(c => (
-              <div key={c.id} style={{
+              <div key={c.id} onClick={() => { setViewCircle(c); loadCircleMembers(c.id) }} style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9,
                 padding: '11px 16px 11px 12px', background: '#fff',
                 border: '1px solid #F1E8E2', borderRadius: 16,
-                boxShadow: '0 6px 16px -12px rgba(20,24,30,.3)',
+                boxShadow: '0 6px 16px -12px rgba(20,24,30,.3)', cursor: 'pointer',
               }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: c.color, opacity: .16 }}/>
                 <div>
@@ -631,7 +675,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {feed.map(plan => (
-              <FeedCard key={plan.id} plan={plan} onOpen={() => onOpenPlan(plan.id)} />
+              <FeedCard key={plan.id} plan={plan} onOpen={() => onOpenPlan(plan.id)} onDelete={() => deletePlan(plan.id)} />
             ))}
           </div>
         )}
@@ -645,6 +689,41 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           onClearAll={clearAll}
           onDismiss={dismissOne}
         />
+      )}
+
+      {viewCircle && (
+        <div onClick={() => setViewCircle(null)} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(20,24,30,.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '80%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: viewCircle.color, flexShrink: 0 }}/>
+                <h3 style={{ margin: 0, font: "600 22px 'Fredoka'", color: '#1F2933' }}>{viewCircle.name}</h3>
+              </div>
+              {loadingMembers ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
+                  <div className="spin" style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid #F0E5DE', borderTopColor: '#FF6B4A' }}/>
+                </div>
+              ) : circleMembers.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#9A9087', fontSize: 14, padding: '20px 0' }}>No friends in this circle yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {circleMembers.map(m => (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '12px 14px' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: '#fff', font: "700 14px 'Plus Jakarta Sans'" }}>{m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'}</span>
+                      </div>
+                      <div>
+                        <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{m.name}</div>
+                        {m.username && <div style={{ fontSize: 12.5, color: '#9A9087' }}>@{m.username}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {createCircleOpen && (

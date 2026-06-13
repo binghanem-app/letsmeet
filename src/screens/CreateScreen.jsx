@@ -232,7 +232,7 @@ function StepPlace({ value, onChange }) {
         <div onClick={() => setMode('search')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'search' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'search' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'search' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
           Search map
         </div>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#C4BBB2', flexShrink: 0, padding: '0 2px' }}>or</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#7B7268', flexShrink: 0, padding: '0 8px' }}>or</span>
         <div onClick={() => setMode('type')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'type' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'type' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'type' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
           Type a name
         </div>

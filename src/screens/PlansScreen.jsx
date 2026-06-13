@@ -118,18 +118,20 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
           <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Edit plan</h3>
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
-            <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', font: "600 16px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
-              <option value="">No time</option>
-              {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 10px', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
+              <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 10px', font: "600 15px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
+                <option value="">No time</option>
+                {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
 
           <button onClick={save} disabled={saving}
@@ -786,17 +788,27 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
         {/* ── Add to calendar ── */}
         {!past && plan.date && (
-          <a
-            href={`data:text/calendar;charset=utf8,BEGIN:VCALENDAR%0ABEGIN:VEVENT%0ASUMMARY:${encodeURIComponent(plan.title || 'Plan')}%0ADTSTART:${plan.date.replace(/-/g,'').slice(0,8)}%0AEND:VEVENT%0AEND:VCALENDAR`}
-            download="event.ics"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', textDecoration: 'none', marginBottom: 8 }}
+          <div
+            onClick={() => {
+              const d = plan.date.replace(/-/g, '').slice(0, 8)
+              const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${d}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
+              try {
+                const blob = new Blob([ics], { type: 'text/calendar' })
+                const url = URL.createObjectURL(blob)
+                window.open(url, '_blank')
+                setTimeout(() => URL.revokeObjectURL(url), 3000)
+              } catch {
+                window.open(`data:text/calendar;charset=utf8,${encodeURIComponent(ics)}`, '_blank')
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}
           >
             <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FFF4E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8922A" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12 14v4M10 16h4"/></svg>
             </div>
             <span style={{ flex: 1, font: "600 13px 'Plus Jakarta Sans'", color: '#1F2933' }}>Add to calendar</span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round"><path d="m9 6 6 6-6 6"/></svg>
-          </a>
+          </div>
         )}
 
         {/* ── RSVP card ── */}
@@ -1207,7 +1219,7 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   }, [planId])
 
   if (!plan) return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: '#EEEAE4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#EEEAE4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A', animation: 'spin .7s linear infinite' }}/>
     </div>
   )
@@ -1219,7 +1231,7 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 90 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000 }}>
       <PlanDetail
         plan={plan}
         myId={session.user.id}
