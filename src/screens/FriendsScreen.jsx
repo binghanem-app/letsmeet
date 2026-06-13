@@ -218,7 +218,7 @@ function AddFriendSheet({ session, onClose, onRequestAccepted }) {
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '10px 22px 32px', maxHeight: '88%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 16px' }}/>
-        <h3 style={{ margin: '0 0 18px', font: "600 21px 'Fredoka'", color: '#1F2933' }}>Add friends</h3>
+        <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Add friends</h3>
 
         {/* username search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
@@ -543,7 +543,7 @@ function CreateCircleSheet({ session, onClose, onCreated }) {
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '10px 22px 32px' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 16px' }}/>
-        <h3 style={{ margin: '0 0 18px', font: "600 21px 'Fredoka'", color: '#1F2933' }}>New circle</h3>
+        <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>New circle</h3>
 
         <input
           autoFocus value={name} onChange={e => setName(e.target.value)}
@@ -713,7 +713,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
         )}
 
         {/* circles row */}
-        <h3 style={{ margin: '0 0 12px', font: "600 16px 'Fredoka'", color: '#1F2933' }}>Your circles</h3>
+        <h3 style={{ margin: '0 0 12px', font: "600 18px 'Fredoka'", color: '#1F2933' }}>Your circles</h3>
         <div style={{ display: 'flex', gap: 9, overflowX: 'auto', margin: '0 -22px 24px', padding: '2px 22px 4px' }}>
           {circles.map((c, i) => {
             const memberCount = friends.filter(f => f.groupIds?.includes(c.id)).length
@@ -736,7 +736,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
 
         {/* friends list */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 13 }}>
-          <h3 style={{ margin: 0, font: "600 16px 'Fredoka'", color: '#1F2933' }}>
+          <h3 style={{ margin: 0, font: "600 18px 'Fredoka'", color: '#1F2933' }}>
             {activeCircle ? circles.find(c => c.id === activeCircle)?.name : 'All friends'}
           </h3>
           <span style={{ fontSize: 13, color: '#9A9087', fontWeight: 600 }}>{displayed.length}</span>

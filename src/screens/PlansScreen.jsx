@@ -512,7 +512,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '75%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
         <div style={{ padding: '16px 20px 12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, font: "600 20px 'Fredoka'", color: '#1F2933' }}>Invite more</h3>
+          <h3 style={{ margin: 0, font: "600 22px 'Fredoka'", color: '#1F2933' }}>Invite more</h3>
           {selected.length > 0 && <span style={{ fontSize: 12.5, fontWeight: 700, color: '#FF6B4A', background: '#FFF1EC', borderRadius: 20, padding: '4px 12px' }}>{selected.length} selected</span>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 16px' }} className="no-scrollbar">
@@ -867,7 +867,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         {/* ── WHO'S COMING ── */}
         <div style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px 10px' }}>
-            <span style={{ font: "700 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>Who's coming</span>
+            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>Who's coming</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               {isHost && !past && (
                 <button onClick={() => setShowInviteMore(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1.5px solid #FF6B4A', borderRadius: 20, background: '#FFF1EC', font: "600 11.5px 'Plus Jakarta Sans'", color: '#FF6B4A', cursor: 'pointer' }}>
@@ -899,7 +899,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
         {/* ── CHAT ── */}
         <div style={{ marginBottom: 8 }}>
-          <div style={{ font: "700 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '2px 2px 10px' }}>Chat</div>
+          <div style={{ font: "600 18px 'Fredoka'", color: '#1F2933', padding: '2px 2px 10px' }}>Chat</div>
           {messages.length === 0 ? (
             <div style={{ background: '#fff', borderRadius: 14, padding: '18px 14px', textAlign: 'center', fontSize: 13, color: '#B6ADA4' }}>
               No messages yet — say hi!
