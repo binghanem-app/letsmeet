@@ -278,17 +278,21 @@ function DeleteAccountSheet({ onClose, onDeleted }) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const id = user.id
-      // wipe all user data
       await Promise.all([
+        supabase.from('plan_messages').delete().eq('sender', id),
         supabase.from('plan_invitees').delete().eq('invitee', id),
         supabase.from('plans').delete().eq('host', id),
         supabase.from('group_members').delete().eq('member', id),
         supabase.from('groups').delete().eq('owner', id),
         supabase.from('friend_nicknames').delete().or(`user_id.eq.${id},friend_id.eq.${id}`),
         supabase.from('friendships').delete().or(`requester.eq.${id},addressee.eq.${id}`),
+        supabase.from('notifications').delete().or(`recipient.eq.${id},actor.eq.${id}`),
+        supabase.from('blocks').delete().or(`blocker.eq.${id},blocked.eq.${id}`),
+        supabase.from('dismissed_suggestions').delete().eq('user_id', id),
       ])
       await supabase.from('profiles').delete().eq('id', id)
-      await supabase.auth.signOut()
+      // delete auth user via edge function (requires service role)
+      await supabase.functions.invoke('delete-user')
       onDeleted()
     } catch (e) {
       setErr('Something went wrong. Please try again.')
