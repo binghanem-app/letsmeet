@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { App as CapApp } from '@capacitor/app'
 import { supabase } from './lib/supabase'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
@@ -175,19 +174,21 @@ export default function App() {
 
     // Capture OAuth deep link on native (letsmeet://localhost#access_token=...)
     let appUrlListener
-    CapApp.addListener('appUrlOpen', async ({ url }) => {
-      if (url && url.includes('access_token')) {
-        const hash = url.split('#')[1] || ''
-        const params = Object.fromEntries(new URLSearchParams(hash))
-        if (params.access_token && params.refresh_token) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: params.access_token,
-            refresh_token: params.refresh_token,
-          })
-          if (!error && data.session) setSession(data.session)
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      CapApp.addListener('appUrlOpen', async ({ url }) => {
+        if (url && url.includes('access_token')) {
+          const hash = url.split('#')[1] || ''
+          const params = Object.fromEntries(new URLSearchParams(hash))
+          if (params.access_token && params.refresh_token) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: params.access_token,
+              refresh_token: params.refresh_token,
+            })
+            if (!error && data.session) setSession(data.session)
+          }
         }
-      }
-    }).then(listener => { appUrlListener = listener }).catch(() => {})
+      }).then(listener => { appUrlListener = listener }).catch(() => {})
+    }).catch(() => {})
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
