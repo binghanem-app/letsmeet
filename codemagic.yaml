@@ -19,8 +19,8 @@ workflows:
         script: npm run build
       - name: Add iOS platform and sync
         script: |
-          node node_modules/@capacitor/cli/bin/capacitor add ios || true
-          node node_modules/@capacitor/cli/bin/capacitor sync ios
+          node node_modules/@capacitor/cli/bin/capacitor.js add ios || true
+          node node_modules/@capacitor/cli/bin/capacitor.js sync ios
       - name: Install CocoaPods
         script: cd ios/App && pod install
       - name: Set up code signing

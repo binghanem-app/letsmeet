@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/app": "^7.6.6",
-    "@capacitor/cli": "^7.6.6",
-    "@capacitor/core": "^7.6.6",
-    "@capacitor/ios": "^7.6.6",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
     "@supabase/supabase-js": "^2.108.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
