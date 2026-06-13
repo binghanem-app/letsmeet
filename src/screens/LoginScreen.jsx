@@ -33,6 +33,7 @@ function EmailModal({ onClose, onDone }) {
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -40,6 +41,10 @@ function EmailModal({ onClose, onDone }) {
   async function submit(e) {
     e.preventDefault()
     setError('')
+    if (mode === 'signup' && password !== confirm) {
+      setError("Passwords don't match")
+      return
+    }
     setLoading(true)
     try {
       if (mode === 'signup') {
@@ -126,6 +131,13 @@ function EmailModal({ onClose, onDone }) {
                 value={password} onChange={e => setPassword(e.target.value)}
                 style={inputStyle}
               />
+              {mode === 'signup' && (
+                <input
+                  type="password" required placeholder="Confirm password" minLength={8}
+                  value={confirm} onChange={e => setConfirm(e.target.value)}
+                  style={{ ...inputStyle, borderColor: confirm && confirm !== password ? '#E14F2E' : inputStyle.borderColor }}
+                />
+              )}
             </div>
 
             {error && (
@@ -140,7 +152,7 @@ function EmailModal({ onClose, onDone }) {
 
             <button
               type="button"
-              onClick={() => { setMode(m => m === 'signup' ? 'signin' : 'signup'); setError('') }}
+              onClick={() => { setMode(m => m === 'signup' ? 'signin' : 'signup'); setError(''); setConfirm('') }}
               style={{ ...btnOutline, marginTop: 10 }}
             >
               {mode === 'signup' ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
