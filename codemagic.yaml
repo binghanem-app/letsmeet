@@ -11,6 +11,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.binghanem.letsmeet"
     scripts:
       - name: Install npm dependencies
         script: npm install
@@ -24,6 +25,10 @@ workflows:
         script: cd ios/App && pod install
       - name: Set up code signing
         script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" 2>/dev/null || echo 0) + 1))
       - name: Build IPA
         script: |
           xcode-project build-ipa \
