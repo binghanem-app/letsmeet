@@ -1,0 +1,8 @@
+{
+  "appId": "com.binghanem.letsmeet",
+  "appName": "Let's Meet",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
