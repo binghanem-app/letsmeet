@@ -11,12 +11,13 @@ function friendDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-export default function UserProfileSheet({ userId, myId, onClose }) {
+export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
   const [profile, setProfile]       = useState(null)
   const [loading, setLoading]       = useState(true)
   const [planScore, setPlanScore]   = useState(0)
   const [mutual, setMutual]         = useState(0)
   const [together, setTogether]     = useState(0)
+  const [friendCount, setFriendCount] = useState(0)
   const [friendship, setFriendship] = useState(null) // null | {status, created_at}
   const [acting, setActing]         = useState(false)
 
@@ -24,10 +25,30 @@ export default function UserProfileSheet({ userId, myId, onClose }) {
 
   async function load() {
     setLoading(true)
+
+    if (isSelf) {
+      const [
+        { data: prof },
+        { count: hostedCount },
+        { count: attendedCount },
+        { count: fc },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url, bio, created_at').eq('id', userId).single(),
+        supabase.from('plans').select('id', { count: 'exact', head: true }).eq('host', userId),
+        supabase.from('plan_invitees').select('id', { count: 'exact', head: true }).eq('invitee', userId).in('rsvp', ['going', 'late']),
+        supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`requester.eq.${userId},addressee.eq.${userId}`).eq('status', 'accepted'),
+      ])
+      setProfile(prof)
+      setPlanScore((hostedCount || 0) + (attendedCount || 0))
+      setFriendCount(fc || 0)
+      setLoading(false)
+      return
+    }
+
     const [
       { data: prof },
-      { data: hosted },
-      { data: attended },
+      { count: hostedCount },
+      { count: attendedCount },
       { data: myFriends },
       { data: theirFriends },
       { data: friendRow },
@@ -41,7 +62,7 @@ export default function UserProfileSheet({ userId, myId, onClose }) {
     ])
 
     setProfile(prof)
-    setPlanScore((hosted?.count || 0) + (attended?.count || 0))
+    setPlanScore((hostedCount || 0) + (attendedCount || 0))
 
     // mutual friends
     const mySet = new Set((myFriends || []).map(f => f.requester === myId ? f.addressee : f.requester))
@@ -88,7 +109,7 @@ export default function UserProfileSheet({ userId, myId, onClose }) {
     onClose()
   }
 
-  if (!userId || userId === myId) return null
+  if (!userId) return null
 
   const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username : '…'
 
@@ -127,8 +148,18 @@ export default function UserProfileSheet({ userId, myId, onClose }) {
               </div>
             </div>
 
-            {/* mutual / together / friends since */}
-            {(mutual > 0 || together > 0 || friendship?.status === 'accepted') && (
+            {/* self: friends count row */}
+            {isSelf && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+                <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                  <div style={{ font: "700 22px 'Fredoka'", color: '#5B7CFA' }}>{friendCount}</div>
+                  <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Friends</div>
+                </div>
+              </div>
+            )}
+
+            {/* mutual / together / friends since (non-self) */}
+            {!isSelf && (mutual > 0 || together > 0 || friendship?.status === 'accepted') && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
                 {mutual > 0 && (
                   <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
@@ -153,27 +184,35 @@ export default function UserProfileSheet({ userId, myId, onClose }) {
 
             {/* action buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {!friendship && (
+              {!isSelf && !friendship && (
                 <button onClick={sendRequest} disabled={acting} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px 'Fredoka'", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
                   {acting ? 'Sending…' : '+ Add friend'}
                 </button>
               )}
-              {friendship?.status === 'pending' && (
+              {!isSelf && friendship?.status === 'pending' && (
                 <div style={{ textAlign: 'center', padding: '13px 0', font: "600 14px 'Plus Jakarta Sans'", color: '#9A9087', background: '#F5F2EE', borderRadius: 16 }}>
                   Friend request sent ✓
                 </div>
               )}
-              {friendship?.status === 'accepted' && (
+              {!isSelf && friendship?.status === 'accepted' && (
                 <button onClick={removeFriend} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
                   {acting ? '…' : 'Remove friend'}
                 </button>
               )}
-              <button onClick={() => { navigator.clipboard?.writeText(`@${profile?.username}`); onClose() }} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+              <button
+                onClick={async () => {
+                  const text = `@${profile?.username} on Let's Meet`
+                  try { await navigator.share({ title: name, text }) } catch { navigator.clipboard?.writeText(text) }
+                }}
+                style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}
+              >
                 Share profile
               </button>
-              <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#E14F2E', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
-                Block
-              </button>
+              {!isSelf && (
+                <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#E14F2E', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+                  Block
+                </button>
+              )}
             </div>
 
           </div>

@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase'
 import { PlanDetailOverlay } from './screens/PlansScreen'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
-import FriendsScreen from './screens/FriendsScreen'
+import FriendsScreen, { AddFriendSheet } from './screens/FriendsScreen'
 import CreateScreen from './screens/CreateScreen'
 import PlansScreen from './screens/PlansScreen'
 import ProfileScreen from './screens/ProfileScreen'
@@ -201,7 +201,7 @@ export default function App() {
               onStartCreate={() => setScreen('create')}
               onGoFriends={() => setScreen('friends')}
               onOpenPlan={(id) => setOverlayPlanId(id)}
-              onOpenAddFriend={() => { setOpenAddFriend(true); setScreen('friends'); setPendingCount(0) }}
+              onOpenAddFriend={() => { setOpenAddFriend(true); setPendingCount(0) }}
               requestCount={pendingCount}
             />
           )
@@ -236,6 +236,14 @@ export default function App() {
           onClose={() => setOverlayPlanId(null)}
           onUpdated={() => setHomeRefresh(r => r + 1)}
         />
+      )}
+      {openAddFriend && session && screen !== 'friends' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 70 }}>
+          <AddFriendSheet
+            session={session}
+            onClose={() => setOpenAddFriend(false)}
+          />
+        </div>
       )}
     </ResponsiveLayout>
   )

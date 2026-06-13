@@ -33,7 +33,7 @@ const Pill = ({ label, color }) => (
 )
 
 // ─── AddFriendSheet ───────────────────────────────────────────────────────────
-function AddFriendSheet({ session, onClose, onRequestAccepted }) {
+export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)

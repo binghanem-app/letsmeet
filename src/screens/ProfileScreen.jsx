@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
+import UserProfileSheet from '../components/UserProfileSheet'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -389,6 +390,7 @@ function BioSheet({ current, onClose, onSaved }) {
 export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms }) {
   const [profile, setProfile] = useState(null)
   const [sheet, setSheet] = useState(null) // 'name'|'username'|'phone'|'password'|'blocked'|'delete'|'bio'
+  const [showCard, setShowCard] = useState(false)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState(() => ({
@@ -510,8 +512,8 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
               }
             </div>
           </div>
-          <div style={{ font: "600 20px 'Fredoka'", color: '#1F2933', marginBottom: 2 }}>{fullName}</div>
-          <div style={{ fontSize: 13.5, color: '#9A9087', marginBottom: profile.bio ? 6 : 0 }}>@{profile.username || 'no username'}</div>
+          <div onClick={() => setShowCard(true)} style={{ font: "600 20px 'Fredoka'", color: '#1F2933', marginBottom: 2, cursor: 'pointer' }}>{fullName}</div>
+          <div onClick={() => setShowCard(true)} style={{ fontSize: 13.5, color: '#9A9087', marginBottom: profile.bio ? 6 : 0, cursor: 'pointer' }}>@{profile.username || 'no username'}</div>
           {profile.bio
             ? <div onClick={() => setSheet('bio')} style={{ fontSize: 13.5, color: '#4A4540', textAlign: 'center', lineHeight: 1.5, maxWidth: 240, cursor: 'pointer' }}>{profile.bio}</div>
             : <div onClick={() => setSheet('bio')} style={{ fontSize: 13, color: '#C4BBB2', cursor: 'pointer', marginTop: 4 }}>+ Add a bio</div>
@@ -722,6 +724,15 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
       )}
 
       <Toast msg={toast}/>
+
+      {showCard && (
+        <UserProfileSheet
+          userId={myId}
+          myId={myId}
+          isSelf
+          onClose={() => setShowCard(false)}
+        />
+      )}
     </div>
   )
 }
