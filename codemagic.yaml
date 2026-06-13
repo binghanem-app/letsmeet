@@ -30,9 +30,11 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $(($BUILD_NUMBER + 1))
-      - name: Set export compliance
+      - name: Set export compliance and URL scheme
         script: |
           plutil -replace ITSAppUsesNonExemptEncryption -bool NO ios/App/App/Info.plist
+          plutil -insert CFBundleURLTypes -json '[{"CFBundleURLSchemes":["letsmeet"]}]' ios/App/App/Info.plist 2>/dev/null || \
+          plutil -replace CFBundleURLTypes -json '[{"CFBundleURLSchemes":["letsmeet"]}]' ios/App/App/Info.plist
       - name: Build IPA
         script: |
           xcode-project build-ipa \
