@@ -11,95 +11,13 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 import TermsScreen from './screens/TermsScreen'
 
 // Phone chrome — wraps every screen in the same outer shell
-function PhoneShell({ children }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 26 }}>
-      {/* header above phone */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10, background: '#FF6B4A',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 14px rgba(255,107,74,.38)',
-        }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-            <circle cx="8.5" cy="9" r="3.4" fill="#fff"/>
-            <circle cx="15.5" cy="9" r="3.4" fill="#fff" opacity=".7"/>
-            <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19"
-                  stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </div>
-        <span style={{ font: "600 24px 'Fredoka'", color: '#1F2933' }}>Let's Meet</span>
-      </div>
-    </div>
-  )
-}
-
-// The 390×844 phone frame
-function PhoneFrame({ children }) {
-  return (
-    <div style={{
-      padding: 11, background: '#15191e', borderRadius: 54,
-      boxShadow: '0 40px 80px -20px rgba(20,24,30,.5),0 0 0 1.5px rgba(255,255,255,.06) inset',
-    }}>
-      <div style={{
-        position: 'relative', width: 390, height: 844,
-        borderRadius: 44, overflow: 'hidden',
-        background: '#FBF7F4', display: 'flex', flexDirection: 'column',
-      }}>
-        {/* status bar */}
-        <div style={{ position: 'relative', height: 52, flexShrink: 0, zIndex: 30 }}>
-          <div style={{
-            position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
-            width: 118, height: 31, background: '#15191e', borderRadius: 18,
-          }}/>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '17px 30px 0', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933',
-          }}>
-            <span>9:41</span>
-            <svg width="64" height="13" viewBox="0 0 64 13" fill="#1F2933">
-              <rect x="0" y="5" width="3" height="8" rx="1"/>
-              <rect x="5" y="3" width="3" height="10" rx="1"/>
-              <rect x="10" y="1.5" width="3" height="11.5" rx="1"/>
-              <rect x="15" y="0" width="3" height="13" rx="1"/>
-              <path d="M27 3.5c2.8-2.6 7.2-2.6 10 0l-1.4 1.5c-2-1.9-5.2-1.9-7.2 0z"/>
-              <circle cx="32" cy="8.4" r="1.9"/>
-              <rect x="46" y="1.5" width="14" height="9" rx="2.6" fill="none" stroke="#1F2933" strokeWidth="1.4"/>
-              <rect x="47.6" y="3.2" width="9" height="5.6" rx="1.2"/>
-              <rect x="61" y="4" width="2" height="4" rx="1"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* screen content */}
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Responsive wrapper: phone frame on desktop, full-screen on mobile
 function ResponsiveLayout({ children }) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 500
-
-  if (isMobile) {
-    return (
-      <div style={{ width: '100%', height: '100vh', background: '#FBF7F4', display: 'flex', flexDirection: 'column' }}>
-        {/* mobile status bar spacer */}
-        <div style={{ height: 'env(safe-area-inset-top, 0px)', background: '#FFEFE9' }}/>
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
-          {children}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: '#EAE7E2', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px 90px' }}>
-      <PhoneShell/>
-      <PhoneFrame>{children}</PhoneFrame>
+    <div style={{ width: '100%', height: '100vh', background: '#FBF7F4', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: '#FFEFE9' }}/>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+        {children}
+      </div>
     </div>
   )
 }
