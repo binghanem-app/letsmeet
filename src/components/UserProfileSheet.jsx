@@ -1,0 +1,184 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import Avatar from './Avatar'
+
+function relDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+function friendDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+export default function UserProfileSheet({ userId, myId, onClose }) {
+  const [profile, setProfile]       = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [planScore, setPlanScore]   = useState(0)
+  const [mutual, setMutual]         = useState(0)
+  const [together, setTogether]     = useState(0)
+  const [friendship, setFriendship] = useState(null) // null | {status, created_at}
+  const [acting, setActing]         = useState(false)
+
+  useEffect(() => { if (userId && myId) load() }, [userId, myId])
+
+  async function load() {
+    setLoading(true)
+    const [
+      { data: prof },
+      { data: hosted },
+      { data: attended },
+      { data: myFriends },
+      { data: theirFriends },
+      { data: friendRow },
+    ] = await Promise.all([
+      supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url, bio, created_at').eq('id', userId).single(),
+      supabase.from('plans').select('id', { count: 'exact', head: true }).eq('host', userId),
+      supabase.from('plan_invitees').select('id', { count: 'exact', head: true }).eq('invitee', userId).in('rsvp', ['going', 'late']),
+      supabase.from('friendships').select('requester, addressee').or(`requester.eq.${myId},addressee.eq.${myId}`).eq('status', 'accepted'),
+      supabase.from('friendships').select('requester, addressee').or(`requester.eq.${userId},addressee.eq.${userId}`).eq('status', 'accepted'),
+      supabase.from('friendships').select('status, created_at').or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`).maybeSingle(),
+    ])
+
+    setProfile(prof)
+    setPlanScore((hosted?.count || 0) + (attended?.count || 0))
+
+    // mutual friends
+    const mySet = new Set((myFriends || []).map(f => f.requester === myId ? f.addressee : f.requester))
+    const theirSet = new Set((theirFriends || []).map(f => f.requester === userId ? f.addressee : f.requester))
+    setMutual([...mySet].filter(id => theirSet.has(id)).length)
+
+    setFriendship(friendRow || null)
+
+    // plans together
+    if (friendRow?.status === 'accepted') {
+      const { data: myPlans } = await supabase.from('plan_invitees').select('plan_id').eq('invitee', myId)
+      const { data: theirPlans } = await supabase.from('plan_invitees').select('plan_id').eq('invitee', userId)
+      const myPlanSet = new Set((myPlans || []).map(p => p.plan_id))
+      setTogether((theirPlans || []).filter(p => myPlanSet.has(p.plan_id)).length)
+    }
+
+    setLoading(false)
+  }
+
+  async function sendRequest() {
+    setActing(true)
+    await supabase.from('friendships').insert({ requester: myId, addressee: userId, status: 'pending' })
+    // create notification for them
+    const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', myId).single()
+    const name = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'Someone' : 'Someone'
+    await supabase.from('notifications').insert({ recipient: userId, actor: myId, kind: 'request', body: `${name} sent you a friend request` })
+    setFriendship({ status: 'pending' })
+    setActing(false)
+  }
+
+  async function removeFriend() {
+    setActing(true)
+    await supabase.from('friendships').delete()
+      .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
+    setFriendship(null)
+    setActing(false)
+  }
+
+  async function blockUser() {
+    setActing(true)
+    await supabase.from('friendships').delete()
+      .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
+    await supabase.from('friendships').insert({ requester: myId, addressee: userId, status: 'blocked' })
+    onClose()
+  }
+
+  if (!userId || userId === myId) return null
+
+  const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username : '…'
+
+  return (
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '90%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
+
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+            <div className="spin" style={{ width: 26, height: 26, borderRadius: '50%', border: '3px solid #F0E5DE', borderTopColor: '#FF6B4A' }}/>
+          </div>
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px 36px' }} className="no-scrollbar">
+
+            {/* avatar + name */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+              <Avatar url={profile?.avatar_url} name={name} color={profile?.avatar_color} size={80}
+                style={{ boxShadow: '0 8px 20px -6px rgba(0,0,0,.18)', marginBottom: 12 }}/>
+              <h2 style={{ margin: '0 0 3px', font: "600 22px 'Fredoka'", color: '#1F2933', textAlign: 'center' }}>{name}</h2>
+              <div style={{ fontSize: 14, color: '#9A9087', marginBottom: profile?.bio ? 8 : 0 }}>@{profile?.username || '—'}</div>
+              {profile?.bio && (
+                <div style={{ fontSize: 14, color: '#4A4540', textAlign: 'center', lineHeight: 1.5, maxWidth: 260, marginTop: 4 }}>{profile.bio}</div>
+              )}
+            </div>
+
+            {/* plan score + member since */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+              <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                <div style={{ font: "700 22px 'Fredoka'", color: '#FF6B4A' }}>{planScore}</div>
+                <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Plan Score</div>
+              </div>
+              <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                <div style={{ font: "700 14px 'Fredoka'", color: '#1F2933', lineHeight: 1.3 }}>{relDate(profile?.created_at)}</div>
+                <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Member since</div>
+              </div>
+            </div>
+
+            {/* mutual / together / friends since */}
+            {(mutual > 0 || together > 0 || friendship?.status === 'accepted') && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+                {mutual > 0 && (
+                  <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                    <div style={{ font: "700 22px 'Fredoka'", color: '#5B7CFA' }}>{mutual}</div>
+                    <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Mutual friends</div>
+                  </div>
+                )}
+                {friendship?.status === 'accepted' && together >= 0 && (
+                  <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                    <div style={{ font: "700 22px 'Fredoka'", color: '#0E9C6B' }}>{together}</div>
+                    <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Plans together</div>
+                  </div>
+                )}
+                {friendship?.status === 'accepted' && friendship?.created_at && (
+                  <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
+                    <div style={{ font: "700 14px 'Fredoka'", color: '#1F2933', lineHeight: 1.3 }}>{friendDate(friendship.created_at)}</div>
+                    <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Friends since</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* action buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {!friendship && (
+                <button onClick={sendRequest} disabled={acting} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px 'Fredoka'", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
+                  {acting ? 'Sending…' : '+ Add friend'}
+                </button>
+              )}
+              {friendship?.status === 'pending' && (
+                <div style={{ textAlign: 'center', padding: '13px 0', font: "600 14px 'Plus Jakarta Sans'", color: '#9A9087', background: '#F5F2EE', borderRadius: 16 }}>
+                  Friend request sent ✓
+                </div>
+              )}
+              {friendship?.status === 'accepted' && (
+                <button onClick={removeFriend} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+                  {acting ? '…' : 'Remove friend'}
+                </button>
+              )}
+              <button onClick={() => { navigator.clipboard?.writeText(`@${profile?.username}`); onClose() }} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+                Share profile
+              </button>
+              <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#E14F2E', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+                Block
+              </button>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
