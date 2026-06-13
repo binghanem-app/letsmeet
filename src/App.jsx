@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
+import { App as CapApp } from '@capacitor/app'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
 import FriendsScreen from './screens/FriendsScreen'
@@ -163,6 +164,12 @@ export default function App() {
         subscribeFriendRequests(data.session.user.id)
       }
     })
+    CapApp.addListener('appUrlOpen', ({ url }) => {
+      if (url.includes('login-callback') || url.includes('access_token') || url.includes('code=')) {
+        supabase.auth.exchangeCodeForSession(url).catch(() => {})
+      }
+    })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
       if (s) {
