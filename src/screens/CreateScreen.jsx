@@ -752,7 +752,7 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
         <SuccessScreen
           title={title}
           inviteeCount={invitees.length}
-          onSeeWhosComing={() => onViewPlan?.(createdPlanId) || onDone?.()}
+          onSeeWhosComing={() => { if (onViewPlan) { onViewPlan(createdPlanId) } else { onDone?.() } }}
           onBackHome={onDone}
         />
       </div>
