@@ -64,11 +64,12 @@ function PlaceSearchMini({ value, onChange }) {
 
 // ─── Edit plan sheet ──────────────────────────────────────────────────────────
 function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
-  const TIMES = ['Morning','Noon','Afternoon','Evening','Night','Late night',
+  const BASE_TIMES = ['Morning','Noon','Afternoon','Evening','Night','Late night',
     '8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM',
     '3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM','9:00 PM','10:00 PM']
+  const existingTime = plan.time_label && !BASE_TIMES.includes(plan.time_label) ? plan.time_label : null
+  const TIMES = existingTime ? [existingTime, ...BASE_TIMES] : BASE_TIMES
 
-  const [title, setTitle]       = useState(plan.title || '')
   const [date, setDate]         = useState(plan.date ? plan.date.slice(0, 10) : '')
   const [timeLabel, setTimeLabel] = useState(plan.time_label || '')
   const [place, setPlace]       = useState(plan.place ? { name: plan.place, address: plan.place_address, lat: plan.place_lat, lng: plan.place_lng } : null)
@@ -76,39 +77,30 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   async function save() {
-    if (!title.trim()) return
     setSaving(true)
 
     const oldDateStr = plan.date ? plan.date.slice(0, 10) : ''
-    const placeChanged = (place?.name || '') !== (plan.place || '')
-    const timeChanged  = date !== oldDateStr || timeLabel !== (plan.time_label || '')
+    const timeChanged = date !== oldDateStr || timeLabel !== (plan.time_label || '')
 
     await supabase.from('plans').update({
-      title: title.trim(),
       starts_at: date || null,
       time_label: timeLabel || null,
-      place_name: place?.name || null,
-      place_address: place?.address || null,
-      place_lat: place?.lat || null,
-      place_lng: place?.lng || null,
     }).eq('id', plan.id)
 
-    if (placeChanged || timeChanged) {
+    if (timeChanged) {
       const { data: invitees } = await supabase
         .from('plan_invitees').select('invitee').eq('plan_id', plan.id)
       if (invitees?.length) {
         const { data: hp } = await supabase.from('profiles')
           .select('first_name, last_name').eq('id', plan.host).single()
         const hostName = hp ? `${hp.first_name || ''} ${hp.last_name || ''}`.trim() || 'The host' : 'The host'
-        const what = placeChanged && timeChanged ? 'time and location'
-          : placeChanged ? 'location' : 'time'
         await supabase.from('notifications').insert(
           invitees.map(i => ({
             recipient: i.invitee,
             actor: plan.host,
             kind: 'plan_update',
             plan_id: plan.id,
-            body: `${hostName} updated the ${what} for "${plan.title}"`,
+            body: `${hostName} updated the time for "${plan.title}"`,
           }))
         )
       }
@@ -126,12 +118,6 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
           <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Edit plan</h3>
 
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TITLE</div>
-          <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Plan name"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}/>
-          </div>
-
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
@@ -146,8 +132,8 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
             </select>
           </div>
 
-          <button onClick={save} disabled={saving || !title.trim()}
-            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: saving || !title.trim() ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px 'Fredoka'", cursor: saving || !title.trim() ? 'default' : 'pointer', boxShadow: saving || !title.trim() ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
+          <button onClick={save} disabled={saving}
+            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: saving ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px 'Fredoka'", cursor: saving ? 'default' : 'pointer', boxShadow: saving ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
             {saving ? 'Saving…' : 'Save changes'}
           </button>
 
@@ -865,8 +851,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         )}
 
         {/* ── WHO'S COMING ── */}
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px 10px' }}>
+        <div style={{ background: '#EEF2FF', borderRadius: 18, padding: '12px 12px 14px', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px 10px' }}>
             <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>Who's coming</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               {isHost && !past && (
@@ -898,8 +884,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         </div>
 
         {/* ── CHAT ── */}
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ font: "600 18px 'Fredoka'", color: '#1F2933', padding: '2px 2px 10px' }}>Chat</div>
+        <div style={{ background: '#FFF8F0', borderRadius: 18, padding: '12px 12px 14px', marginBottom: 8 }}>
+          <div style={{ font: "600 18px 'Fredoka'", color: '#1F2933', padding: '0 2px 10px' }}>Chat</div>
           {messages.length === 0 ? (
             <div style={{ background: '#fff', borderRadius: 14, padding: '18px 14px', textAlign: 'center', fontSize: 13, color: '#B6ADA4' }}>
               No messages yet — say hi!
@@ -1177,6 +1163,70 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Standalone plan detail overlay (open from any screen) ───────────────────
+export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
+  const [plan, setPlan] = useState(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data: p } = await supabase.from('plans')
+        .select('*, plan_invitees(invitee, rsvp)')
+        .eq('id', planId).single()
+      if (!p) return
+
+      const allIds = [...new Set([p.host, ...(p.plan_invitees || []).map(i => i.invitee)])]
+      const { data: profiles } = await supabase.from('profiles')
+        .select('id, first_name, last_name, avatar_color, avatar_url').in('id', allIds)
+      const profileMap = {}
+      profiles?.forEach(pr => { profileMap[pr.id] = pr })
+
+      const { data: nicknames } = await supabase
+        .from('friend_nicknames').select('friend_id, nickname').eq('user_id', session.user.id)
+      const nickMap = {}
+      nicknames?.forEach(n => { nickMap[n.friend_id] = n.nickname })
+
+      const hp = profileMap[p.host]
+      setPlan({
+        ...p,
+        place: p.place_name,
+        date: p.starts_at,
+        hostName: nickMap[p.host] || (hp ? `${hp.first_name || ''} ${hp.last_name || ''}`.trim() : 'Unknown'),
+        hostColor: hp?.avatar_color,
+        hostAvatarUrl: hp?.avatar_url,
+        invitees: (p.plan_invitees || []).map(i => {
+          const pr = profileMap[i.invitee]
+          return { ...i, name: nickMap[i.invitee] || (pr ? `${pr.first_name || ''} ${pr.last_name || ''}`.trim() : 'Unknown'), avatar_color: pr?.avatar_color, avatar_url: pr?.avatar_url }
+        }),
+      })
+    }
+    load()
+  }, [planId])
+
+  if (!plan) return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: '#EEEAE4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A', animation: 'spin .7s linear infinite' }}/>
+    </div>
+  )
+
+  async function deletePlan() {
+    await supabase.from('plans').update({ cancelled: true }).eq('id', planId)
+    onClose()
+    onUpdated?.()
+  }
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90 }}>
+      <PlanDetail
+        plan={plan}
+        myId={session.user.id}
+        onClose={onClose}
+        onUpdated={() => onUpdated?.()}
+        onDeletePlan={deletePlan}
+      />
     </div>
   )
 }

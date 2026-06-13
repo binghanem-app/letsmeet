@@ -90,7 +90,6 @@ function WheelPicker({ items, value, onChange, width = 56 }) {
 // ─── Step 1 — Plan name ───────────────────────────────────────────────────────
 function StepName({ value, onChange, onVibeChange }) {
   const inputRef = useRef(null)
-  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 120) }, [])
 
   return (
     <div className="fade-up">
@@ -229,12 +228,14 @@ function StepPlace({ value, onChange }) {
       <p style={{ margin: '0 0 18px', fontSize: 14, color: '#9A9087' }}>Search a place, or just type the name.</p>
 
       {/* mode toggle */}
-      <div style={{ display: 'flex', background: '#F5F2EE', borderRadius: 14, padding: 4, marginBottom: 18, gap: 4 }}>
-        {['search', 'type'].map(m => (
-          <div key={m} onClick={() => setMode(m)} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === m ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === m ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
-            {m === 'search' ? 'Search map' : 'Type a name'}
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', background: '#F5F2EE', borderRadius: 14, padding: 4, marginBottom: 18, gap: 0 }}>
+        <div onClick={() => setMode('search')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'search' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'search' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'search' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
+          Search map
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#C4BBB2', flexShrink: 0, padding: '0 2px' }}>or</span>
+        <div onClick={() => setMode('type')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'type' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'type' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'type' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
+          Type a name
+        </div>
       </div>
 
       {mode === 'search' ? (
@@ -243,7 +244,6 @@ function StepPlace({ value, onChange }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: `1.5px solid ${query ? '#FF6B4A' : '#EBE2DB'}`, borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3" strokeLinecap="round"/></svg>
             <input
-              autoFocus
               value={query}
               onChange={e => handleSearch(e.target.value)}
               placeholder="Search restaurants, bars, parks…"
@@ -298,7 +298,6 @@ function StepPlace({ value, onChange }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: `1.5px solid ${typedName ? '#FF6B4A' : '#EBE2DB'}`, borderRadius: 14, padding: '4px 14px', marginBottom: 14 }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             <input
-              autoFocus
               value={typedName}
               onChange={e => { setTypedName(e.target.value); onChange(e.target.value.trim() ? { name: e.target.value.trim(), typed: true } : null) }}
               placeholder="e.g. My place, The usual spot…"

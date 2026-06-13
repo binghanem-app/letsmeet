@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
+import { PlanDetailOverlay } from './screens/PlansScreen'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
 import FriendsScreen from './screens/FriendsScreen'
@@ -67,6 +68,7 @@ export default function App() {
   const [screen, setScreen]             = useState('home')
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [openPlanId, setOpenPlanId]     = useState(null)
+  const [overlayPlanId, setOverlayPlanId] = useState(null)
   const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
@@ -197,7 +199,7 @@ export default function App() {
               refreshTrigger={homeRefresh}
               onStartCreate={() => setScreen('create')}
               onGoFriends={() => setScreen('friends')}
-              onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans') }}
+              onOpenPlan={(id) => setOverlayPlanId(id)}
               onOpenAddFriend={() => { setOpenAddFriend(true); setScreen('friends'); setPendingCount(0) }}
               requestCount={pendingCount}
             />
@@ -223,5 +225,17 @@ export default function App() {
     )
   }
 
-  return <ResponsiveLayout>{renderScreen()}</ResponsiveLayout>
+  return (
+    <ResponsiveLayout>
+      {renderScreen()}
+      {overlayPlanId && session && (
+        <PlanDetailOverlay
+          planId={overlayPlanId}
+          session={session}
+          onClose={() => setOverlayPlanId(null)}
+          onUpdated={() => setHomeRefresh(r => r + 1)}
+        />
+      )}
+    </ResponsiveLayout>
+  )
 }

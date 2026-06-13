@@ -57,7 +57,15 @@ function EmailModal({ onClose, onDone }) {
         onDone()
       }
     } catch (err) {
-      setError(err.message)
+      const msg = err.message || ''
+      if (msg.toLowerCase().includes('not confirmed') || msg.toLowerCase().includes('email not confirmed'))
+        setError('Please check your email and click the confirmation link first.')
+      else if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials'))
+        setError('Wrong email or password.')
+      else if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already'))
+        setError('An account with this email already exists. Try signing in instead.')
+      else
+        setError(msg)
     } finally {
       setLoading(false)
     }
