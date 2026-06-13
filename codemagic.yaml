@@ -14,7 +14,7 @@ workflows:
         BUNDLE_ID: "com.binghanem.letsmeet"
     scripts:
       - name: Install npm dependencies
-        script: npm install
+        script: npm install --legacy-peer-deps
       - name: Build web app
         script: npm run build
       - name: Add iOS platform and sync
