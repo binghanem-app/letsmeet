@@ -6,6 +6,8 @@
     "androidScheme": "https"
   },
   "ios": {
-    "scheme": "letsmeet"
+    "scheme": "letsmeet",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false
   }
 }
