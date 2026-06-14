@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import catCoffee from '../assets/categories/coffee.png'
+import catDinner from '../assets/categories/dinner.png'
+import catMovies from '../assets/categories/movies.png'
+import catHangout from '../assets/categories/hangout.png'
+import catOutdoors from '../assets/categories/outdoors.png'
+import catTrip from '../assets/categories/trip.png'
 
 const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
 // ─── presets ─────────────────────────────────────────────────────────────────
 const PRESETS = [
-  { emoji: '☕',  label: 'Coffee',    sub: 'Quick café catch-up' },
-  { emoji: '🍽️', label: 'Dinner',    sub: 'Restaurant, anywhere' },
-  { emoji: '🎬',  label: 'Movies',    sub: 'Cinema night' },
-  { emoji: '🏠',  label: 'Hang out',  sub: "Someone's place" },
-  { emoji: '🌿',  label: 'Outdoors',  sub: 'Park, hike, or beach' },
-  { emoji: '✈️',  label: 'Trip',      sub: 'Weekend getaway' },
+  { icon: catCoffee,   label: 'Coffee',    sub: 'Quick café catch-up' },
+  { icon: catDinner,   label: 'Dinner',    sub: 'Restaurant, anywhere' },
+  { icon: catMovies,   label: 'Movies',    sub: 'Cinema night' },
+  { icon: catHangout,  label: 'Hang out',  sub: "Someone's place" },
+  { icon: catOutdoors, label: 'Outdoors',  sub: 'Park, hike, or beach' },
+  { icon: catTrip,     label: 'Trip',      sub: 'Weekend getaway' },
 ]
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -113,7 +119,7 @@ function StepName({ value, onChange, onVibeChange }) {
             onClick={() => { onChange(p.label); onVibeChange?.(p.label) }}
             style={{ display: 'flex', alignItems: 'center', gap: 13, background: value === p.label ? '#FFF1EC' : '#fff', border: `1.5px solid ${value === p.label ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '12px 15px', cursor: 'pointer' }}
           >
-            <span style={{ fontSize: 24, lineHeight: 1 }}>{p.emoji}</span>
+            <img src={p.icon} alt={p.label} style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: value === p.label ? '#FF6B4A' : '#1F2933' }}>{p.label}</div>
               <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1 }}>{p.sub}</div>

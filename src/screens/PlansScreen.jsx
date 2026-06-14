@@ -4,6 +4,12 @@ import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
+import catCoffee from '../assets/categories/coffee.png'
+import catDinner from '../assets/categories/dinner.png'
+import catMovies from '../assets/categories/movies.png'
+import catHangout from '../assets/categories/hangout.png'
+import catOutdoors from '../assets/categories/outdoors.png'
+import catTrip from '../assets/categories/trip.png'
 
 const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
@@ -233,15 +239,11 @@ function smartDateLabel(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function CategoryIcon({ type, color }) {
-  const p = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }
-  if (type === 'movies')  return <svg {...p}><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M6 2v4M18 2v4M2 12h20M7 16h.01M12 16h.01M17 16h.01"/></svg>
-  if (type === 'coffee')  return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>
-  if (type === 'outdoors') return <svg {...p}><path d="M3 17l4-8 4 5 3-4 4 7H3z"/><path d="M12 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill={color}/></svg>
-  if (type === 'dinner')  return <svg {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-  if (type === 'hangout') return <svg {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  if (type === 'trip')    return <svg {...p}><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.5.1-.9.6-.8 1.1l1 5c.1.5.5.8 1 .9l2 .4 3-3 1 7c.1.5.5.9 1 1l5 1c.5.1 1-.3 1.1-.8l.4-2-.1-1.4"/></svg>
-  return null
+const CAT_IMGS = { coffee: catCoffee, dinner: catDinner, movies: catMovies, hangout: catHangout, outdoors: catOutdoors, trip: catTrip }
+function CategoryIcon({ type }) {
+  const src = CAT_IMGS[type]
+  if (!src) return null
+  return <img src={src} alt={type} style={{ width: 26, height: 26, objectFit: 'contain' }} />
 }
 
 function CategoryIconBadge({ type, color, bg }) {
