@@ -69,6 +69,18 @@ export default function App() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [openPlanId, setOpenPlanId]     = useState(null)
   const [overlayPlanId, setOverlayPlanId] = useState(null)
+
+  useEffect(() => {
+    if (overlayPlanId) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
+    }
+  }, [overlayPlanId])
   const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
