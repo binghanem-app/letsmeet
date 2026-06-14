@@ -1236,7 +1236,7 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9000 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#FBF7F4', paddingTop: 'env(safe-area-inset-top)', boxSizing: 'border-box' }}>
       <PlanDetail
         plan={plan}
         myId={session.user.id}
