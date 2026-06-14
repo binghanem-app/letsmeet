@@ -32,7 +32,8 @@ workflows:
             const sizes = [
               ['Icon-20.png',20],['Icon-40.png',40],['Icon-29.png',29],
               ['Icon-58.png',58],['Icon-87.png',87],['Icon-60.png',60],
-              ['Icon-80.png',80],['Icon-120.png',120],['Icon-180.png',180],
+              ['Icon-76.png',76],['Icon-80.png',80],['Icon-120.png',120],
+              ['Icon-152.png',152],['Icon-167.png',167],['Icon-180.png',180],
               ['Icon-1024.png',1024]
             ];
             sizes.forEach(([name,size]) => execSync('sips -z '+size+' '+size+' '+src+' --out '+dir+'/'+name));
@@ -49,6 +50,15 @@ workflows:
                 {size:'40x40',idiom:'iphone',filename:'Icon-120.png',scale:'3x'},
                 {size:'60x60',idiom:'iphone',filename:'Icon-120.png',scale:'2x'},
                 {size:'60x60',idiom:'iphone',filename:'Icon-180.png',scale:'3x'},
+                {size:'20x20',idiom:'ipad',filename:'Icon-20.png',scale:'1x'},
+                {size:'20x20',idiom:'ipad',filename:'Icon-40.png',scale:'2x'},
+                {size:'29x29',idiom:'ipad',filename:'Icon-29.png',scale:'1x'},
+                {size:'29x29',idiom:'ipad',filename:'Icon-58.png',scale:'2x'},
+                {size:'40x40',idiom:'ipad',filename:'Icon-40.png',scale:'1x'},
+                {size:'40x40',idiom:'ipad',filename:'Icon-80.png',scale:'2x'},
+                {size:'76x76',idiom:'ipad',filename:'Icon-76.png',scale:'1x'},
+                {size:'76x76',idiom:'ipad',filename:'Icon-152.png',scale:'2x'},
+                {size:'83.5x83.5',idiom:'ipad',filename:'Icon-167.png',scale:'2x'},
                 {size:'1024x1024',idiom:'ios-marketing',filename:'Icon-1024.png',scale:'1x'}
               ],
               info: {version:1,author:'xcode'}
