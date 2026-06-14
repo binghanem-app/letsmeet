@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 
 const GAPI_KEY = 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
 
@@ -118,18 +119,20 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
           <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Edit plan</h3>
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 12px', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
-            <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-              style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 12px', font: "600 15px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
-              <option value="">No time</option>
-              {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: '0 0 calc(50% - 6px)', minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 8px', fontSize: 13, color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
+            </div>
+            <div style={{ flex: '0 0 calc(50% - 6px)', minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
+              <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 8px', fontSize: 13, color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
+                <option value="">No time</option>
+                {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
 
           <button onClick={save} disabled={saving}
@@ -553,6 +556,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const [msgProfiles, setMsgProfiles] = useState({})
   const [msgBody, setMsgBody]         = useState('')
   const [msgSending, setMsgSending]   = useState(false)
+  const [fullImg, setFullImg]         = useState(null)
   const chatEndRef  = useRef(null)
   const knownSenders = useRef(new Set())
   const past = isPast(plan.date)
@@ -603,7 +607,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   async function loadMessages() {
     const { data } = await supabase
       .from('plan_messages')
-      .select('id, sender, body, created_at')
+      .select('id, sender, body, photo_url, created_at')
       .eq('plan_id', plan.id)
       .order('created_at', { ascending: true })
     if (!data?.length) return
@@ -626,7 +630,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     setMsgBody('')
     const { data: newMsg, error: msgErr } = await supabase.from('plan_messages').insert({
       plan_id: plan.id, sender: myId, body,
-    }).select('id, sender, body, created_at').single()
+    }).select('id, sender, body, photo_url, created_at').single()
     if (newMsg) {
       setMessages(prev => [...prev, newMsg])
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
@@ -656,6 +660,38 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     }
     setMsgSending(false)
   }
+
+  async function pickAndSendPhoto(source) {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        source,
+        quality: 80,
+        width: 1200,
+      })
+      setMsgSending(true)
+      // dataUrl → blob
+      const res = await fetch(photo.dataUrl)
+      const blob = await res.blob()
+      const ext = photo.format || 'jpeg'
+      const path = `${plan.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
+      if (upErr) { console.error(upErr); setMsgSending(false); return }
+      const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path)
+      const { data: newMsg } = await supabase.from('plan_messages').insert({
+        plan_id: plan.id, sender: myId, photo_url: publicUrl,
+      }).select('id, sender, body, photo_url, created_at').single()
+      if (newMsg) {
+        setMessages(prev => [...prev, newMsg])
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+      }
+    } catch (e) {
+      if (e?.message !== 'User cancelled photos app') console.error(e)
+    }
+    setMsgSending(false)
+  }
+
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false)
 
   async function saveRsvp(val) {
     if (val === rsvp || isHost) return
@@ -906,9 +942,17 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
                     {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
                     <div style={{ maxWidth: '74%' }}>
                       {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
-                      <div style={{ background: isMe ? '#FF6B4A' : '#fff', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px 'Plus Jakarta Sans'", lineHeight: 1.45 }}>
-                        {msg.body}
-                      </div>
+                      {msg.photo_url ? (
+                        <img
+                          src={msg.photo_url}
+                          onClick={() => setFullImg(msg.photo_url)}
+                          style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{ background: isMe ? '#FF6B4A' : '#fff', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px 'Plus Jakarta Sans'", lineHeight: 1.45 }}>
+                          {msg.body}
+                        </div>
+                      )}
                       <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
                         {fmtTime(msg.created_at)}
                       </div>
@@ -925,6 +969,16 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
       {/* ── chat input ── */}
       <div style={{ padding: '10px 16px 20px', borderTop: '1px solid #E8E2DA', background: '#FBF7F4', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
+        <button
+          onClick={() => setShowPhotoSheet(true)}
+          disabled={msgSending}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: '#F0EAE4', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: 24, padding: '4px 16px' }}>
           <input
             value={msgBody}
@@ -942,6 +996,37 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="m22 2-11 11"/></svg>
         </button>
       </div>
+
+      {/* ── photo source picker ── */}
+      {showPhotoSheet && (
+        <div onClick={() => setShowPhotoSheet(false)} style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', padding: '20px 16px 36px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ font: "600 16px 'Fredoka'", color: '#1F2933', textAlign: 'center', marginBottom: 4 }}>Send a photo</div>
+            <button onClick={() => { setShowPhotoSheet(false); pickAndSendPhoto(CameraSource.Camera) }}
+              style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+              Take Photo
+            </button>
+            <button onClick={() => { setShowPhotoSheet(false); pickAndSendPhoto(CameraSource.Photos) }}
+              style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+              Choose from Library
+            </button>
+            <button onClick={() => setShowPhotoSheet(false)}
+              style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#9A9087', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── full-screen image viewer ── */}
+      {fullImg && (
+        <div onClick={() => setFullImg(null)} style={{ position: 'absolute', inset: 0, zIndex: 300, background: 'rgba(0,0,0,.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={fullImg} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          <button onClick={() => setFullImg(null)} style={{ position: 'absolute', top: 20, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
 
       {showEdit && (
         <EditPlanSheet plan={plan} onClose={() => setShowEdit(false)} onSaved={() => { onUpdated?.() }} onDelete={onDeletePlan}/>

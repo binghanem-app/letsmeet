@@ -20,6 +20,8 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
   const [friendCount, setFriendCount] = useState(0)
   const [friendship, setFriendship] = useState(null) // null | {status, created_at}
   const [acting, setActing]         = useState(false)
+  const [reporting, setReporting]   = useState(false)
+  const [reportDone, setReportDone] = useState(false)
   const [dragY, setDragY]           = useState(0)
   const [dragging, setDragging]     = useState(false)
   const dragStartY                  = useRef(0)
@@ -105,6 +107,14 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
       .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
     setFriendship(null)
     setActing(false)
+  }
+
+  const REPORT_REASONS = ['Spam or fake account', 'Inappropriate content', 'Harassment', 'Hate speech', 'Other']
+
+  async function reportUser(reason) {
+    await supabase.from('reports').insert({ reporter: myId, reported: userId, reason })
+    setReporting(false)
+    setReportDone(true)
   }
 
   async function blockUser() {
@@ -220,9 +230,33 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
                 Share profile
               </button>
               {!isSelf && (
-                <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#E14F2E', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
-                  Block
-                </button>
+                <>
+                  <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+                    {acting ? '…' : 'Block'}
+                  </button>
+                  <button
+                    onClick={() => { setReporting(true); setReportDone(false) }}
+                    style={{ width: '100%', padding: 10, border: 'none', borderRadius: 16, background: 'transparent', color: '#B6ADA4', font: "500 13px 'Plus Jakarta Sans'", cursor: 'pointer' }}
+                  >
+                    {reportDone ? 'Reported ✓' : 'Report this account'}
+                  </button>
+                </>
+              )}
+              {/* Report reason picker */}
+              {reporting && (
+                <div style={{ background: '#fff', border: '1.5px solid #F1E8E2', borderRadius: 18, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 16px 10px', font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', borderBottom: '1px solid #F1E8E2' }}>Why are you reporting this account?</div>
+                  {REPORT_REASONS.map(r => (
+                    <button key={r} onClick={() => reportUser(r)}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '13px 16px', border: 'none', borderBottom: '1px solid #F7F3F0', background: 'transparent', font: "400 14px 'Plus Jakarta Sans'", color: '#1F2933', cursor: 'pointer' }}>
+                      {r}
+                    </button>
+                  ))}
+                  <button onClick={() => setReporting(false)}
+                    style={{ display: 'block', width: '100%', textAlign: 'center', padding: '13px 16px', border: 'none', background: 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: '#9A9087', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
               )}
             </div>
 

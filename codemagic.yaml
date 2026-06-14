@@ -35,6 +35,10 @@ workflows:
           plutil -replace ITSAppUsesNonExemptEncryption -bool NO ios/App/App/Info.plist
           plutil -insert CFBundleURLTypes -json '[{"CFBundleURLSchemes":["letsmeet"]}]' ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace CFBundleURLTypes -json '[{"CFBundleURLSchemes":["letsmeet"]}]' ios/App/App/Info.plist
+          plutil -insert NSCameraUsageDescription -string "Let's Meet uses your camera to share photos in group chats." ios/App/App/Info.plist 2>/dev/null || \
+          plutil -replace NSCameraUsageDescription -string "Let's Meet uses your camera to share photos in group chats." ios/App/App/Info.plist
+          plutil -insert NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist 2>/dev/null || \
+          plutil -replace NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist
       - name: Build IPA
         script: |
           xcode-project build-ipa \
