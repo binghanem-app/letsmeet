@@ -119,15 +119,15 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
           <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Edit plan</h3>
 
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 10px', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 8px', font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box' }}/>
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
               <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 10px', font: "600 15px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 8px', font: "600 14px 'Plus Jakarta Sans'", color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box' }}>
                 <option value="">No time</option>
                 {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -795,12 +795,11 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
               const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${dtStr}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
               try {
-                const file = new File([ics], 'event.ics', { type: 'text/calendar' })
-                await navigator.share({ files: [file], title: plan.title || 'Plan' })
+                const { Browser } = await import('@capacitor/browser')
+                await Browser.open({ url: `data:text/calendar;charset=utf8,${encodeURIComponent(ics)}` })
               } catch {
-                const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }))
-                window.open(url, '_blank')
-                setTimeout(() => URL.revokeObjectURL(url), 3000)
+                const file = new File([ics], 'event.ics', { type: 'text/calendar' })
+                navigator.share?.({ files: [file], title: plan.title || 'Plan' })
               }
             }}
             style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}

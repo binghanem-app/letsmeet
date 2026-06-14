@@ -222,30 +222,26 @@ function FeedCard({ plan, onOpen, onDelete }) {
               </span>
             )}
           </div>
-          {/* RIGHT: badges column */}
+          {/* RIGHT: trash (host) or rsvp badge, then category icon */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, marginTop: 2, flexShrink: 0 }}>
-            {rsvpBadge && (
+            {plan.isHost && !showDelConfirm ? (
+              <div onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }} style={{ padding: '2px 4px', cursor: 'pointer', borderRadius: 8 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </div>
+            ) : rsvpBadge ? (
               <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: rsvpBadge.color, background: rsvpBadge.bg, padding: '4px 9px', borderRadius: 20 }}>{rsvpBadge.label}</span>
-            )}
+            ) : null}
             {cat && <CategoryIconBadge type={cat.iconType} color={cat.accent} bg={cat.accentBg}/>}
           </div>
         </div>
 
-        {/* host delete */}
-        {plan.isHost && (
-          showDelConfirm ? (
-            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, padding: '10px 12px', marginBottom: 10 }}>
-              <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan?</span>
-              <button onClick={() => onDelete?.()} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
-              <button onClick={() => setShowDelConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-              <div onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }} style={{ padding: '4px 8px', cursor: 'pointer', borderRadius: 8 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-              </div>
-            </div>
-          )
+        {/* host delete confirm */}
+        {plan.isHost && showDelConfirm && (
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, padding: '10px 12px', marginBottom: 10 }}>
+            <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan?</span>
+            <button onClick={() => onDelete?.()} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
+            <button onClick={() => setShowDelConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
+          </div>
         )}
 
         {/* LOCATION */}
