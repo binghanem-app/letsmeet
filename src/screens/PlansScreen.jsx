@@ -795,11 +795,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
               const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${dtStr}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
               try {
-                const { Browser } = await import('@capacitor/browser')
-                await Browser.open({ url: `data:text/calendar;charset=utf8,${encodeURIComponent(ics)}` })
-              } catch {
                 const file = new File([ics], 'event.ics', { type: 'text/calendar' })
-                navigator.share?.({ files: [file], title: plan.title || 'Plan' })
+                await navigator.share({ files: [file], title: plan.title || 'Plan' })
+              } catch {
+                const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }))
+                window.open(url, '_blank')
+                setTimeout(() => URL.revokeObjectURL(url), 3000)
               }
             }}
             style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}
