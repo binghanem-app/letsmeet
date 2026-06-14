@@ -449,14 +449,14 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
       { data: friendPlans },
     ] = await Promise.all([
       supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-        .eq('host', session.user.id).gte('starts_at', now).order('starts_at').limit(10),
+        .eq('host', session.user.id).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10),
       inviteePlanIds.length
         ? supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-            .in('id', inviteePlanIds).gte('starts_at', now).order('starts_at').limit(10)
+            .in('id', inviteePlanIds).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10)
         : Promise.resolve({ data: [] }),
       friendIds.length
         ? supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-            .in('host', friendIds).gte('starts_at', now).order('starts_at').limit(10)
+            .in('host', friendIds).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10)
         : Promise.resolve({ data: [] }),
     ])
 
