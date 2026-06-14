@@ -5,13 +5,11 @@ const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
 // ─── presets ─────────────────────────────────────────────────────────────────
 const PRESETS = [
-  { emoji: '🍽️', label: 'Dinner',    sub: 'Restaurant, anywhere' },
   { emoji: '☕',  label: 'Coffee',    sub: 'Quick café catch-up' },
-  { emoji: '🍹',  label: 'Drinks',    sub: 'Bar or rooftop' },
+  { emoji: '🍽️', label: 'Dinner',    sub: 'Restaurant, anywhere' },
   { emoji: '🎬',  label: 'Movies',    sub: 'Cinema night' },
-  { emoji: '🌿',  label: 'Outdoors',  sub: 'Park, hike, or beach' },
   { emoji: '🏠',  label: 'Hang out',  sub: "Someone's place" },
-  { emoji: '🎉',  label: 'Party',     sub: 'Celebrate something' },
+  { emoji: '🌿',  label: 'Outdoors',  sub: 'Park, hike, or beach' },
   { emoji: '✈️',  label: 'Trip',      sub: 'Weekend getaway' },
 ]
 

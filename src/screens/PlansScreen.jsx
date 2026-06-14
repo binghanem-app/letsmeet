@@ -211,13 +211,11 @@ function fmtTime(iso) {
 }
 
 const CATEGORY_CONFIG = {
-  Movies:     { gradient: 'linear-gradient(90deg,#FF6B4A,#FF9A7A)', accent: '#FF6B4A', accentBg: '#FFEFE9', iconType: 'movies'  },
   Coffee:     { gradient: 'linear-gradient(90deg,#F5A623,#F7C05A)', accent: '#C8841A', accentBg: '#FBF0DA', iconType: 'coffee'  },
-  Outdoors:   { gradient: 'linear-gradient(90deg,#12B886,#38D3A0)', accent: '#0E9C6B', accentBg: '#E4F6EE', iconType: 'outdoors'},
   Dinner:     { gradient: 'linear-gradient(90deg,#A78BFA,#C4B0FF)', accent: '#A78BFA', accentBg: '#F0EBFF', iconType: 'dinner'  },
-  Drinks:     { gradient: 'linear-gradient(90deg,#5B7CFA,#7C9AFF)', accent: '#5B7CFA', accentBg: '#EAF1FF', iconType: 'drinks'  },
+  Movies:     { gradient: 'linear-gradient(90deg,#FF6B4A,#FF9A7A)', accent: '#FF6B4A', accentBg: '#FFEFE9', iconType: 'movies'  },
   'Hang out': { gradient: 'linear-gradient(90deg,#EC6A9C,#F28CB8)', accent: '#EC6A9C', accentBg: '#FDEAF3', iconType: 'hangout' },
-  Party:      { gradient: 'linear-gradient(90deg,#EC6A9C,#F28CB8)', accent: '#EC6A9C', accentBg: '#FDEAF3', iconType: 'party'   },
+  Outdoors:   { gradient: 'linear-gradient(90deg,#12B886,#38D3A0)', accent: '#0E9C6B', accentBg: '#E4F6EE', iconType: 'outdoors'},
   Trip:       { gradient: 'linear-gradient(90deg,#5B7CFA,#7C9AFF)', accent: '#5B7CFA', accentBg: '#EAF1FF', iconType: 'trip'    },
 }
 
@@ -241,9 +239,7 @@ function CategoryIcon({ type, color }) {
   if (type === 'coffee')  return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>
   if (type === 'outdoors') return <svg {...p}><path d="M3 17l4-8 4 5 3-4 4 7H3z"/><path d="M12 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill={color}/></svg>
   if (type === 'dinner')  return <svg {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-  if (type === 'drinks')  return <svg {...p}><path d="M8 22h8M12 11v11M20 3H4l6 7.46V17h4v-6.54Z"/></svg>
   if (type === 'hangout') return <svg {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  if (type === 'party')   return <svg {...p}><path d="M5.8 11.3 2 22l10.7-3.79M4 3h.01M22 8h.01M15 2h.01M22 20h.01M22 2 11 13M13 11 6.6 4.6"/></svg>
   if (type === 'trip')    return <svg {...p}><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.5.1-.9.6-.8 1.1l1 5c.1.5.5.8 1 .9l2 .4 3-3 1 7c.1.5.5.9 1 1l5 1c.5.1 1-.3 1.1-.8l.4-2-.1-1.4"/></svg>
   return null
 }
