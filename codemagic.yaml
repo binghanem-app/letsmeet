@@ -21,6 +21,7 @@ workflows:
         script: |
           node node_modules/@capacitor/cli/bin/capacitor add ios || true
           node node_modules/@capacitor/cli/bin/capacitor sync ios
+          node node_modules/@capacitor/assets/bin/capacitor-assets generate --ios
 
       - name: Install CocoaPods
         script: cd ios/App && pod install
