@@ -1,6 +1,19 @@
 # Claude Code session files
 .claude/
 
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Apple signing & keys
+*.p8
+AuthKey_*.p8
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
 # Logs
 logs
 *.log

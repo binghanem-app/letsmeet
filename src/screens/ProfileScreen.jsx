@@ -462,6 +462,9 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    const allowed = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowed.includes(file.type)) { showToast('Please choose a JPEG, PNG, or WebP image'); return }
+    if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2 MB'); return }
     setUploading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const ext = file.name.split('.').pop() || 'jpg'

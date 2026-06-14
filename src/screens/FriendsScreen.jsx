@@ -123,17 +123,8 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
         .filter(p => p && p.length >= 7)
       if (!phones.length) { setContactsState('done'); return }
       const suffixes = phones.map(p => p.slice(-10))
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, username, avatar_color, phone')
-        .neq('id', session.user.id)
-        .eq('phone_discoverable', true)
-        .not('phone', 'is', null)
-      const matched = (data || []).filter(p => {
-        const clean = p.phone.replace(/\D/g, '')
-        return phones.includes(clean) || suffixes.includes(clean.slice(-10))
-      })
-      setContactsResults(matched)
+      const { data } = await supabase.rpc('match_contacts', { phone_suffixes: suffixes })
+      setContactsResults(data || [])
       setContactsState('done')
     } catch { setContactsState('done') }
   }
