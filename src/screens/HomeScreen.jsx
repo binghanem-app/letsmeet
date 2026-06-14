@@ -246,9 +246,9 @@ function FeedCard({ plan, onOpen, onDelete }) {
 
         {/* LOCATION */}
         {plan.place_name && (
-          <div style={{ fontSize: 13, color: '#7B7268', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            {plan.place_name}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
+            <span style={{ font: "600 16px 'Fredoka'", color: '#1F2933' }}>{plan.place_name}</span>
           </div>
         )}
 
