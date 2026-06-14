@@ -1,4 +1,18 @@
-import { useEffect, useRef, useState } from 'react'
+import { Component, useEffect, useRef, useState } from 'react'
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) return (
+      <div style={{ padding: 24, fontFamily: 'monospace', fontSize: 13, color: '#c00', background: '#fff', height: '100vh', overflow: 'auto' }}>
+        <b>Crash:</b> {String(this.state.error)}<br/><br/>
+        {this.state.error?.stack}
+      </div>
+    )
+    return this.props.children
+  }
+}
 import { supabase } from './lib/supabase'
 import { PlanDetailOverlay } from './screens/PlansScreen'
 import LoginScreen from './screens/LoginScreen'
@@ -239,6 +253,7 @@ export default function App() {
   }
 
   return (
+    <ErrorBoundary>
     <ResponsiveLayout>
       {renderScreen()}
       {overlayPlanId && session && (
@@ -258,5 +273,6 @@ export default function App() {
         </div>
       )}
     </ResponsiveLayout>
+    </ErrorBoundary>
   )
 }
