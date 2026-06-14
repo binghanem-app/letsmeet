@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { CreateCircleSheet } from './FriendsScreen'
+import UserProfileSheet from '../components/UserProfileSheet'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -68,7 +69,7 @@ function KindDot({ kind }) {
 }
 
 // ─── Notifications sheet ──────────────────────────────────────────────────────
-function NotificationsSheet({ notifs, onClose, onClearAll, onDismiss }) {
+function NotificationsSheet({ notifs, onClose, onClearAll, onDismiss, onOpenPlan, onOpenFriends }) {
   return (
     <div
       onClick={onClose}
@@ -103,11 +104,16 @@ function NotificationsSheet({ notifs, onClose, onClearAll, onDismiss }) {
               {notifs.map(n => (
                 <div
                   key={n.id}
+                  onClick={() => {
+                    if (n.kind === 'request') { onClose(); onOpenFriends?.() }
+                    else if (n.plan_id) { onClose(); onOpenPlan?.(n.plan_id) }
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     background: n.read ? '#F5F0EB' : '#FFF0EC',
                     border: `1px solid ${n.read ? '#EBE4DC' : '#FFD5C8'}`,
                     borderRadius: 14, padding: '10px 13px',
+                    cursor: (n.kind === 'request' || n.plan_id) ? 'pointer' : 'default',
                   }}
                 >
                   <KindDot kind={n.kind}/>
@@ -236,7 +242,7 @@ function FeedCard({ plan, onOpen, onDelete }) {
           ) : (
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
               <div onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }} style={{ padding: '4px 8px', cursor: 'pointer', borderRadius: 8 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
               </div>
             </div>
           )
@@ -279,6 +285,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   const [viewCircle, setViewCircle] = useState(null) // { id, name, color }
   const [circleMembers, setCircleMembers] = useState([])
   const [loadingMembers, setLoadingMembers] = useState(false)
+  const [viewMemberId, setViewMemberId] = useState(null)
   const [notifs, setNotifs]     = useState([])
   const [showSheet, setShowSheet] = useState(false)
   const pushOn = getPref('notif_push', false)
@@ -322,7 +329,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   async function loadNotifs() {
     const { data } = await supabase
       .from('notifications')
-      .select('id, kind, body, read, created_at')
+      .select('id, kind, body, read, created_at, plan_id')
       .eq('recipient', session.user.id)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -688,6 +695,8 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           onClose={() => setShowSheet(false)}
           onClearAll={clearAll}
           onDismiss={dismissOne}
+          onOpenPlan={onOpenPlan}
+          onOpenFriends={onGoFriends}
         />
       )}
 
@@ -709,7 +718,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {circleMembers.map(m => (
-                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '12px 14px' }}>
+                    <div key={m.id} onClick={() => setViewMemberId(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '12px 14px', cursor: 'pointer' }}>
                       <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <span style={{ color: '#fff', font: "700 14px 'Plus Jakarta Sans'" }}>{m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'}</span>
                       </div>
@@ -723,6 +732,12 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {viewMemberId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9100 }}>
+          <UserProfileSheet userId={viewMemberId} myId={session.user.id} onClose={() => setViewMemberId(null)} />
         </div>
       )}
 

@@ -790,15 +790,17 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         {!past && plan.date && (
           <div
             onClick={() => {
-              const d = plan.date.replace(/-/g, '').slice(0, 8)
-              const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${d}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
+              const d = new Date(plan.date)
+              const pad = n => String(n).padStart(2, '0')
+              const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
+              const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${dtStr}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
               try {
-                const blob = new Blob([ics], { type: 'text/calendar' })
-                const url = URL.createObjectURL(blob)
+                const file = new File([ics], 'event.ics', { type: 'text/calendar' })
+                await navigator.share({ files: [file], title: plan.title || 'Plan' })
+              } catch {
+                const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }))
                 window.open(url, '_blank')
                 setTimeout(() => URL.revokeObjectURL(url), 3000)
-              } catch {
-                window.open(`data:text/calendar;charset=utf8,${encodeURIComponent(ics)}`, '_blank')
               }
             }}
             style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}
@@ -1183,12 +1185,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
 export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   const [plan, setPlan] = useState(null)
 
-  useEffect(() => {
-    async function load() {
-      const { data: p } = await supabase.from('plans')
-        .select('*, plan_invitees(invitee, rsvp)')
-        .eq('id', planId).single()
-      if (!p) return
+  async function load() {
+    const { data: p } = await supabase.from('plans')
+      .select('*, plan_invitees(invitee, rsvp)')
+      .eq('id', planId).single()
+    if (!p) return
 
       const allIds = [...new Set([p.host, ...(p.plan_invitees || []).map(i => i.invitee)])]
       const { data: profiles } = await supabase.from('profiles')
@@ -1214,9 +1215,9 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
           return { ...i, name: nickMap[i.invitee] || (pr ? `${pr.first_name || ''} ${pr.last_name || ''}`.trim() : 'Unknown'), avatar_color: pr?.avatar_color, avatar_url: pr?.avatar_url }
         }),
       })
-    }
-    load()
-  }, [planId])
+  }
+
+  useEffect(() => { load() }, [planId])
 
   if (!plan) return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#EEEAE4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1249,7 +1250,7 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
         plan={plan}
         myId={session.user.id}
         onClose={onClose}
-        onUpdated={() => onUpdated?.()}
+        onUpdated={() => { load(); onUpdated?.() }}
         onDeletePlan={deletePlan}
       />
     </div>

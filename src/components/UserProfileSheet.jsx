@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from './Avatar'
 
@@ -20,6 +20,12 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
   const [friendCount, setFriendCount] = useState(0)
   const [friendship, setFriendship] = useState(null) // null | {status, created_at}
   const [acting, setActing]         = useState(false)
+  const [dragY, setDragY]           = useState(0)
+  const [dragging, setDragging]     = useState(false)
+  const dragStartY                  = useRef(0)
+  function onDragStart(e) { dragStartY.current = e.touches[0].clientY; setDragging(true) }
+  function onDragMove(e) { const d = e.touches[0].clientY - dragStartY.current; if (d > 0) setDragY(d) }
+  function onDragEnd() { setDragging(false); if (dragY > 100) { onClose() } else { setDragY(0) } }
 
   useEffect(() => { if (userId && myId) load() }, [userId, myId])
 
@@ -115,8 +121,13 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
 
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '90%', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
+      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '90%', display: 'flex', flexDirection: 'column', transform: `translateY(${dragY}px)`, transition: dragging ? 'none' : 'transform .3s ease' }}>
+        <div onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '14px 16px 6px', flexShrink: 0 }}>
+          <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
+          <button onClick={onClose} style={{ position: 'absolute', right: 14, top: 10, width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#EDE8E3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>

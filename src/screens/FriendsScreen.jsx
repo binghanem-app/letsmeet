@@ -46,6 +46,12 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
   const [contactsState, setContactsState] = useState(null) // null | 'loading' | 'done'
   const [contactsResults, setContactsResults] = useState([])
   const debounce = useRef(null)
+  const [dragY, setDragY] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const dragStartY = useRef(0)
+  function onDragStart(e) { dragStartY.current = e.touches[0].clientY; setDragging(true) }
+  function onDragMove(e) { const d = e.touches[0].clientY - dragStartY.current; if (d > 0) setDragY(d) }
+  function onDragEnd() { setDragging(false); if (dragY > 100) { onClose() } else { setDragY(0) } }
 
   useEffect(() => { loadIncoming(); loadSuggestions(); loadDismissed() }, [])
 
@@ -232,15 +238,16 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
 
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '10px 22px 32px', maxHeight: '88%', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 16px' }}/>
+      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '0 22px 32px', maxHeight: '88%', display: 'flex', flexDirection: 'column', transform: `translateY(${dragY}px)`, transition: dragging ? 'none' : 'transform .3s ease' }}>
+        <div onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 10px' }}>
+          <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
+        </div>
         <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Add friends</h3>
 
         {/* username search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
           <span style={{ font: "700 16px 'Plus Jakarta Sans'", color: '#B6ADA4' }}>@</span>
           <input
-            autoFocus
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             placeholder="search by username"

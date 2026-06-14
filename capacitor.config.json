@@ -9,5 +9,10 @@
     "scheme": "letsmeet",
     "scrollEnabled": false,
     "allowsLinkPreview": false
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "none"
+    }
   }
 }
