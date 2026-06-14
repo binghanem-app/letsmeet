@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Capacitor } from '@capacitor/core'
 
 const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
@@ -558,6 +559,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const [msgSending, setMsgSending]   = useState(false)
   const [fullImg, setFullImg]         = useState(null)
   const chatEndRef  = useRef(null)
+  const fileInputRef = useRef(null)
   const knownSenders = useRef(new Set())
   const past = isPast(plan.date)
 
@@ -661,19 +663,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     setMsgSending(false)
   }
 
-  async function pickAndSendPhoto(source) {
+  async function uploadAndSendPhoto(dataUrl, format) {
+    setMsgSending(true)
     try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.DataUrl,
-        source,
-        quality: 80,
-        width: 1200,
-      })
-      setMsgSending(true)
-      // dataUrl → blob
-      const res = await fetch(photo.dataUrl)
+      const res = await fetch(dataUrl)
       const blob = await res.blob()
-      const ext = photo.format || 'jpeg'
+      const ext = format || 'jpeg'
       const path = `${plan.id}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
       if (upErr) { console.error(upErr); setMsgSending(false); return }
@@ -686,9 +681,22 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
       }
     } catch (e) {
-      if (e?.message !== 'User cancelled photos app') console.error(e)
+      console.error(e)
     }
     setMsgSending(false)
+  }
+
+  async function pickAndSendPhoto(source) {
+    if (!Capacitor.isNativePlatform()) {
+      fileInputRef.current?.click()
+      return
+    }
+    try {
+      const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
+      await uploadAndSendPhoto(photo.dataUrl, photo.format)
+    } catch (e) {
+      if (e?.message !== 'User cancelled photos app') console.error(e)
+    }
   }
 
   const [showPhotoSheet, setShowPhotoSheet] = useState(false)
@@ -967,10 +975,23 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
       </div>
 
+      {/* hidden file input for web photo picking */}
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = async ev => {
+          const ext = file.type.split('/')[1] || 'jpeg'
+          await uploadAndSendPhoto(ev.target.result, ext)
+        }
+        reader.readAsDataURL(file)
+        e.target.value = ''
+      }}/>
+
       {/* ── chat input ── */}
       <div style={{ padding: '10px 16px 20px', borderTop: '1px solid #E8E2DA', background: '#FBF7F4', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
         <button
-          onClick={() => setShowPhotoSheet(true)}
+          onClick={() => Capacitor.isNativePlatform() ? setShowPhotoSheet(true) : fileInputRef.current?.click()}
           disabled={msgSending}
           style={{ width: 42, height: 42, borderRadius: '50%', background: '#F0EAE4', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
         >
