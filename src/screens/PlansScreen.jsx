@@ -789,19 +789,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         {/* ── Add to calendar ── */}
         {!past && plan.date && (
           <div
-            onClick={async () => {
+            onClick={() => {
               const d = new Date(plan.date)
               const pad = n => String(n).padStart(2, '0')
               const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
-              const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:${plan.title || 'Plan'}\r\nDTSTART:${dtStr}\r\n${plan.place ? `LOCATION:${plan.place}\r\n` : ''}END:VEVENT\r\nEND:VCALENDAR`
-              try {
-                const file = new File([ics], 'event.ics', { type: 'text/calendar' })
-                await navigator.share({ files: [file], title: plan.title || 'Plan' })
-              } catch {
-                const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }))
-                window.open(url, '_blank')
-                setTimeout(() => URL.revokeObjectURL(url), 3000)
-              }
+              const params = new URLSearchParams({ title: plan.title || 'Plan', date: dtStr, place: plan.place || '' })
+              window.open(`https://wmexrzdrsrbahprczmsv.supabase.co/functions/v1/create-ics?${params}`, '_system')
             }}
             style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}
           >
