@@ -1225,7 +1225,20 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   )
 
   async function deletePlan() {
-    await supabase.from('plans').update({ cancelled: true }).eq('id', planId)
+    if (plan?.invitees?.length) {
+      const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', session.user.id).single()
+      const hostName = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'The host' : 'The host'
+      await supabase.from('notifications').insert(
+        plan.invitees.map(i => ({
+          recipient: i.invitee,
+          actor: session.user.id,
+          kind: 'plan_update',
+          plan_id: null,
+          body: `${hostName} cancelled "${plan.title}"`,
+        }))
+      )
+    }
+    await supabase.from('plans').delete().eq('id', planId)
     onClose()
     onUpdated?.()
   }

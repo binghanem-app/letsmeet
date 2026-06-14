@@ -401,16 +401,15 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
     push:           localStorage.getItem('notif_push')            === 'true',
     planResponses:  localStorage.getItem('notif_plan_responses')  !== 'false',
     friendRequests: localStorage.getItem('notif_friend_requests') !== 'false',
-    reminders:      localStorage.getItem('notif_reminders')       !== 'false',
   }))
   const [discoveryOn, setDiscoveryOn] = useState(true)
 
   function toggleNotifPref(key) {
-    const keyMap = { push: 'notif_push', planResponses: 'notif_plan_responses', friendRequests: 'notif_friend_requests', reminders: 'notif_reminders' }
+    const keyMap = { push: 'notif_push', planResponses: 'notif_plan_responses', friendRequests: 'notif_friend_requests' }
     setNotifPrefs(prev => {
       if (key === 'push') {
         const pushOn = !prev.push
-        const next = { push: pushOn, planResponses: pushOn, friendRequests: pushOn, reminders: pushOn }
+        const next = { push: pushOn, planResponses: pushOn, friendRequests: pushOn }
         Object.entries(keyMap).forEach(([k, lk]) => localStorage.setItem(lk, String(next[k])))
         if (pushOn) { try { Notification?.requestPermission?.() } catch (_) {} }
         return next
@@ -610,7 +609,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
             iconBg="#5B7CFA"
             icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>}
             label="Plan responses"
-            value="When someone RSVPs to your plan"
+            value="When someone joins your plan"
             toggle
             toggled={notifPrefs.planResponses}
             onToggle={() => toggleNotifPref('planResponses')}
@@ -624,16 +623,6 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
             toggle
             toggled={notifPrefs.friendRequests}
             onToggle={() => toggleNotifPref('friendRequests')}
-            muted={!notifPrefs.push}
-          />
-          <Row
-            iconBg="#F5A623"
-            icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>}
-            label="Reminders"
-            value="Day-before plan reminders"
-            toggle
-            toggled={notifPrefs.reminders}
-            onToggle={() => toggleNotifPref('reminders')}
             muted={!notifPrefs.push}
             last
           />
