@@ -11,7 +11,7 @@ import catHangout from '../assets/categories/hangout.png'
 import catOutdoors from '../assets/categories/outdoors.png'
 import catTrip from '../assets/categories/trip.png'
 
-const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
 
 // ─── Minimal place search for Edit sheet ─────────────────────────────────────
 function PlaceSearchMini({ value, onChange }) {
@@ -690,6 +690,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       return
     }
     try {
+      const permType = source === CameraSource.Camera ? 'camera' : 'photos'
+      const perms = await Camera.requestPermissions({ permissions: [permType] })
+      if (perms[permType] === 'denied') {
+        alert("Please go to Settings → Let's Meet and allow camera/photo access.")
+        return
+      }
       const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
       await uploadAndSendPhoto(photo.dataUrl, photo.format)
     } catch (e) {

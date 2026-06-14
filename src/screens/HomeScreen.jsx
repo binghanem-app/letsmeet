@@ -174,7 +174,7 @@ const CAT_IMGS = { coffee: catCoffee, dinner: catDinner, movies: catMovies, hang
 function CategoryIcon({ type }) {
   const src = CAT_IMGS[type]
   if (!src) return null
-  return <img src={src} alt={type} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+  return <img src={src} alt={type} style={{ width: 26, height: 26, objectFit: 'contain', mixBlendMode: 'multiply' }} />
 }
 
 function CategoryIconBadge({ type, color, bg }) {
@@ -246,7 +246,7 @@ function FeedCard({ plan, onOpen, onDelete }) {
         {plan.place_name && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            <span style={{ font: "600 16px 'Fredoka'", color: '#1F2933' }}>{plan.place_name}</span>
+            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>{plan.place_name}</span>
           </div>
         )}
 
@@ -447,14 +447,14 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
       { data: friendPlans },
     ] = await Promise.all([
       supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-        .eq('host', session.user.id).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10),
+        .eq('host', session.user.id).neq('cancelled', true).gte('starts_at', now).order('starts_at').limit(10),
       inviteePlanIds.length
         ? supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-            .in('id', inviteePlanIds).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10)
+            .in('id', inviteePlanIds).neq('cancelled', true).gte('starts_at', now).order('starts_at').limit(10)
         : Promise.resolve({ data: [] }),
       friendIds.length
         ? supabase.from('plans').select('id, title, place_name, starts_at, host, vibe')
-            .in('host', friendIds).eq('cancelled', false).gte('starts_at', now).order('starts_at').limit(10)
+            .in('host', friendIds).neq('cancelled', true).gte('starts_at', now).order('starts_at').limit(10)
         : Promise.resolve({ data: [] }),
     ])
 
@@ -607,7 +607,12 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         {/* circles */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '26px 0 13px' }}>
           <h3 style={{ margin: 0, font: "600 18px 'Fredoka'", color: '#1F2933' }}>Your circles</h3>
-          <span onClick={onGoFriends} style={{ fontSize: 13, fontWeight: 600, color: '#FF6B4A', cursor: 'pointer' }}>See all</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div onClick={() => setCreateCircleOpen(true)} style={{ width: 28, height: 28, borderRadius: 9, background: '#FFEFE9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <span onClick={onGoFriends} style={{ fontSize: 13, fontWeight: 600, color: '#FF6B4A', cursor: 'pointer' }}>See all</span>
+          </div>
         </div>
 
         {loading ? (

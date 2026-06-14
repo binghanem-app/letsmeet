@@ -7,7 +7,7 @@ import catHangout from '../assets/categories/hangout.png'
 import catOutdoors from '../assets/categories/outdoors.png'
 import catTrip from '../assets/categories/trip.png'
 
-const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
 
 // ─── presets ─────────────────────────────────────────────────────────────────
 const PRESETS = [
