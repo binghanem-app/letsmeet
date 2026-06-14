@@ -4,7 +4,7 @@ import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 
-const GAPI_KEY = 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
 // ─── Minimal place search for Edit sheet ─────────────────────────────────────
 function PlaceSearchMini({ value, onChange }) {

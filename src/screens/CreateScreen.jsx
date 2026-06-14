@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const GAPI_KEY = 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
 // ─── presets ─────────────────────────────────────────────────────────────────
 const PRESETS = [
