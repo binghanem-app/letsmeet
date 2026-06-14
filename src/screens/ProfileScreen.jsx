@@ -443,7 +443,8 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data } = await supabase.rpc('get_my_profile')
+    const prof = data?.[0]
     setProfile({ ...prof, email: user.email })
     setDiscoveryOn(prof?.phone_discoverable ?? true)
   }
