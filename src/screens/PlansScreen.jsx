@@ -243,7 +243,7 @@ const CAT_IMGS = { coffee: catCoffee, dinner: catDinner, movies: catMovies, hang
 function CategoryIcon({ type }) {
   const src = CAT_IMGS[type]
   if (!src) return null
-  return <img src={src} alt={type} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+  return <img src={src} alt={type} style={{ width: 26, height: 26, objectFit: 'contain', mixBlendMode: 'multiply' }} />
 }
 
 function CategoryIconBadge({ type, color, bg }) {
@@ -362,9 +362,9 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
 
         {/* LOCATION */}
         {plan.place && (
-          <div style={{ fontSize: 13, color: '#7B7268', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            {plan.place}
+          <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
+            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>{plan.place}</span>
           </div>
         )}
 
@@ -690,16 +690,15 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       return
     }
     try {
-      const permType = source === CameraSource.Camera ? 'camera' : 'photos'
-      const perms = await Camera.requestPermissions({ permissions: [permType] })
-      if (perms[permType] === 'denied') {
-        alert("Please go to Settings → Let's Meet and allow camera/photo access.")
-        return
-      }
       const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
       await uploadAndSendPhoto(photo.dataUrl, photo.format)
     } catch (e) {
-      if (e?.message !== 'User cancelled photos app') console.error(e)
+      if (e?.message !== 'User cancelled photos app') {
+        console.error('Camera error:', e)
+        if (e?.message?.toLowerCase().includes('permission') || e?.message?.toLowerCase().includes('denied')) {
+          alert("Please go to Settings → Let's Meet and allow camera/photo access.")
+        }
+      }
     }
   }
 

@@ -11,12 +11,12 @@ const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivC
 
 // ─── presets ─────────────────────────────────────────────────────────────────
 const PRESETS = [
-  { icon: catCoffee,   label: 'Coffee',    sub: 'Quick café catch-up' },
-  { icon: catDinner,   label: 'Dinner',    sub: 'Restaurant, anywhere' },
-  { icon: catMovies,   label: 'Movies',    sub: 'Cinema night' },
-  { icon: catHangout,  label: 'Hang out',  sub: "Someone's place" },
-  { icon: catOutdoors, label: 'Outdoors',  sub: 'Park, hike, or beach' },
-  { icon: catTrip,     label: 'Trip',      sub: 'Weekend getaway' },
+  { icon: catCoffee,   label: 'Coffee',    sub: 'Quick café catch-up',  bg: '#FBF0DA' },
+  { icon: catDinner,   label: 'Dinner',    sub: 'Restaurant, anywhere', bg: '#F0EBFF' },
+  { icon: catMovies,   label: 'Movies',    sub: 'Cinema night',         bg: '#FFEFE9' },
+  { icon: catHangout,  label: 'Hang out',  sub: "Someone's place",      bg: '#FDEAF3' },
+  { icon: catOutdoors, label: 'Outdoors',  sub: 'Park, hike, or beach', bg: '#E4F6EE' },
+  { icon: catTrip,     label: 'Trip',      sub: 'Weekend getaway',      bg: '#EAF1FF' },
 ]
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -119,7 +119,9 @@ function StepName({ value, onChange, onVibeChange }) {
             onClick={() => { onChange(p.label); onVibeChange?.(p.label) }}
             style={{ display: 'flex', alignItems: 'center', gap: 13, background: value === p.label ? '#FFF1EC' : '#fff', border: `1.5px solid ${value === p.label ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '12px 15px', cursor: 'pointer' }}
           >
-            <img src={p.icon} alt={p.label} style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <img src={p.icon} alt={p.label} style={{ width: 28, height: 28, objectFit: 'contain', mixBlendMode: 'multiply' }} />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: value === p.label ? '#FF6B4A' : '#1F2933' }}>{p.label}</div>
               <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1 }}>{p.sub}</div>
