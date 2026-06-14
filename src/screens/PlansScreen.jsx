@@ -789,7 +789,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         {/* ── Add to calendar ── */}
         {!past && plan.date && (
           <div
-            onClick={() => {
+            onClick={async () => {
               const d = new Date(plan.date)
               const pad = n => String(n).padStart(2, '0')
               const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
