@@ -240,7 +240,7 @@ export default function App() {
           </div>
           {screen === 'create' && (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1); setPlansRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans') }} />
+              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1); setPlansRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }} />
             </div>
           )}
           <div style={show('plans')}>

@@ -700,6 +700,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       const msg = e?.message || ''
       if (msg === 'User cancelled photos app' || msg === 'User cancelled') return
       console.error('Camera error:', e)
+      alert(`Camera error: ${msg || 'Unknown error'}`)
     }
   }
 
