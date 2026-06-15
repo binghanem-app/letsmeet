@@ -644,7 +644,7 @@ function StepReview({ title, place, date, hour, minute, ampm, inviteeCount }) {
 
       <div style={{ display: 'flex', gap: 8, padding: '12px 15px', background: '#F0FAF5', borderRadius: 14, border: '1px solid #C3EDD8' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E9C6B" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
-        <span style={{ fontSize: 13, color: '#0E9C6B', lineHeight: 1.5 }}>Friends can mark themselves as In, Out, or Maybe. You'll see responses in real time.</span>
+        <span style={{ fontSize: 13, color: '#0E9C6B', lineHeight: 1.5 }}>Friends can mark themselves as Going, Late, or Can't. You'll see responses in real time.</span>
       </div>
     </div>
   )
