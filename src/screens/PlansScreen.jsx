@@ -1068,7 +1068,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
@@ -1095,6 +1095,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
     await supabase.from('plans').delete().eq('id', planId)
     load()
   }
+
+  useEffect(() => {
+    if (!session || refreshTrigger === 0) return
+    load()
+  }, [refreshTrigger])
 
   useEffect(() => {
     if (!session) return

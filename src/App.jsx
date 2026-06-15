@@ -98,6 +98,7 @@ export default function App() {
   const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
+  const [plansRefresh, setPlansRefresh] = useState(0)
   const friendSubRef = useRef(null)
 
   useEffect(() => {
@@ -206,7 +207,7 @@ export default function App() {
     onHome:    () => setScreen('home'),
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
-    onPlans:   () => setScreen('plans'),
+    onPlans:   () => { setScreen('plans'); setPlansRefresh(r => r + 1) },
     onProfile: () => setScreen('profile'),
   })
 
@@ -237,11 +238,11 @@ export default function App() {
           </div>
           {screen === 'create' && (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans') }} />
+              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1); setPlansRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans') }} />
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} />
           </div>
           <div style={show('profile')}>
             <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
