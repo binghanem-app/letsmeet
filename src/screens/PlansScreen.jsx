@@ -1098,7 +1098,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
 
   useEffect(() => {
     if (!session || refreshTrigger === 0) return
-    load()
+    load(true)
   }, [refreshTrigger])
 
   useEffect(() => {
@@ -1123,8 +1123,8 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
     }
   }, [openPlanId, plans])
 
-  async function load() {
-    setLoading(true)
+  async function load(silent = false) {
+    if (!silent) setLoading(true)
 
     const { data: hosting } = await supabase
       .from('plans')
