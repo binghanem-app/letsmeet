@@ -216,11 +216,12 @@ export default function App() {
     if (!session || screen === 'login') return <LoginScreen onLogin={() => { supabase.auth.getSession().then(({ data }) => setSession(data.session)); setScreen('home') }} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
     if (needsOnboarding) return <OnboardingScreen session={session} onDone={() => setNeedsOnboarding(false)} />
 
-    const postLoginScreen = (() => {
-      switch (screen) {
-        case 'home':
-        default:
-          return (
+    const show = (key) => ({ display: screen === key ? 'flex' : 'none', flexDirection: 'column', height: '100%' })
+
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+          <div style={show('home')}>
             <HomeScreen
               session={session}
               refreshTrigger={homeRefresh}
@@ -230,22 +231,21 @@ export default function App() {
               onOpenAddFriend={() => { setOpenAddFriend(true); setPendingCount(0) }}
               requestCount={pendingCount}
             />
-          )
-        case 'friends':
-          return <FriendsScreen session={session} externalAddFriendOpen={openAddFriend} onCloseAddFriend={() => setOpenAddFriend(false)} />
-        case 'create':
-          return <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans') }} />
-        case 'plans':
-          return <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} />
-        case 'profile':
-          return <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
-      }
-    })()
-
-    return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-          {postLoginScreen}
+          </div>
+          <div style={show('friends')}>
+            <FriendsScreen session={session} externalAddFriendOpen={openAddFriend} onCloseAddFriend={() => setOpenAddFriend(false)} />
+          </div>
+          {screen === 'create' && (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans') }} />
+            </div>
+          )}
+          <div style={show('plans')}>
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} />
+          </div>
+          <div style={show('profile')}>
+            <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
+          </div>
         </div>
         <TabBar active={screen} {...tabNav()} />
       </div>
