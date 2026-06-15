@@ -1127,13 +1127,14 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened }) {
       .from('plans')
       .select('id, title, place_name, place_address, place_lat, place_lng, starts_at, time_label, host, vibe')
       .eq('host', session.user.id)
+      .not('cancelled', 'is', true)
 
     const { data: myInvites } = await supabase
       .from('plan_invitees').select('plan_id, rsvp').eq('invitee', session.user.id)
 
     const invitedPlanIds = (myInvites || []).map(i => i.plan_id)
     const { data: invited } = invitedPlanIds.length
-      ? await supabase.from('plans').select('id, title, place_name, place_address, place_lat, place_lng, starts_at, time_label, host, vibe').in('id', invitedPlanIds)
+      ? await supabase.from('plans').select('id, title, place_name, place_address, place_lat, place_lng, starts_at, time_label, host, vibe').in('id', invitedPlanIds).not('cancelled', 'is', true)
       : { data: [] }
 
     const allPlans = [...(hosting || []), ...(invited || [])]
