@@ -580,6 +580,11 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
   useEffect(() => {
     loadMessages()
+    // Mark chat as read
+    supabase.from('plan_message_reads').upsert(
+      { user_id: myId, plan_id: plan.id, last_read_at: new Date().toISOString() },
+      { onConflict: 'user_id,plan_id' }
+    )
 
     const channel = supabase.channel(`plan-detail-${plan.id}`)
       .on('postgres_changes', {

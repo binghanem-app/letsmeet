@@ -245,7 +245,7 @@ export default function App() {
               refreshTrigger={homeRefresh}
               onStartCreate={() => setScreen('create')}
               onGoFriends={() => setScreen('friends')}
-              onOpenPlan={() => { setScreen('plans'); setPlansRefresh(r => r + 1) }}
+              onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
               onPlanCancelled={(id) => setCancelledPlanIds(s => new Set([...s, id]))}
               onUnreadChatCount={(n) => setTotalUnreadChat(n)}
             />

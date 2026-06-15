@@ -540,46 +540,368 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
 
 // ─── CreateCircleSheet ────────────────────────────────────────────────────────
 export function CreateCircleSheet({ session, onClose, onCreated }) {
+  const [step, setStep] = useState(1)         // 1 = name, 2 = color, 3 = friends
   const [name, setName] = useState('')
   const [color, setColor] = useState(CIRCLE_COLORS[0])
+  const [friends, setFriends] = useState([])   // all friends loaded
+  const [selected, setSelected] = useState([]) // selected friend ids
+  const [loadingFriends, setLoadingFriends] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  async function goToStep3() {
+    setStep(3)
+    setLoadingFriends(true)
+    const { data: fs } = await supabase
+      .from('friendships')
+      .select('requester, addressee')
+      .or(`requester.eq.${session.user.id},addressee.eq.${session.user.id}`)
+      .eq('status', 'accepted')
+    const ids = (fs || []).map(f => f.requester === session.user.id ? f.addressee : f.requester)
+    if (ids.length) {
+      const { data: profiles } = await supabase
+        .from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+      setFriends(profiles || [])
+    }
+    setLoadingFriends(false)
+  }
+
+  function toggle(id) {
+    setSelected(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
+  }
 
   async function create() {
     if (!name.trim()) return
     setSaving(true)
-    await supabase.from('groups').insert({ owner: session.user.id, name: name.trim(), color })
+    const { data: group } = await supabase
+      .from('groups')
+      .insert({ owner: session.user.id, name: name.trim(), color })
+      .select('id').single()
+    if (group && selected.length) {
+      await supabase.from('group_members').insert(selected.map(uid => ({ group_id: group.id, member: uid })))
+    }
     setSaving(false)
     onCreated?.()
     onClose()
   }
 
+  // step labels
+  const STEPS = ['Name', 'Color', 'Add friends']
+
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '10px 22px 32px' }}>
-        <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 16px' }}/>
-        <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>New circle</h3>
-
-        <input
-          autoFocus value={name} onChange={e => setName(e.target.value)}
-          placeholder="e.g. Close Friends, Work, Family…"
-          onKeyDown={e => e.key === 'Enter' && create()}
-          style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 15px', font: "600 16px -apple-system", color: '#1F2933', outline: 'none', background: '#fff', marginBottom: 18 }}
-        />
-
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginBottom: 10, letterSpacing: .3 }}>COLOUR</div>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-          {CIRCLE_COLORS.map(c => (
-            <div
-              key={c} onClick={() => setColor(c)}
-              style={{ width: 32, height: 32, borderRadius: '50%', background: c, cursor: 'pointer', outline: c === color ? `3px solid ${c}` : 'none', outlineOffset: 3 }}
-            />
-          ))}
+      <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#F9F4F0', borderRadius: '28px 28px 0 0', padding: '0 0 0', maxHeight: '85%', display: 'flex', flexDirection: 'column' }}>
+        {/* drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+          <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
         </div>
 
-        <button onClick={create} disabled={!name.trim() || saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: name.trim() ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 16px -apple-system", cursor: name.trim() ? 'pointer' : 'default', boxShadow: name.trim() ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none' }}>
-          {saving ? 'Creating…' : 'Create circle'}
-        </button>
+        {/* step header */}
+        <div style={{ padding: '16px 20px 0' }}>
+          {/* step dots */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+            {STEPS.map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: i + 1 === step ? 20 : 8, height: 8, borderRadius: 4, background: i + 1 <= step ? color : '#E0D7CF', transition: 'all .2s' }}/>
+                {i < STEPS.length - 1 && <div style={{ width: 16, height: 2, background: i + 1 < step ? color : '#E0D7CF', borderRadius: 1, transition: 'background .2s' }}/>}
+              </div>
+            ))}
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginLeft: 6 }}>{STEPS[step - 1]}</span>
+          </div>
+          <div style={{ font: '700 22px -apple-system', color: '#1A1A1A', marginBottom: 18 }}>
+            {step === 1 ? 'Name your circle' : step === 2 ? 'Pick a color' : 'Add friends'}
+          </div>
+        </div>
+
+        {/* step content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }} className="no-scrollbar">
+          {step === 1 && (
+            <div>
+              <input
+                autoFocus
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && name.trim() && setStep(2)}
+                placeholder="e.g. Close Friends, Work, Family..."
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 16, padding: '14px 16px', font: '600 17px -apple-system', color: '#1A1A1A', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+              {CIRCLE_COLORS.map(c => (
+                <div key={c} onClick={() => setColor(c)}
+                  style={{ width: 48, height: 48, borderRadius: '50%', background: c, cursor: 'pointer', outline: c === color ? `4px solid ${c}` : 'none', outlineOffset: 4, boxShadow: c === color ? `0 6px 16px ${c}55` : 'none', transition: 'all .15s' }}/>
+              ))}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              {loadingFriends ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height: 58, borderRadius: 14, background: '#EFE8E2' }}/>)}
+                </div>
+              ) : friends.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '28px 0', fontSize: 13.5, color: '#9A9087' }}>
+                  No friends yet - you can add them later.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, paddingBottom: 8 }}>
+                  {friends.map(f => {
+                    const fname = `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username
+                    const sel = selected.includes(f.id)
+                    return (
+                      <div key={f.id} onClick={() => toggle(f.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
+                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
+                          {fname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <span style={{ flex: 1, font: '600 14.5px -apple-system', color: sel ? '#FF6B4A' : '#1A1A1A' }}>{fname}</span>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* sticky footer CTA */}
+        <div style={{ padding: '14px 20px 32px', borderTop: '1px solid #EFE8E2', background: '#F9F4F0', flexShrink: 0 }}>
+          {step < 3 ? (
+            <div style={{ display: 'flex', gap: 10 }}>
+              {step > 1 && (
+                <button onClick={() => setStep(s => s - 1)}
+                  style={{ flex: 1, padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: '600 16px -apple-system', cursor: 'pointer' }}>
+                  Back
+                </button>
+              )}
+              <button
+                onClick={() => step === 1 ? (name.trim() && setStep(2)) : goToStep3()}
+                disabled={step === 1 && !name.trim()}
+                style={{ flex: 2, padding: 15, border: 'none', borderRadius: 16, background: (step === 1 && !name.trim()) ? '#E7DED7' : '#FF6B4A', color: '#fff', font: '600 16px -apple-system', cursor: (step === 1 && !name.trim()) ? 'default' : 'pointer', boxShadow: (step === 1 && !name.trim()) ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
+                Next
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setStep(2)}
+                style={{ flex: 1, padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: '600 16px -apple-system', cursor: 'pointer' }}>
+                Back
+              </button>
+              <button onClick={create} disabled={saving}
+                style={{ flex: 2, padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: '600 16px -apple-system', cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.7)' }}>
+                {saving ? 'Creating...' : selected.length ? `Create with ${selected.length}` : 'Create circle'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  )
+}
+
+// ─── CircleDetailScreen ───────────────────────────────────────────────────────
+function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onDeleted }) {
+  const [name, setName] = useState(circle.name)
+  const [editingName, setEditingName] = useState(false)
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addableFriends, setAddableFriends] = useState([])
+  const [selectedToAdd, setSelectedToAdd] = useState([])
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const color = circle.color || '#5B7CFA'
+
+  useEffect(() => { loadMembers() }, [circle.id])
+
+  async function loadMembers() {
+    setLoading(true)
+    const { data: rows } = await supabase
+      .from('group_members')
+      .select('member')
+      .eq('group_id', circle.id)
+    const ids = (rows || []).map(r => r.member)
+    if (!ids.length) { setMembers([]); setLoading(false); return }
+    const { data: profiles } = await supabase
+      .from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+    setMembers(profiles || [])
+    setLoading(false)
+  }
+
+  async function removeMember(memberId) {
+    setMembers(prev => prev.filter(m => m.id !== memberId))
+    await supabase.from('group_members').delete().eq('group_id', circle.id).eq('member', memberId)
+  }
+
+  async function saveName() {
+    if (!name.trim() || name.trim() === circle.name) { setEditingName(false); return }
+    await supabase.from('groups').update({ name: name.trim() }).eq('id', circle.id)
+    setEditingName(false)
+    onSaved?.()
+  }
+
+  async function deleteCircle() {
+    await supabase.from('groups').delete().eq('id', circle.id)
+    onDeleted?.()
+    onClose()
+  }
+
+  function openAddPeople() {
+    const memberIds = new Set(members.map(m => m.id))
+    setAddableFriends(allFriends.filter(f => !memberIds.has(f.id)))
+    setSelectedToAdd([])
+    setAddOpen(true)
+  }
+
+  async function addPeople() {
+    if (!selectedToAdd.length) { setAddOpen(false); return }
+    setSaving(true)
+    await supabase.from('group_members').insert(selectedToAdd.map(uid => ({ group_id: circle.id, member: uid })))
+    setSaving(false)
+    setAddOpen(false)
+    loadMembers()
+    onSaved?.()
+  }
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 40, background: '#F9F4F0', display: 'flex', flexDirection: 'column' }} className="fade-up">
+
+      {/* Header */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #EFE8E2', padding: '14px 16px 14px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.4" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }}/>
+          {editingName ? (
+            <input
+              autoFocus
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={e => e.key === 'Enter' && saveName()}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: '700 20px -apple-system', color: '#1A1A1A', padding: 0 }}
+            />
+          ) : (
+            <span style={{ flex: 1, font: '700 20px -apple-system', color: '#1A1A1A' }}>{name}</span>
+          )}
+          <button onClick={() => setEditingName(true)}
+            style={{ width: 36, height: 36, borderRadius: 10, background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }} className="no-scrollbar">
+
+        {/* Add people button */}
+        <div onClick={openAddPeople}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1.5px dashed #D8D0C8', borderRadius: 16, padding: '13px 16px', marginBottom: 16, cursor: 'pointer', background: '#fff' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#F2EFEC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <span style={{ font: '600 15px -apple-system', color: '#9A9087' }}>Add people</span>
+        </div>
+
+        {/* Members list */}
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[1,2].map(i => <div key={i} style={{ height: 64, borderRadius: 14, background: '#EFE8E2' }}/>)}
+          </div>
+        ) : members.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '28px 0', fontSize: 14, color: '#9A9087' }}>No members yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {members.map(m => {
+              const mname = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.username
+              return (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 14, padding: '11px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
+                    {mname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ flex: 1, font: '600 15px -apple-system', color: '#1A1A1A' }}>{mname}</span>
+                  <button onClick={() => removeMember(m.id)}
+                    style={{ border: 'none', background: '#F2EFEC', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Delete footer */}
+      <div style={{ padding: '12px 20px 32px', borderTop: '1px solid #EFE8E2', background: '#F9F4F0', flexShrink: 0 }}>
+        {confirmDelete ? (
+          <div style={{ background: '#FFF1EC', border: '1.5px solid #FFD8CC', borderRadius: 16, padding: '14px 16px', marginBottom: 0 }}>
+            <p style={{ margin: '0 0 10px', font: '600 15px -apple-system', color: '#1A1A1A' }}>Delete "{circle.name}"?</p>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9A9087' }}>All members will be removed from this circle.</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDelete(false)}
+                style={{ flex: 1, padding: '12px 0', border: '1.5px solid #E7DED7', borderRadius: 12, background: '#fff', color: '#7B7268', font: '600 14px -apple-system', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={deleteCircle}
+                style={{ flex: 1, padding: '12px 0', border: 'none', borderRadius: 12, background: '#E14F2E', color: '#fff', font: '600 14px -apple-system', cursor: 'pointer' }}>Delete</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmDelete(true)}
+            style={{ width: '100%', padding: 15, border: '1.5px solid #F3D2CC', borderRadius: 16, background: '#fff', color: '#E14F2E', font: '600 15px -apple-system', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+            Delete circle
+          </button>
+        )}
+      </div>
+
+      {/* Add people sub-sheet */}
+      {addOpen && (
+        <div onClick={() => setAddOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#F9F4F0', borderRadius: '28px 28px 0 0', padding: '0', maxHeight: '70%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+              <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
+            </div>
+            <div style={{ padding: '14px 20px 10px', font: '700 20px -apple-system', color: '#1A1A1A', flexShrink: 0 }}>Add to circle</div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }} className="no-scrollbar">
+              {addableFriends.length === 0 ? (
+                <p style={{ fontSize: 14, color: '#9A9087', textAlign: 'center', padding: '20px 0' }}>All friends are already in this circle.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, paddingBottom: 8 }}>
+                  {addableFriends.map(f => {
+                    const fname = `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username
+                    const sel = selectedToAdd.includes(f.id)
+                    return (
+                      <div key={f.id} onClick={() => setSelectedToAdd(prev => sel ? prev.filter(i => i !== f.id) : [...prev, f.id])}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
+                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
+                          {fname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <span style={{ flex: 1, font: '600 14.5px -apple-system', color: sel ? '#FF6B4A' : '#1A1A1A' }}>{fname}</span>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '12px 20px 28px', borderTop: '1px solid #EFE8E2', flexShrink: 0 }}>
+              <button onClick={addPeople} disabled={saving}
+                style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: selectedToAdd.length ? '#FF6B4A' : '#E7DED7', color: '#fff', font: '600 16px -apple-system', cursor: selectedToAdd.length ? 'pointer' : 'default', boxShadow: selectedToAdd.length ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none' }}>
+                {saving ? 'Adding...' : selectedToAdd.length ? `Add ${selectedToAdd.length}` : 'Select friends to add'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -593,6 +915,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   const [createCircleOpen, setCreateCircleOpen] = useState(false)
   const [menuFriend, setMenuFriend] = useState(null)
   const [activeCircle, setActiveCircle] = useState(null)
+  const [circleDetail, setCircleDetail] = useState(null)
   const [viewFriendId, setViewFriendId] = useState(null)
   const [pendingIn, setPendingIn] = useState([])
   const [acceptedMap, setAcceptedMap] = useState({})
@@ -790,13 +1113,12 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
             </div>
             {circles.map(c => {
               const memberCount = friends.filter(f => f.groupIds?.includes(c.id)).length
-              const sel = activeCircle === c.id
               return (
-                <div key={c.id} onClick={() => setActiveCircle(sel ? null : c.id)}
-                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px 10px 12px', background: sel ? c.color : '#fff', border: `1.5px solid ${sel ? c.color : '#EFE8E2'}`, borderRadius: 14, cursor: 'pointer', transition: 'all .15s' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: sel ? '#fff' : c.color }}/>
-                  <span style={{ font: "600 13.5px -apple-system", color: sel ? '#fff' : '#1A1A1A', whiteSpace: 'nowrap' }}>{c.name}</span>
-                  <span style={{ fontSize: 12, color: sel ? 'rgba(255,255,255,.75)' : '#9A9087' }}>{memberCount}</span>
+                <div key={c.id} onClick={() => setCircleDetail(c)}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px 10px 12px', background: '#fff', border: '1.5px solid #EFE8E2', borderRadius: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }}/>
+                  <span style={{ font: "600 13.5px -apple-system", color: '#1A1A1A', whiteSpace: 'nowrap' }}>{c.name}</span>
+                  <span style={{ fontSize: 12, color: '#9A9087' }}>{memberCount}</span>
                 </div>
               )
             })}
@@ -923,6 +1245,16 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           userId={viewFriendId}
           myId={session.user.id}
           onClose={() => setViewFriendId(null)}
+        />
+      )}
+      {circleDetail && (
+        <CircleDetailScreen
+          circle={circleDetail}
+          allFriends={friends}
+          session={session}
+          onClose={() => setCircleDetail(null)}
+          onSaved={() => { setCircleDetail(null); loadAll() }}
+          onDeleted={() => { setCircleDetail(null); loadAll() }}
         />
       )}
     </div>
