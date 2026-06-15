@@ -85,6 +85,7 @@ export default function App() {
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
   const [plansRefresh, setPlansRefresh] = useState(0)
+  const [plansBackToList, setPlansBackToList] = useState(0)
   const [cancelledPlanIds, setCancelledPlanIds] = useState(new Set())
   const friendSubRef = useRef(null)
 
@@ -194,7 +195,7 @@ export default function App() {
     onHome:    () => setScreen('home'),
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
-    onPlans:   () => { setScreen('plans'); setPlansRefresh(r => r + 1) },
+    onPlans:   () => { setScreen('plans'); setPlansRefresh(r => r + 1); setPlansBackToList(r => r + 1) },
     onProfile: () => setScreen('profile'),
   })
 
@@ -230,7 +231,7 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} cancelledPlanIds={cancelledPlanIds} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} />
           </div>
           <div style={show('profile')}>
             <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />

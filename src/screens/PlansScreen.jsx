@@ -1069,7 +1069,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, cancelledPlanIds }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
@@ -1117,6 +1117,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [session])
+
+  useEffect(() => {
+    if (backToListTrigger === 0) return
+    setSelectedId(null)
+  }, [backToListTrigger])
 
   useEffect(() => {
     if (openPlanId && plans.length) {
