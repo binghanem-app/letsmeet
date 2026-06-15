@@ -215,7 +215,7 @@ export default function App() {
               refreshTrigger={homeRefresh}
               onStartCreate={() => setScreen('create')}
               onGoFriends={() => setScreen('friends')}
-              onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
+              onOpenPlan={() => { setScreen('plans'); setPlansRefresh(r => r + 1) }}
               onOpenAddFriend={() => { setOpenAddFriend(true); setPendingCount(0) }}
               requestCount={pendingCount}
               onPlanCancelled={(id) => setCancelledPlanIds(s => new Set([...s, id]))}
