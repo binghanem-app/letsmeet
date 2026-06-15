@@ -294,108 +294,113 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
   const myInvite = plan.invitees?.find(i => i.invitee === myId)
   const myRsvp = myInvite?.rsvp || (isHost ? 'going' : 'invited')
   const past = isPast(plan.date)
-  const cat = CATEGORY_CONFIG[plan.vibe]
+  const cat = CATEGORY_CONFIG[plan.vibe] || { emoji: '📅', gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)', accent: '#9A9087' }
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const goingCount = (plan.invitees?.filter(i => i.rsvp === 'going').length || 0) + (isHost ? 1 : 0)
-  const lateCount  = plan.invitees?.filter(i => i.rsvp === 'late').length || 0
-  const cantCount  = plan.invitees?.filter(i => i.rsvp === 'cant').length || 0
+  const isToday = plan.date && new Date(plan.date).toDateString() === new Date().toDateString()
 
-  const RSVP_BADGE = {
-    going:   { label: "You're in",     color: '#0E9C6B', bg: '#E4F6EE' },
-    late:    { label: 'Going, late',   color: '#C8841A', bg: '#FBF0DA' },
-    cant:    { label: "Can't make it", color: '#8A94A0', bg: '#EFEBE7' },
-    invited: { label: 'Pending',       color: '#8A94A0', bg: '#EFEBE7' },
-  }
-  const rsvpBadge = RSVP_BADGE[myRsvp] || RSVP_BADGE.invited
-  const groupLabel = plan.groupName
-  const dateLabel = smartDateLabel(plan.date)
-  const timeStr = fmtTime(plan.date)
+  const going = plan.invitees?.filter(i => i.rsvp === 'going') || []
+  const late  = plan.invitees?.filter(i => i.rsvp === 'late')  || []
+  const goingCount = going.length + (isHost ? 1 : 0)
+  const extraCount = Math.max(0, goingCount - 4)
+
+  // avatar stack: host + going, up to 4
+  const avatars = [
+    { initials: initials(plan.hostName || ''), color: plan.hostColor || '#5B7CFA' },
+    ...going.slice(0, 3).map(inv => ({ initials: initials(inv.name || ''), color: inv.avatar_color || '#A78BFA' })),
+  ]
+
+  const RSVP = [
+    { val: 'going', label: 'Going', activeColor: '#0E9C6B', ghostBorder: '#CDEBDD', ghostText: '#0E9C6B', activeShadow: 'rgba(14,156,107,.25)' },
+    { val: 'late',  label: 'Late',  activeColor: '#C8841A', ghostBorder: '#F0D9B5', ghostText: '#C8841A', activeShadow: 'rgba(200,132,26,.25)' },
+    { val: 'cant',  label: "Can't", activeColor: '#E5484D', ghostBorder: '#F3C9C9', ghostText: '#E5484D', activeShadow: 'rgba(229,72,77,.25)' },
+  ]
+
+  const dateStr = plan.date ? (() => {
+    const d = new Date(plan.date)
+    const now = new Date()
+    const tom = new Date(now); tom.setDate(now.getDate() + 1)
+    if (d.toDateString() === now.toDateString()) return 'Today · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    if (d.toDateString() === tom.toDateString()) return 'Tomorrow · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  })() : 'Date TBD'
 
   return (
-    <div onClick={onOpen} style={{ background: '#fff', borderRadius: 22, overflow: 'hidden', boxShadow: '0 4px 22px -10px rgba(20,24,30,.22)', cursor: 'pointer', opacity: past ? 0.72 : 1 }}>
-      <div style={{ height: 5, background: cat ? cat.gradient : '#EBE4DC', opacity: past ? 0.4 : 1 }}/>
-      <div style={{ padding: '16px 17px 17px' }}>
+    <div style={{ position: 'relative', marginBottom: 0 }}>
+      <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 3px rgba(0,0,0,.05), 0 8px 22px rgba(0,0,0,.05)', overflow: 'visible', opacity: past ? 0.72 : 1 }}>
 
-        {/* TOP ROW */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 11 }}>
-          {/* LEFT: title + chip */}
-          <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-            <div style={{ font: "600 21px -apple-system", color: '#1F2933', marginBottom: 3 }}>{plan.title || 'Untitled'}</div>
-            {isHost ? (
-              groupLabel && <span style={{ font: "700 11px -apple-system", color: cat?.accent || '#FF6B4A', background: cat?.accentBg || '#FFEFE9', padding: '4px 9px', borderRadius: 20 }}>{groupLabel}</span>
-            ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, font: "600 11px -apple-system", color: '#5B6770', background: '#F2EFEC', padding: '4px 9px', borderRadius: 20 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: plan.hostColor || '#A78BFA', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 8px -apple-system", flexShrink: 0 }}>{initials(plan.hostName || '')}</span>
-                by {plan.hostName || 'Someone'}
-              </span>
-            )}
+        {/* Main info row */}
+        <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '16px 16px 13px', cursor: 'pointer' }}>
+          {/* Emoji tile */}
+          <div style={{ width: 50, height: 50, borderRadius: 15, background: cat.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+            {cat.emoji}
           </div>
-
-          {/* RIGHT: badges column */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, marginTop: 2, flexShrink: 0 }}>
-            {isHost ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ font: "700 11px -apple-system", color: '#E14F2E', background: '#FFE7E0', padding: '4px 9px', borderRadius: 20 }}>Hosting</span>
-                  {!past && (
-                    <button onClick={e => { e.stopPropagation(); setShowConfirm(s => !s) }}
-                      style={{ width: 30, height: 30, borderRadius: 9, background: '#FEF0EE', border: '1px solid #FAD5CF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-                      </svg>
-                    </button>
-                  )}
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {plan.place || plan.title || 'No location'}
+            </div>
+            <div style={{ fontSize: 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 600 : 400 }}>
+              {dateStr}
+            </div>
+          </div>
+          {/* Avatar stack + chevron */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <div style={{ display: 'flex' }}>
+              {avatars.slice(0, 4).map((a, i) => (
+                <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: a.color, border: '2px solid #fff', marginLeft: i === 0 ? 0 : -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 4 - i }}>
+                  {a.initials}
                 </div>
-                {cat && <CategoryIconBadge type={cat.iconType} color={cat.accent} bg={cat.accentBg}/>}
-              </>
-            ) : (
-              <>
-                <span style={{ font: "700 11px -apple-system", color: rsvpBadge.color, background: rsvpBadge.bg, padding: '4px 9px', borderRadius: 20 }}>{rsvpBadge.label}</span>
-                {cat && <CategoryIconBadge type={cat.iconType} color={cat.accent} bg={cat.accentBg}/>}
-              </>
-            )}
+              ))}
+              {extraCount > 0 && (
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#ECE6E0', border: '2px solid #fff', marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A9087', fontSize: 9, fontWeight: 700 }}>
+                  +{extraCount}
+                </div>
+              )}
+            </div>
+            <svg width="9" height="15" viewBox="0 0 10 17" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 1 7 7.5L2 16"/></svg>
           </div>
         </div>
 
-        {/* LOCATION */}
-        {plan.place && (
-          <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            <span style={{ font: "600 18px -apple-system", color: '#1F2933' }}>{plan.place}</span>
-          </div>
-        )}
-
-        {/* DATE */}
-        {dateLabel && (
-          <div style={{ fontSize: 13, color: '#7B7268', marginBottom: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-            <b style={{ color: '#1F2933' }}>{dateLabel}</b>{timeStr && <> · {timeStr}</>}
-          </div>
-        )}
-
-        {/* STATUS PILLS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: isHost ? 0 : 11 }}>
-          {goingCount > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#0E9C6B', background: '#E4F6EE', padding: '4px 10px', borderRadius: 20 }}>{goingCount} going</span>}
-          {lateCount  > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#C8841A', background: '#FBF0DA', padding: '4px 10px', borderRadius: 20 }}>{lateCount} late</span>}
-          {cantCount  > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#8A94A0', background: '#EFEBE7', padding: '4px 10px', borderRadius: 20 }}>{cantCount} can't</span>}
-        </div>
-
-        {/* EDIT RESPONSE — guest + upcoming */}
-        {!isHost && !past && (
-          <button onClick={e => { e.stopPropagation(); onEditResponse() }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 10, border: '1.5px solid #EBE4DC', borderRadius: 12, background: '#FBF7F4', color: '#1F2933', font: "600 13px -apple-system", cursor: 'pointer', marginTop: 11 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-            Edit my response
-          </button>
-        )}
-
-        {/* CANCEL CONFIRM BAR — host */}
+        {/* Host cancel confirm */}
         {isHost && showConfirm && (
-          <div style={{ background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 13, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, marginTop: 11 }}>
-            <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan? Everyone will be notified.</span>
-            <button onClick={e => { e.stopPropagation(); onDelete?.() }} style={{ background: '#E14F2E', color: '#fff', border: 'none', font: "700 12px -apple-system", padding: '8px 13px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Confirm</button>
-            <button onClick={e => { e.stopPropagation(); setShowConfirm(false) }} style={{ border: '1.5px solid #FAD5CF', background: '#fff', color: '#7B7268', font: "600 12px -apple-system", padding: '8px 12px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Keep</button>
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, margin: '0 14px 12px', padding: '10px 12px' }}>
+            <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan for everyone?</span>
+            <button onClick={() => { onDelete?.(); setShowConfirm(false) }} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
+            <button onClick={() => setShowConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
+          </div>
+        )}
+
+        {/* RSVP / host row */}
+        {!past && (
+          <div style={{ padding: '0 14px 14px' }}>
+            {isHost ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, height: 40, borderRadius: 11, background: '#E4F6EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ font: '600 14px -apple-system', color: '#0E9C6B' }}>You&apos;re hosting</span>
+                </div>
+                {!past && (
+                  <button onClick={e => { e.stopPropagation(); setShowConfirm(s => !s) }}
+                    style={{ width: 40, height: 40, borderRadius: 11, background: '#FEF0EE', border: '1px solid #FAD5CF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {RSVP.map(r => {
+                  const sel = myRsvp === r.val
+                  return (
+                    <button key={r.val} onClick={e => { e.stopPropagation(); onEditResponse() }}
+                      style={{ flex: 1, height: 40, border: `1.5px solid ${sel ? r.activeColor : r.ghostBorder}`, borderRadius: 11, background: sel ? r.activeColor : '#fff', color: sel ? '#fff' : r.ghostText, font: '600 14px -apple-system', cursor: 'pointer', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${r.activeShadow}` : 'none' }}>
+                      {r.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -830,11 +835,24 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         {/* ── Who's in (collapsible) ── */}
         <div style={{ background: '#fff', borderRadius: 16, marginBottom: 14, overflow: 'hidden' }}>
           <div onClick={() => setWhosInOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', cursor: 'pointer' }}>
-            <span style={{ font: "600 15px -apple-system", color: '#1A1A1A', flex: 1 }}>Who's in</span>
-            <span style={{ fontSize: 13, color: '#9A9087', marginRight: 4 }}>
-              {goingCount + late.length > 0 ? `${goingCount + late.length} people` : 'No RSVPs yet'}
-            </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: whosInOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+            <span style={{ font: "600 15px -apple-system", color: '#1A1A1A', flex: 1 }}>Who&apos;s in</span>
+            {/* mini avatar stack */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex' }}>
+                {[
+                  { name: plan.hostName, color: plan.hostColor },
+                  ...going.slice(0, 3).map(inv => ({ name: inv.name, color: inv.avatar_color })),
+                ].slice(0, 4).map((p, i) => (
+                  <div key={i} style={{ width: 22, height: 22, borderRadius: '50%', background: p.color || '#A78BFA', border: '2px solid #fff', marginLeft: i === 0 ? 0 : -7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700, zIndex: 4 - i, flexShrink: 0 }}>
+                    {(p.name || '?').split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                ))}
+              </div>
+              <span style={{ fontSize: 13, color: '#9A9087' }}>
+                {goingCount + late.length > 0 ? `${goingCount + late.length} people` : 'No RSVPs yet'}
+              </span>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: whosInOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>
               <path d="m6 9 6 6 6-6"/>
             </svg>
           </div>
@@ -1016,7 +1034,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
@@ -1184,7 +1202,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
           plan={selected}
           myId={session.user.id}
           startOnRsvp={startRsvp}
-          onClose={() => setSelectedId(null)}
+          onClose={() => { setSelectedId(null); onPlanViewed?.() }}
           onUpdated={load}
           onDeletePlan={() => deletePlan(selected.id)}
         />

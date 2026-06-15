@@ -41,6 +41,7 @@ const CATEGORY_CONFIG = {
 function FeedCard({ plan, onOpen, onDelete, onRsvp }) {
   const cat = CATEGORY_CONFIG[plan.vibe] || { emoji: '📅', gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)', accent: '#9A9087' }
   const past = plan.starts_at && new Date(plan.starts_at) < new Date()
+  const isToday = plan.starts_at && new Date(plan.starts_at).toDateString() === new Date().toDateString()
   const [showDelConfirm, setShowDelConfirm] = useState(false)
 
   const RSVP = [
@@ -82,8 +83,8 @@ function FeedCard({ plan, onOpen, onDelete, onRsvp }) {
           </div>
           {/* Text */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title}</div>
-            <div style={{ fontSize: 13, color: '#9A9087', marginTop: 2 }}>{friendlyDate(plan.starts_at)}</div>
+            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title || 'No location'}</div>
+            <div style={{ fontSize: 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 600 : 400 }}>{friendlyDate(plan.starts_at)}</div>
           </div>
           {/* Avatar stack + chevron */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -250,7 +251,9 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     reads?.forEach(r => { readMap[r.plan_id] = r.last_read_at })
 
     const unreadResults = await Promise.all(planIds.map(async id => {
-      let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true }).eq('plan_id', id)
+      let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true })
+        .eq('plan_id', id)
+        .neq('sender', session.user.id)
       if (readMap[id]) q = q.gt('created_at', readMap[id])
       const { count } = await q
       return [id, count || 0]
