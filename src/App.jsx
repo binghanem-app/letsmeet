@@ -203,7 +203,7 @@ export default function App() {
   }
 
   const tabNav = (key) => ({
-    onHome:    () => { setScreen('home'); setHomeRefresh(r => r + 1) },
+    onHome:    () => setScreen('home'),
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
     onPlans:   () => setScreen('plans'),
