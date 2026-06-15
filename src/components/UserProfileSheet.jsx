@@ -150,7 +150,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
               <Avatar url={profile?.avatar_url} name={name} color={profile?.avatar_color} size={80}
                 style={{ boxShadow: '0 8px 20px -6px rgba(0,0,0,.18)', marginBottom: 12 }}/>
-              <h2 style={{ margin: '0 0 3px', font: "600 22px 'Fredoka'", color: '#1F2933', textAlign: 'center' }}>{name}</h2>
+              <h2 style={{ margin: '0 0 3px', font: "600 22px -apple-system", color: '#1F2933', textAlign: 'center' }}>{name}</h2>
               <div style={{ fontSize: 14, color: '#9A9087', marginBottom: profile?.bio ? 8 : 0 }}>@{profile?.username || '—'}</div>
               {profile?.bio && (
                 <div style={{ fontSize: 14, color: '#4A4540', textAlign: 'center', lineHeight: 1.5, maxWidth: 260, marginTop: 4 }}>{profile.bio}</div>
@@ -160,11 +160,11 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
             {/* plan score + member since */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
               <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                <div style={{ font: "700 22px 'Fredoka'", color: '#FF6B4A' }}>{planScore}</div>
+                <div style={{ font: "700 22px -apple-system", color: '#FF6B4A' }}>{planScore}</div>
                 <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Plan Score</div>
               </div>
               <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                <div style={{ font: "700 14px 'Fredoka'", color: '#1F2933', lineHeight: 1.3 }}>{relDate(profile?.created_at)}</div>
+                <div style={{ font: "700 14px -apple-system", color: '#1F2933', lineHeight: 1.3 }}>{relDate(profile?.created_at)}</div>
                 <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Member since</div>
               </div>
             </div>
@@ -173,7 +173,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
             {isSelf && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
                 <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                  <div style={{ font: "700 22px 'Fredoka'", color: '#5B7CFA' }}>{friendCount}</div>
+                  <div style={{ font: "700 22px -apple-system", color: '#5B7CFA' }}>{friendCount}</div>
                   <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Friends</div>
                 </div>
               </div>
@@ -184,19 +184,19 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
               <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
                 {mutual > 0 && (
                   <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                    <div style={{ font: "700 22px 'Fredoka'", color: '#5B7CFA' }}>{mutual}</div>
+                    <div style={{ font: "700 22px -apple-system", color: '#5B7CFA' }}>{mutual}</div>
                     <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Mutual friends</div>
                   </div>
                 )}
                 {friendship?.status === 'accepted' && together >= 0 && (
                   <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                    <div style={{ font: "700 22px 'Fredoka'", color: '#0E9C6B' }}>{together}</div>
+                    <div style={{ font: "700 22px -apple-system", color: '#0E9C6B' }}>{together}</div>
                     <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Plans together</div>
                   </div>
                 )}
                 {friendship?.status === 'accepted' && friendship?.created_at && (
                   <div style={{ flex: 1, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 16, padding: '13px 0', textAlign: 'center' }}>
-                    <div style={{ font: "700 14px 'Fredoka'", color: '#1F2933', lineHeight: 1.3 }}>{friendDate(friendship.created_at)}</div>
+                    <div style={{ font: "700 14px -apple-system", color: '#1F2933', lineHeight: 1.3 }}>{friendDate(friendship.created_at)}</div>
                     <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2, fontWeight: 600 }}>Friends since</div>
                   </div>
                 )}
@@ -206,17 +206,17 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
             {/* action buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {!isSelf && !friendship && (
-                <button onClick={sendRequest} disabled={acting} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px 'Fredoka'", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
+                <button onClick={sendRequest} disabled={acting} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px -apple-system", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
                   {acting ? 'Sending…' : '+ Add friend'}
                 </button>
               )}
               {!isSelf && friendship?.status === 'pending' && (
-                <div style={{ textAlign: 'center', padding: '13px 0', font: "600 14px 'Plus Jakarta Sans'", color: '#9A9087', background: '#F5F2EE', borderRadius: 16 }}>
+                <div style={{ textAlign: 'center', padding: '13px 0', font: "600 14px -apple-system", color: '#9A9087', background: '#F5F2EE', borderRadius: 16 }}>
                   Friend request sent ✓
                 </div>
               )}
               {!isSelf && friendship?.status === 'accepted' && (
-                <button onClick={removeFriend} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+                <button onClick={removeFriend} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px -apple-system", cursor: 'pointer' }}>
                   {acting ? '…' : 'Remove friend'}
                 </button>
               )}
@@ -225,18 +225,18 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
                   const text = `@${profile?.username} on Let's Meet`
                   try { await navigator.share({ title: name, text }) } catch { navigator.clipboard?.writeText(text) }
                 }}
-                style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}
+                style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px -apple-system", cursor: 'pointer' }}
               >
                 Share profile
               </button>
               {!isSelf && (
                 <>
-                  <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+                  <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px -apple-system", cursor: 'pointer' }}>
                     {acting ? '…' : 'Block'}
                   </button>
                   <button
                     onClick={() => { setReporting(true); setReportDone(false) }}
-                    style={{ width: '100%', padding: 10, border: 'none', borderRadius: 16, background: 'transparent', color: '#B6ADA4', font: "500 13px 'Plus Jakarta Sans'", cursor: 'pointer' }}
+                    style={{ width: '100%', padding: 10, border: 'none', borderRadius: 16, background: 'transparent', color: '#B6ADA4', font: "500 13px -apple-system", cursor: 'pointer' }}
                   >
                     {reportDone ? 'Reported ✓' : 'Report this account'}
                   </button>
@@ -245,15 +245,15 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
               {/* Report reason picker */}
               {reporting && (
                 <div style={{ background: '#fff', border: '1.5px solid #F1E8E2', borderRadius: 18, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px 10px', font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', borderBottom: '1px solid #F1E8E2' }}>Why are you reporting this account?</div>
+                  <div style={{ padding: '14px 16px 10px', font: "600 14px -apple-system", color: '#1F2933', borderBottom: '1px solid #F1E8E2' }}>Why are you reporting this account?</div>
                   {REPORT_REASONS.map(r => (
                     <button key={r} onClick={() => reportUser(r)}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '13px 16px', border: 'none', borderBottom: '1px solid #F7F3F0', background: 'transparent', font: "400 14px 'Plus Jakarta Sans'", color: '#1F2933', cursor: 'pointer' }}>
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '13px 16px', border: 'none', borderBottom: '1px solid #F7F3F0', background: 'transparent', font: "400 14px -apple-system", color: '#1F2933', cursor: 'pointer' }}>
                       {r}
                     </button>
                   ))}
                   <button onClick={() => setReporting(false)}
-                    style={{ display: 'block', width: '100%', textAlign: 'center', padding: '13px 16px', border: 'none', background: 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: '#9A9087', cursor: 'pointer' }}>
+                    style={{ display: 'block', width: '100%', textAlign: 'center', padding: '13px 16px', border: 'none', background: 'transparent', font: "600 14px -apple-system", color: '#9A9087', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </div>

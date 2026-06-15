@@ -81,7 +81,7 @@ function WheelPicker({ items, value, onChange, width = 56 }) {
         {items.map(item => (
           <div
             key={item}
-            style={{ height: ITEM_H, display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', font: "600 18px 'Plus Jakarta Sans'", color: '#1F2933', cursor: 'pointer' }}
+            style={{ height: ITEM_H, display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', font: "600 18px -apple-system", color: '#1F2933', cursor: 'pointer' }}
             onClick={() => {
               onChange(item)
               const i = items.indexOf(item)
@@ -102,7 +102,7 @@ function StepName({ value, onChange, onVibeChange }) {
 
   return (
     <div className="fade-up">
-      <h2 style={{ margin: '0 0 5px', font: "600 26px 'Fredoka'", color: '#1F2933' }}>What's the plan?</h2>
+      <h2 style={{ margin: '0 0 5px', font: "600 26px -apple-system", color: '#1F2933' }}>What's the plan?</h2>
       <p style={{ margin: '0 0 20px', fontSize: 14, color: '#9A9087' }}>Give it a name your friends will recognise.</p>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: `1.5px solid ${value.trim() ? '#FF6B4A' : '#EBE2DB'}`, borderRadius: 16, padding: '4px 15px', marginBottom: 26 }}>
@@ -111,7 +111,7 @@ function StepName({ value, onChange, onVibeChange }) {
           value={value}
           onChange={e => { onChange(e.target.value); onVibeChange?.(null) }}
           placeholder="e.g. Friday night dinner"
-          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '13px 0' }}
         />
         {value && <span onClick={() => { onChange(''); onVibeChange?.(null) }} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
       </div>
@@ -128,7 +128,7 @@ function StepName({ value, onChange, onVibeChange }) {
               <CategoryIcon type={p.type} color={p.color} size={24} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: value === p.label ? '#FF6B4A' : '#1F2933' }}>{p.label}</div>
+              <div style={{ font: "600 15px -apple-system", color: value === p.label ? '#FF6B4A' : '#1F2933' }}>{p.label}</div>
               <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1 }}>{p.sub}</div>
             </div>
             {value === p.label && (
@@ -235,16 +235,16 @@ function StepPlace({ value, onChange }) {
 
   return (
     <div className="fade-up">
-      <h2 style={{ margin: '0 0 5px', font: "600 26px 'Fredoka'", color: '#1F2933' }}>Where to?</h2>
+      <h2 style={{ margin: '0 0 5px', font: "600 26px -apple-system", color: '#1F2933' }}>Where to?</h2>
       <p style={{ margin: '0 0 18px', fontSize: 14, color: '#9A9087' }}>Search a place, or just type the name.</p>
 
       {/* mode toggle */}
       <div style={{ display: 'flex', alignItems: 'center', background: '#F5F2EE', borderRadius: 14, padding: 4, marginBottom: 18, gap: 0 }}>
-        <div onClick={() => setMode('search')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'search' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'search' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'search' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
+        <div onClick={() => setMode('search')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'search' ? '#fff' : 'transparent', font: "600 14px -apple-system", color: mode === 'search' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'search' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
           Search map
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#7B7268', flexShrink: 0, padding: '0 8px' }}>or</span>
-        <div onClick={() => setMode('type')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'type' ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: mode === 'type' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'type' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
+        <div onClick={() => setMode('type')} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: mode === 'type' ? '#fff' : 'transparent', font: "600 14px -apple-system", color: mode === 'type' ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: mode === 'type' ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
           Type a name
         </div>
       </div>
@@ -258,7 +258,7 @@ function StepPlace({ value, onChange }) {
               value={query}
               onChange={e => handleSearch(e.target.value)}
               placeholder="Search restaurants, bars, parks…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '10px 0' }}
             />
             {searching && <div className="spin" style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
             {query && !searching && <span onClick={() => { setQuery(''); setResults([]) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
@@ -269,7 +269,7 @@ function StepPlace({ value, onChange }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FFF1EC', border: '1.5px solid #FF6B4A', borderRadius: 14, padding: '12px 15px', marginBottom: 16 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933' }}>{value.name}</div>
+                <div style={{ font: "600 14.5px -apple-system", color: '#1F2933' }}>{value.name}</div>
                 <div style={{ fontSize: 12, color: '#B6ADA4', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value.address}</div>
               </div>
               {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, fontWeight: 700, color: '#FF6B4A', textDecoration: 'none', flexShrink: 0 }}>Open in Maps</a>}
@@ -312,7 +312,7 @@ function StepPlace({ value, onChange }) {
               value={typedName}
               onChange={e => { setTypedName(e.target.value); onChange(e.target.value.trim() ? { name: e.target.value.trim(), typed: true } : null) }}
               placeholder="e.g. My place, The usual spot…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '11px 0' }}
             />
             {typedName && <span onClick={() => { setTypedName(''); onChange(null) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
           </div>
@@ -337,7 +337,7 @@ function PlaceList({ places, onSelect, selected }) {
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={sel ? '#FF6B4A' : '#9A9087'} strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: sel ? '#FF6B4A' : '#1F2933', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+              <div style={{ font: "600 14.5px -apple-system", color: sel ? '#FF6B4A' : '#1F2933', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
               <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1 }}>{p.sub}</div>
             </div>
             {p.dist && <span style={{ fontSize: 12, color: '#B6ADA4', flexShrink: 0 }}>{p.dist}</span>}
@@ -431,7 +431,7 @@ function StepDateTime({ date, hour, minute, ampm, onDateChange, onHour, onMinute
 
   return (
     <div className="fade-up">
-      <h2 style={{ margin: '0 0 5px', font: "600 26px 'Fredoka'", color: '#1F2933' }}>When works?</h2>
+      <h2 style={{ margin: '0 0 5px', font: "600 26px -apple-system", color: '#1F2933' }}>When works?</h2>
       <p style={{ margin: '0 0 18px', fontSize: 14, color: '#9A9087' }}>Pick any date — even months ahead.</p>
 
       {/* calendar */}
@@ -440,7 +440,7 @@ function StepDateTime({ date, hour, minute, ampm, onDateChange, onHour, onMinute
           <div onClick={prev} style={{ width: 34, height: 34, borderRadius: 10, background: '#F5F2EE', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.2" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           </div>
-          <span style={{ font: "600 15px 'Fredoka'", color: '#1F2933' }}>{MONTHS[viewMonth]} {viewYear}</span>
+          <span style={{ font: "600 15px -apple-system", color: '#1F2933' }}>{MONTHS[viewMonth]} {viewYear}</span>
           <div onClick={next} style={{ width: 34, height: 34, borderRadius: 10, background: '#F5F2EE', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.2" strokeLinecap="round"><path d="m9 6 6 6-6 6"/></svg>
           </div>
@@ -467,14 +467,14 @@ function StepDateTime({ date, hour, minute, ampm, onDateChange, onHour, onMinute
       <div style={{ fontSize: 11.5, fontWeight: 700, color: '#B6ADA4', letterSpacing: .4, marginBottom: 12 }}>TIME</div>
       <div style={{ background: '#fff', border: '1px solid #F1E8E2', borderRadius: 18, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 0, justifyContent: 'center', marginBottom: 12 }}>
         <WheelPicker key={`h-${ampm}-${isToday}`} items={availHours} value={hour} onChange={onHour} width={60}/>
-        <span style={{ font: "700 22px 'Plus Jakarta Sans'", color: '#C4BBB2', padding: '0 4px', marginTop: -4 }}>:</span>
+        <span style={{ font: "700 22px -apple-system", color: '#C4BBB2', padding: '0 4px', marginTop: -4 }}>:</span>
         <WheelPicker key={`m-${hour}-${ampm}-${isToday}`} items={availMinutes} value={minute} onChange={onMinute} width={60}/>
         <div style={{ width: 14 }}/>
         <WheelPicker key={`ap-${isToday}`} items={availAmpm} value={ampm} onChange={onAmpm} width={52}/>
       </div>
 
       {(date || hour) && (
-        <div style={{ textAlign: 'center', font: "600 14px 'Plus Jakarta Sans'", color: '#FF6B4A', background: '#FFF1EC', borderRadius: 12, padding: '10px 16px' }}>
+        <div style={{ textAlign: 'center', font: "600 14px -apple-system", color: '#FF6B4A', background: '#FFF1EC', borderRadius: 12, padding: '10px 16px' }}>
           {dateLabel} · {timeLabel}
         </div>
       )}
@@ -539,13 +539,13 @@ function StepInvite({ session, selectedIds, onToggle }) {
 
   return (
     <div className="fade-up">
-      <h2 style={{ margin: '0 0 5px', font: "600 26px 'Fredoka'", color: '#1F2933' }}>Who's invited?</h2>
+      <h2 style={{ margin: '0 0 5px', font: "600 26px -apple-system", color: '#1F2933' }}>Who's invited?</h2>
       <p style={{ margin: '0 0 16px', fontSize: 14, color: '#9A9087' }}>Pick whole circles, or add individual friends.</p>
 
       {/* tab toggle */}
       <div style={{ display: 'flex', background: '#F5F2EE', borderRadius: 14, padding: 4, marginBottom: 18, gap: 4 }}>
         {['circles','friends'].map(t => (
-          <div key={t} onClick={() => setTab(t)} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: tab === t ? '#fff' : 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: tab === t ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
+          <div key={t} onClick={() => setTab(t)} style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 11, background: tab === t ? '#fff' : 'transparent', font: "600 14px -apple-system", color: tab === t ? '#1F2933' : '#9A9087', cursor: 'pointer', boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,.07)' : 'none', transition: 'all .15s' }}>
             {t === 'circles' ? 'Circles' : 'All friends'}
           </div>
         ))}
@@ -566,7 +566,7 @@ function StepInvite({ session, selectedIds, onToggle }) {
                 <div key={c.id} onClick={() => toggleCircle(c)} style={{ display: 'flex', alignItems: 'center', gap: 13, background: allIn ? '#FFF1EC' : '#fff', border: `1.5px solid ${allIn ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '13px 15px', cursor: 'pointer' }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: c.color, flexShrink: 0 }}/>
                   <div style={{ flex: 1 }}>
-                    <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: allIn ? '#FF6B4A' : '#1F2933' }}>{c.name}</div>
+                    <div style={{ font: "600 15px -apple-system", color: allIn ? '#FF6B4A' : '#1F2933' }}>{c.name}</div>
                     <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 2 }}>{c.members.length} {c.members.length === 1 ? 'person' : 'people'}</div>
                   </div>
                   <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: allIn ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${allIn ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
@@ -588,11 +588,11 @@ function StepInvite({ session, selectedIds, onToggle }) {
               const viaCircle = circles.find(c => f.groupIds.includes(c.id))
               return (
                 <div key={f.id} onClick={() => onToggle(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '11px 14px', cursor: 'pointer' }}>
-                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 14px 'Plus Jakarta Sans'", flexShrink: 0 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 14px -apple-system", flexShrink: 0 }}>
                     {initials(f.displayName)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</div>
+                    <div style={{ font: "600 14.5px -apple-system", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</div>
                     {viaCircle && <div style={{ fontSize: 12, color: '#9A9087', marginTop: 1 }}>via {viaCircle.name}</div>}
                   </div>
                   <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
@@ -611,7 +611,7 @@ function StepInvite({ session, selectedIds, onToggle }) {
 function Empty({ text, sub }) {
   return (
     <div style={{ background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 18, padding: '28px 20px', textAlign: 'center' }}>
-      <p style={{ margin: '0 0 5px', font: "600 16px 'Fredoka'", color: '#1F2933' }}>{text}</p>
+      <p style={{ margin: '0 0 5px', font: "600 16px -apple-system", color: '#1F2933' }}>{text}</p>
       <p style={{ margin: 0, fontSize: 13, color: '#9A9087' }}>{sub}</p>
     </div>
   )
@@ -625,13 +625,13 @@ function StepReview({ title, place, date, hour, minute, ampm, inviteeCount }) {
 
   return (
     <div className="fade-up">
-      <h2 style={{ margin: '0 0 5px', font: "600 26px 'Fredoka'", color: '#1F2933' }}>Ready to send?</h2>
+      <h2 style={{ margin: '0 0 5px', font: "600 26px -apple-system", color: '#1F2933' }}>Ready to send?</h2>
       <p style={{ margin: '0 0 20px', fontSize: 14, color: '#9A9087' }}>Here's what your friends will see.</p>
 
       <div style={{ background: '#fff', border: '1px solid #F1E8E2', borderRadius: 22, overflow: 'hidden', marginBottom: 16 }}>
         {/* coral header */}
         <div style={{ background: 'linear-gradient(135deg, #FF6B4A 0%, #FF9070 100%)', padding: '22px 22px 18px' }}>
-          <div style={{ font: "600 22px 'Fredoka'", color: '#fff', marginBottom: 2 }}>{title || 'Untitled plan'}</div>
+          <div style={{ font: "600 22px -apple-system", color: '#fff', marginBottom: 2 }}>{title || 'Untitled plan'}</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,.8)' }}>You're hosting · Let's meet up</div>
         </div>
         {/* details */}
@@ -656,7 +656,7 @@ function ReviewRow({ icon, label, value }) {
       <span style={{ fontSize: 18, lineHeight: 1.1, flexShrink: 0 }}>{icon}</span>
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', marginBottom: 2 }}>{label.toUpperCase()}</div>
-        <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933' }}>{value}</div>
+        <div style={{ font: "600 14.5px -apple-system", color: '#1F2933' }}>{value}</div>
       </div>
     </div>
   )
@@ -669,16 +669,16 @@ function SuccessScreen({ title, inviteeCount, onSeeWhosComing, onBackHome }) {
       <div style={{ width: 80, height: 80, borderRadius: 26, background: 'linear-gradient(135deg, #FF6B4A, #FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22, boxShadow: '0 16px 32px -10px rgba(255,107,74,.55)' }}>
         <span style={{ fontSize: 40 }}>🎉</span>
       </div>
-      <h2 style={{ margin: '0 0 8px', font: "600 28px 'Fredoka'", color: '#1F2933' }}>Invite sent!</h2>
-      <p style={{ margin: '0 0 6px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933' }}>{title}</p>
+      <h2 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933' }}>Invite sent!</h2>
+      <p style={{ margin: '0 0 6px', font: "600 16px -apple-system", color: '#1F2933' }}>{title}</p>
       <p style={{ margin: '0 0 32px', fontSize: 14, color: '#9A9087', lineHeight: 1.5 }}>
         {inviteeCount > 0 ? `${inviteeCount} friend${inviteeCount === 1 ? '' : 's'} just got the invite.` : 'Your plan is ready.'}<br/>
         We'll let you know who's in.
       </p>
-      <button onClick={onSeeWhosComing} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px 'Fredoka'", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)', marginBottom: 12 }}>
+      <button onClick={onSeeWhosComing} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px -apple-system", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)', marginBottom: 12 }}>
         See who's coming
       </button>
-      <button onClick={onBackHome} style={{ width: '100%', padding: 16, border: '1.5px solid #E7DED7', borderRadius: 18, background: '#fff', color: '#7B7268', font: "600 16px 'Fredoka'", cursor: 'pointer' }}>
+      <button onClick={onBackHome} style={{ width: '100%', padding: 16, border: '1.5px solid #E7DED7', borderRadius: 18, background: '#fff', color: '#7B7268', font: "600 16px -apple-system", cursor: 'pointer' }}>
         Back to home
       </button>
     </div>
@@ -773,12 +773,12 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#FBF7F4' }}>
       {/* top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 0', flexShrink: 0 }}>
-        <button onClick={() => step === 0 ? onCancel?.() : setStep(s => s - 1)} style={{ border: 'none', background: '#F5F2EE', borderRadius: 12, padding: '9px 15px', font: "600 14px 'Plus Jakarta Sans'", color: '#7B7268', cursor: 'pointer' }}>
+        <button onClick={() => step === 0 ? onCancel?.() : setStep(s => s - 1)} style={{ border: 'none', background: '#F5F2EE', borderRadius: 12, padding: '9px 15px', font: "600 14px -apple-system", color: '#7B7268', cursor: 'pointer' }}>
           {step === 0 ? 'Cancel' : '← Back'}
         </button>
-        <span style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#B6ADA4' }}>Step {step + 1} of {TOTAL}</span>
+        <span style={{ font: "600 14px -apple-system", color: '#B6ADA4' }}>Step {step + 1} of {TOTAL}</span>
         {step > 0 && step < TOTAL - 1
-          ? <button onClick={() => setStep(s => s + 1)} style={{ border: 'none', background: 'transparent', font: "600 14px 'Plus Jakarta Sans'", color: '#B6ADA4', cursor: 'pointer', padding: '9px 4px' }}>Skip</button>
+          ? <button onClick={() => setStep(s => s + 1)} style={{ border: 'none', background: 'transparent', font: "600 14px -apple-system", color: '#B6ADA4', cursor: 'pointer', padding: '9px 4px' }}>Skip</button>
           : <div style={{ width: 60 }}/>
         }
       </div>
@@ -804,12 +804,12 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
         {step < TOTAL - 1 ? (
           <button
             onClick={() => canContinue() && setStep(s => s + 1)}
-            style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: canContinue() ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 17px 'Fredoka'", cursor: canContinue() ? 'pointer' : 'default', boxShadow: canContinue() ? '0 12px 26px -10px rgba(255,107,74,.75)' : 'none', transition: 'all .2s' }}
+            style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: canContinue() ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 17px -apple-system", cursor: canContinue() ? 'pointer' : 'default', boxShadow: canContinue() ? '0 12px 26px -10px rgba(255,107,74,.75)' : 'none', transition: 'all .2s' }}
           >
             {step === 3 && invitees.length > 0 ? `Continue · ${invitees.length} invited` : 'Continue'}
           </button>
         ) : (
-          <button onClick={send} disabled={sending} style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px 'Fredoka'", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)' }}>
+          <button onClick={send} disabled={sending} style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px -apple-system", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)' }}>
             {sending ? 'Sending…' : 'Send invites 🎉'}
           </button>
         )}

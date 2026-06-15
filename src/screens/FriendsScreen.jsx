@@ -14,7 +14,7 @@ const Avatar = ({ name, color, size = 44 }) => (
   <div style={{
     width: size, height: size, borderRadius: '50%', background: color || '#A78BFA',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#fff', font: `600 ${Math.round(size * 0.34)}px 'Plus Jakarta Sans'`, flexShrink: 0,
+    color: '#fff', font: `600 ${Math.round(size * 0.34)}px -apple-system`, flexShrink: 0,
   }}>
     {initials(name)}
   </div>
@@ -23,7 +23,7 @@ const Avatar = ({ name, color, size = 44 }) => (
 const Pill = ({ label, color }) => (
   <span style={{
     display: 'inline-flex', alignItems: 'center', gap: 5,
-    font: "600 11px 'Plus Jakarta Sans'", color,
+    font: "600 11px -apple-system", color,
     background: `color-mix(in srgb, ${color} 13%, #fff)`,
     padding: '3px 9px', borderRadius: 20,
   }}>
@@ -199,7 +199,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '11px 13px' }}>
         <Avatar name={name} color={u.avatar_color} size={44}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{name}</div>
+          <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>{name}</div>
           <div style={{ fontSize: 12.5, color: '#9A9087' }}>
             {u.username}{u.mutuals > 0 ? ` · ${u.mutuals} mutual` : ''}
           </div>
@@ -220,7 +220,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
     return (
       <button
         onClick={() => !wasSent && sendRequest(userId)}
-        style={{ border: 'none', borderRadius: 12, padding: '9px 16px', cursor: wasSent ? 'default' : 'pointer', font: "600 13px 'Plus Jakarta Sans'", background: wasSent === 'already' ? '#E4F6EE' : wasSent ? '#F5F2EE' : '#FF6B4A', color: wasSent === 'already' ? '#0E9C6B' : wasSent ? '#7B7268' : '#fff', flexShrink: 0 }}
+        style={{ border: 'none', borderRadius: 12, padding: '9px 16px', cursor: wasSent ? 'default' : 'pointer', font: "600 13px -apple-system", background: wasSent === 'already' ? '#E4F6EE' : wasSent ? '#F5F2EE' : '#FF6B4A', color: wasSent === 'already' ? '#0E9C6B' : wasSent ? '#7B7268' : '#fff', flexShrink: 0 }}
       >
         {wasSent === 'already' ? 'Already friends' : wasSent === 'pending' ? 'Sent' : wasSent === 'sent' ? 'Sent ✓' : 'Add'}
       </button>
@@ -233,16 +233,16 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
         <div onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 10px' }}>
           <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
         </div>
-        <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Add friends</h3>
+        <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>Add friends</h3>
 
         {/* username search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
-          <span style={{ font: "700 16px 'Plus Jakarta Sans'", color: '#B6ADA4' }}>@</span>
+          <span style={{ font: "700 16px -apple-system", color: '#B6ADA4' }}>@</span>
           <input
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             placeholder="search by username"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '9px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '9px 0' }}
           />
           {searching && <div className="spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
           {query && !searching && <span onClick={() => { setQuery(''); setResults([]) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
@@ -270,7 +270,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8841A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.5 13.5 7 4M15.5 6.5l-7 4"/></svg>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>Invite friends</div>
+                  <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>Invite friends</div>
                   <div style={{ fontSize: 12.5, color: '#9A9087' }}>Share your link · letsmeet.app</div>
                 </div>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
@@ -280,7 +280,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
               {pendingIn.filter(r => !denied[r.requester]).length > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 11 }}>
-                    <span style={{ font: "700 12px 'Plus Jakarta Sans'", color: '#9A9087', letterSpacing: .3 }}>WANTS TO ADD YOU</span>
+                    <span style={{ font: "700 12px -apple-system", color: '#9A9087', letterSpacing: .3 }}>WANTS TO ADD YOU</span>
                     <span style={{ background: '#FF6B4A', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 20 }}>
                       {pendingIn.filter(r => !denied[r.requester]).length}
                     </span>
@@ -294,7 +294,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                         <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '11px 13px' }}>
                           <Avatar name={name} color={p?.avatar_color} size={44}/>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{name}</div>
+                            <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>{name}</div>
                             <div style={{ fontSize: 12.5, color: '#9A9087' }}>{p?.username}</div>
                           </div>
                           {isAccepted
@@ -303,8 +303,8 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                                 Friends
                               </span>
                             : <div style={{ display: 'flex', gap: 6 }}>
-                                <button onClick={() => acceptRequest(r)} style={{ border: 'none', background: '#FF6B4A', color: '#fff', font: "600 13px 'Plus Jakarta Sans'", padding: '9px 14px', borderRadius: 12, cursor: 'pointer' }}>Accept</button>
-                                <button onClick={() => denyRequest(r)} style={{ border: '1.5px solid #E7DED7', background: '#fff', color: '#7B7268', font: "600 13px 'Plus Jakarta Sans'", padding: '9px 13px', borderRadius: 12, cursor: 'pointer' }}>Deny</button>
+                                <button onClick={() => acceptRequest(r)} style={{ border: 'none', background: '#FF6B4A', color: '#fff', font: "600 13px -apple-system", padding: '9px 14px', borderRadius: 12, cursor: 'pointer' }}>Accept</button>
+                                <button onClick={() => denyRequest(r)} style={{ border: '1.5px solid #E7DED7', background: '#fff', color: '#7B7268', font: "600 13px -apple-system", padding: '9px 13px', borderRadius: 12, cursor: 'pointer' }}>Deny</button>
                               </div>
                           }
                         </div>
@@ -327,7 +327,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                       }
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>
+                      <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>
                         {contactsState === 'loading' ? 'Scanning your contacts…' : 'Find from contacts'}
                       </div>
                       <div style={{ fontSize: 12.5, color: '#9A9087' }}>
@@ -341,7 +341,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                 {/* from your contacts results */}
                 {contactsState === 'done' && contactsResults.filter(u => !dismissed.has(u.id)).length > 0 && (
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ font: "700 12px 'Plus Jakarta Sans'", color: '#9A9087', letterSpacing: .3, marginBottom: 11 }}>FROM YOUR CONTACTS</div>
+                    <div style={{ font: "700 12px -apple-system", color: '#9A9087', letterSpacing: .3, marginBottom: 11 }}>FROM YOUR CONTACTS</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {contactsResults.filter(u => !dismissed.has(u.id)).map(u => (
                         <PersonRow key={u.id} u={u} actionSlot={<AddBtn userId={u.id}/>} onDismiss={() => dismiss(u.id)}/>
@@ -360,7 +360,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                 {/* people you may know — always below contacts */}
                 {suggestions.filter(u => !dismissed.has(u.id)).length > 0 && (
                   <div>
-                    <div style={{ font: "700 12px 'Plus Jakarta Sans'", color: '#9A9087', letterSpacing: .3, marginBottom: 11 }}>PEOPLE YOU MAY KNOW</div>
+                    <div style={{ font: "700 12px -apple-system", color: '#9A9087', letterSpacing: .3, marginBottom: 11 }}>PEOPLE YOU MAY KNOW</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {suggestions.filter(u => !dismissed.has(u.id)).map(u => (
                         <PersonRow key={u.id} u={u} actionSlot={<AddBtn userId={u.id}/>} onDismiss={() => dismiss(u.id)}/>
@@ -441,7 +441,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
           <Avatar name={displayName} color={friend.avatar_color} size={54}/>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginBottom: 3 }}>FRIEND</div>
-            <div style={{ font: "600 17px 'Plus Jakarta Sans'", color: '#1F2933' }}>{displayName}</div>
+            <div style={{ font: "600 17px -apple-system", color: '#1F2933' }}>{displayName}</div>
             {friend.nickname && <div style={{ fontSize: 12.5, color: '#9A9087' }}>Real name: {realName}</div>}
             {!friend.nickname && <div style={{ fontSize: 12.5, color: '#9A9087' }}>{friend.username}</div>}
           </div>
@@ -455,7 +455,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
             value={nickname}
             onChange={e => setNickname(e.target.value)}
             placeholder={`e.g. "Alex from work"`}
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '9px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '9px 0' }}
           />
           {nickname.trim() && (
             <span onClick={() => setNickname('')} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer', lineHeight: 1 }}>×</span>
@@ -482,7 +482,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
                 style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: `2px solid ${sel ? color : '#F1E8E2'}`, borderRadius: 15, padding: '13px 14px', cursor: 'pointer' }}
               >
                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }}/>
-                <span style={{ flex: 1, font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{g.name}</span>
+                <span style={{ flex: 1, font: "600 15px -apple-system", color: '#1F2933' }}>{g.name}</span>
                 <div style={{
                   width: 24, height: 24, borderRadius: 8,
                   border: `2px solid ${sel ? color : '#E0D7CF'}`,
@@ -501,32 +501,32 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
 
         {confirmRemove ? (
           <div style={{ background: '#FFF1EC', border: '1.5px solid #FFD8CC', borderRadius: 18, padding: '16px 18px', marginBottom: 10 }}>
-            <p style={{ margin: '0 0 12px', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>
+            <p style={{ margin: '0 0 12px', font: "600 15px -apple-system", color: '#1F2933' }}>
               Remove {displayName} from friends?
             </p>
             <p style={{ margin: '0 0 14px', fontSize: 13, color: '#9A9087', lineHeight: 1.5 }}>
               They won't be notified. You can add them again anytime.
             </p>
             <div style={{ display: 'flex', gap: 9 }}>
-              <button onClick={() => setConfirmRemove(false)} style={{ flex: 1, padding: '13px 0', border: '1.5px solid #E7DED7', borderRadius: 14, background: '#fff', color: '#7B7268', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              <button onClick={() => setConfirmRemove(false)} style={{ flex: 1, padding: '13px 0', border: '1.5px solid #E7DED7', borderRadius: 14, background: '#fff', color: '#7B7268', font: "600 14px -apple-system", cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button onClick={removeFriend} style={{ flex: 1, padding: '13px 0', border: 'none', borderRadius: 14, background: '#E14F2E', color: '#fff', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              <button onClick={removeFriend} style={{ flex: 1, padding: '13px 0', border: 'none', borderRadius: 14, background: '#E14F2E', color: '#fff', font: "600 14px -apple-system", cursor: 'pointer' }}>
                 Yes, remove
               </button>
             </div>
           </div>
         ) : (
           <>
-            <button onClick={save} disabled={saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 16px 'Plus Jakarta Sans'", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.7)', marginBottom: 10 }}>
+            <button onClick={save} disabled={saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 16px -apple-system", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.7)', marginBottom: 10 }}>
               {saving ? 'Saving…' : 'Save changes'}
             </button>
             <div style={{ display: 'flex', gap: 9 }}>
-              <button onClick={() => setConfirmRemove(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 14.5px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              <button onClick={() => setConfirmRemove(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 14.5px -apple-system", cursor: 'pointer' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
                 Remove
               </button>
-              <button onClick={blockFriend} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #F3D2CC', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 14.5px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              <button onClick={blockFriend} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #F3D2CC', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 14.5px -apple-system", cursor: 'pointer' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
                 Block
               </button>
@@ -557,13 +557,13 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', padding: '10px 22px 32px' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 16px' }}/>
-        <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>New circle</h3>
+        <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>New circle</h3>
 
         <input
           autoFocus value={name} onChange={e => setName(e.target.value)}
           placeholder="e.g. Close Friends, Work, Family…"
           onKeyDown={e => e.key === 'Enter' && create()}
-          style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 15px', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', outline: 'none', background: '#fff', marginBottom: 18 }}
+          style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 15px', font: "600 16px -apple-system", color: '#1F2933', outline: 'none', background: '#fff', marginBottom: 18 }}
         />
 
         <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginBottom: 10, letterSpacing: .3 }}>COLOUR</div>
@@ -576,7 +576,7 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
           ))}
         </div>
 
-        <button onClick={create} disabled={!name.trim() || saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: name.trim() ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 16px 'Plus Jakarta Sans'", cursor: name.trim() ? 'pointer' : 'default', boxShadow: name.trim() ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none' }}>
+        <button onClick={create} disabled={!name.trim() || saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: name.trim() ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 16px -apple-system", cursor: name.trim() ? 'pointer' : 'default', boxShadow: name.trim() ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none' }}>
           {saving ? 'Creating…' : 'Create circle'}
         </button>
       </div>
@@ -588,13 +588,17 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
 export default function FriendsScreen({ session, onOpenAddFriend, externalAddFriendOpen, onCloseAddFriend }) {
   const [friends, setFriends] = useState([])
   const [circles, setCircles] = useState([])
-  const [pendingCount, setPendingCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
   const [createCircleOpen, setCreateCircleOpen] = useState(false)
   const [menuFriend, setMenuFriend] = useState(null)
   const [activeCircle, setActiveCircle] = useState(null)
   const [viewFriendId, setViewFriendId] = useState(null)
+  const [pendingIn, setPendingIn] = useState([])
+  const [acceptedMap, setAcceptedMap] = useState({})
+  const [deniedMap, setDeniedMap] = useState({})
+  const [suggestions, setSuggestions] = useState([])
+  const [dismissed, setDismissed] = useState(new Set())
 
   // If parent signals to open add sheet (e.g. from home bell)
   useEffect(() => {
@@ -608,7 +612,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
 
   async function loadAll() {
     setLoading(true)
-    await Promise.all([loadFriends(), loadCircles()])
+    await Promise.all([loadFriends(), loadCircles(), loadIncoming(), loadSuggestions(), loadDismissed()])
     setLoading(false)
   }
 
@@ -622,22 +626,13 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   }
 
   async function loadFriends() {
-    // accepted friendships in both directions
     const { data: fs } = await supabase
       .from('friendships')
       .select('id, requester, addressee, status')
       .or(`requester.eq.${session.user.id},addressee.eq.${session.user.id}`)
       .eq('status', 'accepted')
 
-    if (!fs?.length) { setFriends([]); setPendingCount(0); return }
-
-    // pending incoming
-    const { data: pending } = await supabase
-      .from('friendships')
-      .select('id')
-      .eq('addressee', session.user.id)
-      .eq('status', 'pending')
-    setPendingCount(pending?.length || 0)
+    if (!fs?.length) { setFriends([]); return }
 
     const friendIds = fs.map(f => f.requester === session.user.id ? f.addressee : f.requester)
 
@@ -646,13 +641,11 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
       .select('id, first_name, last_name, username, avatar_color')
       .in('id', friendIds)
 
-    // group memberships
     const { data: memberships } = await supabase
       .from('group_members')
       .select('group_id, member')
       .in('member', friendIds)
 
-    // circles for this owner
     const { data: myGroups } = await supabase
       .from('groups')
       .select('id, name, color')
@@ -667,7 +660,6 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
       if (groupMap[m.group_id]) membershipsByFriend[m.member].push(groupMap[m.group_id])
     })
 
-    // nicknames set by current user
     const { data: nicknames } = await supabase
       .from('friend_nicknames')
       .select('friend_id, nickname')
@@ -685,126 +677,220 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
     })))
   }
 
+  async function loadIncoming() {
+    const { data } = await supabase
+      .from('friendships')
+      .select('id, requester, profiles!friendships_requester_fkey(first_name, last_name, username, avatar_color)')
+      .eq('addressee', session.user.id)
+      .eq('status', 'pending')
+    setPendingIn(data || [])
+  }
+
+  async function loadSuggestions() {
+    const { data: rows } = await supabase.rpc('get_friend_suggestions', { p_user_id: session.user.id, p_limit: 6 })
+    if (!rows?.length) return
+    const ids = rows.map(r => r.user_id)
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+    const countMap = {}; rows.forEach(r => { countMap[r.user_id] = Number(r.mutual_count) })
+    setSuggestions((profiles || []).map(p => ({ ...p, mutuals: countMap[p.id] || 0 })))
+  }
+
+  async function loadDismissed() {
+    const { data } = await supabase.from('dismissed_suggestions').select('dismissed_id').eq('user_id', session.user.id)
+    if (data?.length) setDismissed(new Set(data.map(r => r.dismissed_id)))
+  }
+
+  async function acceptRequest(r) {
+    await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', r.id)
+    setAcceptedMap(m => ({ ...m, [r.requester]: true }))
+    loadFriends()
+  }
+
+  async function denyRequest(r) {
+    await supabase.from('friendships').delete().eq('id', r.id)
+    setDeniedMap(m => ({ ...m, [r.requester]: true }))
+  }
+
+  async function dismissSuggestion(userId) {
+    setDismissed(prev => new Set([...prev, userId]))
+    await supabase.from('dismissed_suggestions').insert({ user_id: session.user.id, dismissed_id: userId })
+  }
+
   const displayed = activeCircle
     ? friends.filter(f => f.groupIds?.includes(activeCircle))
     : friends
 
   return (
-    <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 22px 24px' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 28px' }} className="no-scrollbar">
 
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 0 16px' }}>
-          <h2 style={{ margin: 0, font: "600 25px 'Fredoka'", color: '#1F2933' }}>Friends</h2>
-          <div
-            onClick={() => setAddOpen(true)}
-            style={{ width: 40, height: 40, borderRadius: 13, background: '#FF6B4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 8px 18px -8px rgba(255,107,74,.8)' }}
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 14px' }}>
+          <div style={{ font: "700 28px -apple-system", color: '#1A1A1A' }}>Friends</div>
+          <button
+            onClick={() => navigator.share?.({ title: "Let's Meet", url: 'https://letsmeet.app' }) || navigator.clipboard?.writeText('https://letsmeet.app')}
+            style={{ width: 40, height: 40, borderRadius: 12, background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-              <circle cx="10" cy="8" r="3.4"/><path d="M4 19c0-3 2.7-4.8 6-4.8"/><path d="M17 13v6M14 16h6"/>
-            </svg>
-          </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.5 13.5 7 4M15.5 6.5l-7 4"/></svg>
+          </button>
         </div>
 
-        {/* search-bar shortcut */}
-        <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '13px 15px', marginBottom: 14, cursor: 'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3" strokeLinecap="round"/></svg>
-          <span style={{ color: '#B6ADA4', fontSize: 14.5 }}>Add friends by username</span>
+        {/* Search bar */}
+        <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1.5px solid #EFE8E2', borderRadius: 14, padding: '13px 15px', margin: '0 20px 20px', cursor: 'pointer' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+          <span style={{ color: '#B6ADA4', fontSize: 14.5 }}>Search by username…</span>
         </div>
 
-        {/* pending requests banner */}
-        {pendingCount > 0 && (
-          <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FFF1EC', border: '1px solid #FFD8CC', borderRadius: 16, padding: '13px 15px', marginBottom: 22, cursor: 'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#FF6B4A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8 1 0 1.9.2 2.7.5"/><path d="M16 11h6M19 8v6"/></svg>
+        {/* Requests section (inline) */}
+        {pendingIn.filter(r => !deniedMap[r.requester]).length > 0 && (
+          <div style={{ padding: '0 20px', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ font: "700 13px -apple-system", color: '#9A9087', letterSpacing: 0.5, textTransform: 'uppercase' }}>Requests</span>
+              <span style={{ background: '#E5484D', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                {pendingIn.filter(r => !deniedMap[r.requester]).length}
+              </span>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933' }}>{pendingCount} {pendingCount === 1 ? 'person wants' : 'people want'} to add you</div>
-              <div style={{ fontSize: 12.5, color: '#B9760F' }}>Tap to review &amp; accept</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {pendingIn.filter(r => !deniedMap[r.requester]).map(r => {
+                const p = r.profiles
+                const name = p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username : 'Someone'
+                const isAccepted = acceptedMap[r.requester]
+                return (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: p?.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 15px -apple-system", flexShrink: 0 }}>
+                      {name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ font: "600 15px -apple-system", color: '#1A1A1A' }}>{name}</div>
+                      <div style={{ fontSize: 12.5, color: '#9A9087' }}>{p?.username}</div>
+                    </div>
+                    {isAccepted
+                      ? <span style={{ fontSize: 13, fontWeight: 600, color: '#0E9C6B', background: '#E4F6EE', padding: '8px 13px', borderRadius: 12 }}>Friends ✓</span>
+                      : <div style={{ display: 'flex', gap: 7 }}>
+                          <button onClick={() => acceptRequest(r)} style={{ border: 'none', background: '#FF6B4A', color: '#fff', font: "600 13px -apple-system", padding: '9px 14px', borderRadius: 12, cursor: 'pointer' }}>Accept</button>
+                          <button onClick={() => denyRequest(r)} style={{ border: '1.5px solid #E7DED7', background: '#fff', color: '#7B7268', font: "600 13px -apple-system", padding: '8px 13px', borderRadius: 12, cursor: 'pointer' }}>Decline</button>
+                        </div>
+                    }
+                  </div>
+                )
+              })}
             </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E08A6B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
           </div>
         )}
 
-        {/* circles row */}
-        <h3 style={{ margin: '0 0 12px', font: "600 18px 'Fredoka'", color: '#1F2933' }}>Your circles</h3>
-        <div style={{ display: 'flex', gap: 9, overflowX: 'auto', margin: '0 -22px 24px', padding: '2px 22px 4px' }}>
-          {circles.map((c, i) => {
-            const memberCount = friends.filter(f => f.groupIds?.includes(c.id)).length
-            const sel = activeCircle === c.id
-            return (
-              <div key={c.id} onClick={() => setActiveCircle(sel ? null : c.id)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px 9px 10px', background: sel ? c.color : '#fff', border: `1px solid ${sel ? c.color : '#F1E8E2'}`, borderRadius: 14, cursor: 'pointer', transition: 'all .15s' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: sel ? '#fff' : c.color }}/>
-                <span style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: sel ? '#fff' : '#1F2933', whiteSpace: 'nowrap' }}>{c.name}</span>
-                <span style={{ fontSize: 12, color: sel ? 'rgba(255,255,255,.75)' : '#9A9087' }}>{memberCount}</span>
-              </div>
-            )
-          })}
-          <div
-            onClick={() => setCreateCircleOpen(true)}
-            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 14, cursor: 'pointer' }}
-          >
-            <span style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: '#9A9087' }}>+ New</span>
-          </div>
-        </div>
-
-        {/* friends list */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 13 }}>
-          <h3 style={{ margin: 0, font: "600 18px 'Fredoka'", color: '#1F2933' }}>
-            {activeCircle ? circles.find(c => c.id === activeCircle)?.name : 'All friends'}
-          </h3>
-          <span style={{ fontSize: 13, color: '#9A9087', fontWeight: 600 }}>{displayed.length}</span>
-        </div>
-
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[1,2,3].map(i => <div key={i} style={{ height: 70, borderRadius: 18, background: '#F1E8E2' }}/>)}
-          </div>
-        ) : displayed.length === 0 ? (
-          <div style={{ background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 18, padding: '28px 20px', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 4px', font: "600 16px 'Fredoka'", color: '#1F2933' }}>
-              {activeCircle ? 'No friends in this circle' : 'No friends yet'}
-            </p>
-            <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>
-              {activeCircle
-                ? "Tap a friend’s ⋮ menu to add them here."
-                : <span>Tap the <b style={{ color: '#FF6B4A' }}>+</b> button above to find friends.</span>}
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {displayed.map(f => {
-              const realName = `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username
-              const displayName = f.nickname || realName
+        {/* Circles horizontal row */}
+        <div style={{ padding: '0 0 0 20px', marginBottom: 24 }}>
+          <div style={{ font: "700 17px -apple-system", color: '#1A1A1A', marginBottom: 12 }}>Circles</div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingRight: 20, paddingBottom: 4 }} className="no-scrollbar">
+            {/* + New always first */}
+            <div onClick={() => setCreateCircleOpen(true)}
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', background: '#fff', border: '1.5px dashed #D8D0C8', borderRadius: 14, cursor: 'pointer' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style={{ font: "600 13.5px -apple-system", color: '#9A9087', whiteSpace: 'nowrap' }}>New</span>
+            </div>
+            {circles.map(c => {
+              const memberCount = friends.filter(f => f.groupIds?.includes(c.id)).length
+              const sel = activeCircle === c.id
               return (
-                <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 18, padding: '12px 8px 12px 14px' }}>
-                  {/* tappable left: opens profile */}
-                  <div onClick={() => setViewFriendId(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer' }}>
-                    <Avatar name={displayName} color={f.avatar_color} size={44}/>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{displayName}</div>
-                      {f.nickname && (
-                        <div style={{ fontSize: 12, color: '#B6ADA4', marginBottom: 3 }}>{realName}</div>
-                      )}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: f.nickname ? 2 : 4 }}>
-                        {f.groupTags.map(t => (
-                          <Pill key={t.id} label={t.name} color={t.color || '#A78BFA'}/>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* ⋮ menu */}
-                  <div
-                    onClick={() => setMenuFriend(f)}
-                    style={{ width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#B6ADA4"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                  </div>
+                <div key={c.id} onClick={() => setActiveCircle(sel ? null : c.id)}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px 10px 12px', background: sel ? c.color : '#fff', border: `1.5px solid ${sel ? c.color : '#EFE8E2'}`, borderRadius: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: sel ? '#fff' : c.color }}/>
+                  <span style={{ font: "600 13.5px -apple-system", color: sel ? '#fff' : '#1A1A1A', whiteSpace: 'nowrap' }}>{c.name}</span>
+                  <span style={{ fontSize: 12, color: sel ? 'rgba(255,255,255,.75)' : '#9A9087' }}>{memberCount}</span>
                 </div>
               )
             })}
           </div>
+        </div>
+
+        {/* People you may know */}
+        {suggestions.filter(s => !dismissed.has(s.id)).length > 0 && !activeCircle && (
+          <div style={{ padding: '0 20px', marginBottom: 24 }}>
+            <div style={{ font: "700 17px -apple-system", color: '#1A1A1A', marginBottom: 12 }}>People you may know</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {suggestions.filter(s => !dismissed.has(s.id)).map(u => {
+                const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username
+                return (
+                  <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: u.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 15px -apple-system", flexShrink: 0 }}>
+                      {name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ font: "600 15px -apple-system", color: '#1A1A1A' }}>{name}</div>
+                      <div style={{ fontSize: 12.5, color: '#9A9087' }}>{u.username}{u.mutuals > 0 ? ` · ${u.mutuals} mutual` : ''}</div>
+                    </div>
+                    <button onClick={() => dismissSuggestion(u.id)}
+                      style={{ border: 'none', background: 'none', color: '#C4BBB2', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px', marginRight: 4 }}>
+                      ×
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         )}
+
+        {/* All friends / filtered list */}
+        <div style={{ padding: '0 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 13 }}>
+            <div style={{ font: "700 17px -apple-system", color: '#1A1A1A' }}>
+              {activeCircle ? circles.find(c => c.id === activeCircle)?.name : 'All friends'}
+            </div>
+            <span style={{ fontSize: 13, color: '#9A9087', fontWeight: 600 }}>{displayed.length}</span>
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[1, 2, 3].map(i => <div key={i} style={{ height: 68, borderRadius: 16, background: '#EFE8E2' }}/>)}
+            </div>
+          ) : displayed.length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 16, padding: '28px 20px', textAlign: 'center' }}>
+              <p style={{ margin: '0 0 4px', font: "600 16px -apple-system", color: '#1A1A1A' }}>
+                {activeCircle ? 'No friends in this circle' : 'No friends yet'}
+              </p>
+              <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>
+                {activeCircle
+                  ? "Tap a friend's ⋯ menu to add them here."
+                  : 'Use the search bar to find friends.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {displayed.map(f => {
+                const realName = `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username
+                const displayName = f.nickname || realName
+                return (
+                  <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 8px 12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
+                    <div onClick={() => setViewFriendId(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 15px -apple-system", flexShrink: 0 }}>
+                        {displayName.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ font: "600 15px -apple-system", color: '#1A1A1A' }}>{displayName}</div>
+                        {f.nickname && <div style={{ fontSize: 12, color: '#B6ADA4', marginBottom: 2 }}>{realName}</div>}
+                        {f.groupTags.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
+                            {f.groupTags.map(t => (
+                              <span key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: t.color || '#A78BFA', background: `color-mix(in srgb, ${t.color || '#A78BFA'} 13%, #fff)`, padding: '2px 8px', borderRadius: 20 }}>
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: t.color || '#A78BFA' }}/>
+                                {t.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div onClick={() => setMenuFriend(f)}
+                      style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#B6ADA4"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* sheets */}
@@ -815,7 +901,6 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           onRequestAccepted={loadAll}
         />
       )}
-
       {createCircleOpen && (
         <CreateCircleSheet
           session={session}
@@ -823,7 +908,6 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           onCreated={loadAll}
         />
       )}
-
       {menuFriend && (
         <FriendMenuSheet
           friend={menuFriend}
@@ -834,9 +918,12 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           onRemoved={loadAll}
         />
       )}
-
       {viewFriendId && (
-        <UserProfileSheet userId={viewFriendId} myId={session.user.id} onClose={() => setViewFriendId(null)}/>
+        <UserProfileSheet
+          userId={viewFriendId}
+          myId={session.user.id}
+          onClose={() => setViewFriendId(null)}
+        />
       )}
     </div>
   )

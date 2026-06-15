@@ -60,7 +60,7 @@ export default function OnboardingScreen({ session, onDone }) {
             <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </div>
-        <h1 style={{ margin: '0 0 8px', font: "600 28px 'Fredoka'", color: '#1F2933', textAlign: 'center' }}>
+        <h1 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933', textAlign: 'center' }}>
           Welcome to Let's Meet
         </h1>
         <p style={{ margin: 0, fontSize: 14.5, color: '#9A9087', textAlign: 'center', lineHeight: 1.6 }}>
@@ -99,7 +99,7 @@ export default function OnboardingScreen({ session, onDone }) {
               placeholder="choose_username"
               autoCapitalize="none"
               autoCorrect="off"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '11px 0' }}
             />
           </div>
           <div style={{ fontSize: 12, color: '#B6ADA4', marginTop: 6, paddingLeft: 2 }}>
@@ -119,7 +119,7 @@ export default function OnboardingScreen({ session, onDone }) {
         <button
           onClick={save}
           disabled={!canSave || saving}
-          style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: canSave && !saving ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 17px 'Fredoka'", cursor: canSave && !saving ? 'pointer' : 'default', boxShadow: canSave && !saving ? '0 12px 26px -10px rgba(255,107,74,.75)' : 'none', transition: 'all .2s' }}
+          style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: canSave && !saving ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 17px -apple-system", cursor: canSave && !saving ? 'pointer' : 'default', boxShadow: canSave && !saving ? '0 12px 26px -10px rgba(255,107,74,.75)' : 'none', transition: 'all .2s' }}
         >
           {saving ? 'Saving…' : "Let's go 🎉"}
         </button>
@@ -149,7 +149,7 @@ function Input({ value, onChange, placeholder, autoFocus, onNext }) {
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         onKeyDown={e => e.key === 'Enter' && onNext?.()}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933', padding: '13px 0' }}
+        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px -apple-system", color: '#1F2933', padding: '13px 0' }}
       />
     </div>
   )

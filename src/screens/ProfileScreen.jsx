@@ -32,7 +32,7 @@ function Row({ icon, iconBg, label, value, onPress, toggle, toggled, onToggle, d
         </div>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: danger ? '#E14F2E' : '#1F2933', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+        <div style={{ font: "600 14.5px -apple-system", color: danger ? '#E14F2E' : '#1F2933', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
         {value && <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>}
       </div>
       {toggle ? (
@@ -61,7 +61,7 @@ function Sheet({ onClose, children }) {
 }
 
 function SheetTitle({ children }) {
-  return <h3 style={{ margin: '0 0 6px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>{children}</h3>
+  return <h3 style={{ margin: '0 0 6px', font: "600 22px -apple-system", color: '#1F2933' }}>{children}</h3>
 }
 function SheetSub({ children }) {
   return <p style={{ margin: '0 0 20px', fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>{children}</p>
@@ -79,14 +79,14 @@ function TextInput({ value, onChange, placeholder, prefix, type = 'text', autoFo
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '11px 0' }}
+        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '11px 0' }}
       />
     </div>
   )
 }
 function PrimaryBtn({ children, onClick, disabled }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: disabled ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px 'Fredoka'", cursor: disabled ? 'default' : 'pointer', boxShadow: disabled ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
+    <button onClick={onClick} disabled={disabled} style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: disabled ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px -apple-system", cursor: disabled ? 'default' : 'pointer', boxShadow: disabled ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
       {children}
     </button>
   )
@@ -247,14 +247,14 @@ function BlockedSheet({ myId, onClose }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {blocked.map(u => (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 42, height: 42, borderRadius: '50%', background: u.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 14px 'Plus Jakarta Sans'", flexShrink: 0 }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: u.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 14px -apple-system", flexShrink: 0 }}>
                 {initials(u.name)}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ font: "600 14.5px 'Plus Jakarta Sans'", color: '#1F2933' }}>{u.name}</div>
+                <div style={{ font: "600 14.5px -apple-system", color: '#1F2933' }}>{u.name}</div>
                 <div style={{ fontSize: 12.5, color: '#9A9087' }}>@{u.username}</div>
               </div>
-              <button onClick={() => unblock(u.id)} style={{ padding: '8px 14px', border: '1.5px solid #E7DED7', borderRadius: 12, background: '#fff', font: "600 13px 'Plus Jakarta Sans'", color: '#7B7268', cursor: 'pointer' }}>
+              <button onClick={() => unblock(u.id)} style={{ padding: '8px 14px', border: '1.5px solid #E7DED7', borderRadius: 12, background: '#fff', font: "600 13px -apple-system", color: '#7B7268', cursor: 'pointer' }}>
                 Unblock
               </button>
             </div>
@@ -321,7 +321,7 @@ function DeleteAccountSheet({ onClose, onDeleted }) {
       <button
         onClick={deleteAccount}
         disabled={!ready || deleting}
-        style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: ready && !deleting ? '#E14F2E' : '#E7DED7', color: '#fff', font: "600 16px 'Fredoka'", cursor: ready && !deleting ? 'pointer' : 'default', transition: 'all .2s' }}
+        style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: ready && !deleting ? '#E14F2E' : '#E7DED7', color: '#fff', font: "600 16px -apple-system", cursor: ready && !deleting ? 'pointer' : 'default', transition: 'all .2s' }}
       >
         {deleting ? 'Deleting…' : 'Delete my account'}
       </button>
@@ -381,7 +381,7 @@ function BioSheet({ current, onClose, onSaved }) {
           maxLength={80}
           placeholder="e.g. Always up for tacos 🌮"
           rows={3}
-          style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', font: "600 16px 'Plus Jakarta Sans'", color: '#1F2933', resize: 'none', lineHeight: 1.5 }}
+          style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', resize: 'none', lineHeight: 1.5 }}
         />
         <div style={{ textAlign: 'right', fontSize: 11.5, color: '#C4BBB2', marginTop: 4 }}>{val.length}/80</div>
       </div>
@@ -521,7 +521,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
               }
             </div>
           </div>
-          <div onClick={() => setShowCard(true)} style={{ font: "600 20px 'Fredoka'", color: '#1F2933', marginBottom: 2, cursor: 'pointer' }}>{fullName}</div>
+          <div onClick={() => setShowCard(true)} style={{ font: "600 20px -apple-system", color: '#1F2933', marginBottom: 2, cursor: 'pointer' }}>{fullName}</div>
           <div onClick={() => setShowCard(true)} style={{ fontSize: 13.5, color: '#9A9087', marginBottom: profile.bio ? 6 : 0, cursor: 'pointer' }}>@{profile.username || 'no username'}</div>
           {profile.bio
             ? <div onClick={() => setSheet('bio')} style={{ fontSize: 13.5, color: '#4A4540', textAlign: 'center', lineHeight: 1.5, maxWidth: 240, cursor: 'pointer' }}>{profile.bio}</div>

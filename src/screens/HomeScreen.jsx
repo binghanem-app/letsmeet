@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { CreateCircleSheet } from './FriendsScreen'
-import UserProfileSheet from '../components/UserProfileSheet'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -29,262 +27,126 @@ function getPref(key, fallback = true) {
   return v === null ? fallback : v === 'true'
 }
 
-const CIRCLE_COLORS = ['#FF6B4A','#5B7CFA','#12B886','#F5A623','#A78BFA','#EC6A9C']
-
-// ─── icons ───────────────────────────────────────────────────────────────────
-const BellIcon = ({ active }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#FF6B4A' : 'none'} stroke={active ? '#FF6B4A' : '#1F2933'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-    <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
-  </svg>
-)
-const AddFriendIcon = () => (
-  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#1F2933" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="10" cy="8" r="3.4"/>
-    <path d="M4 19c0-3 2.7-4.8 6-4.8"/>
-    <path d="M17 13v6M14 16h6"/>
-  </svg>
-)
-const PinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2">
-    <path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/>
-    <circle cx="12" cy="10" r="2.4"/>
-  </svg>
-)
-const ChevronRight = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m9 6 6 6-6 6"/>
-  </svg>
-)
-const PlusIcon = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
-    <path d="M12 5v14M5 12h14"/>
-  </svg>
-)
-
-// ─── Notification kind icons ──────────────────────────────────────────────────
-function KindDot({ kind }) {
-  const colors = { rsvp: '#0E9C6B', request: '#5B7CFA', reminder: '#F5A623', message: '#FF6B4A', invite: '#FF6B4A', plan_update: '#A78BFA' }
-  return <div style={{ width: 8, height: 8, borderRadius: '50%', background: colors[kind] || '#A78BFA', flexShrink: 0, marginTop: 4 }}/>
-}
-
-// ─── Notifications sheet ──────────────────────────────────────────────────────
-function NotificationsSheet({ notifs, onClose, onClearAll, onDismiss, onOpenPlan, onOpenFriends }) {
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        className="sheet-up"
-        style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '80%', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
-
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 10px', flexShrink: 0 }}>
-          <h3 style={{ margin: 0, font: "600 20px 'Fredoka'", color: '#1F2933' }}>Notifications</h3>
-          {notifs.length > 0 && (
-            <button onClick={onClearAll} style={{ fontSize: 13, fontWeight: 700, color: '#FF6B4A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              Clear all
-            </button>
-          )}
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 16px 32px' }} className="no-scrollbar">
-          {notifs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 24px' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🔔</div>
-              <p style={{ margin: '0 0 6px', font: "600 16px 'Fredoka'", color: '#1F2933' }}>All caught up</p>
-              <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087' }}>Activity on your plans will show up here.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {notifs.map(n => (
-                <div
-                  key={n.id}
-                  onClick={() => {
-                    if (n.kind === 'request') { onClose(); onOpenFriends?.() }
-                    else if (n.plan_id) { onClose(); onOpenPlan?.(n.plan_id) }
-                  }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    background: n.read ? '#F5F0EB' : '#FFF0EC',
-                    border: `1px solid ${n.read ? '#EBE4DC' : '#FFD5C8'}`,
-                    borderRadius: 14, padding: '10px 13px',
-                    cursor: (n.kind === 'request' || n.plan_id) ? 'pointer' : 'default',
-                  }}
-                >
-                  <KindDot kind={n.kind}/>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: '0 0 2px', fontSize: 13.5, color: '#1F2933', lineHeight: 1.4, fontWeight: n.read ? 400 : 600 }}>
-                      {n.body}
-                    </p>
-                    <span style={{ fontSize: 11.5, color: '#B6ADA4' }}>{relativeTime(n.created_at)}</span>
-                  </div>
-                  <button
-                    onClick={() => onDismiss(n.id)}
-                    style={{ width: 24, height: 24, borderRadius: 8, background: n.read ? '#EBE4DC' : '#FFD5C8', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={n.read ? '#9A9087' : '#E14F2E'} strokeWidth="3" strokeLinecap="round">
-                      <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
+// ─── Category config ─────────────────────────────────────────────────────────
 const CATEGORY_CONFIG = {
-  Coffee:     { gradient: 'linear-gradient(90deg,#F5A623,#F7C05A)', accent: '#C8841A', accentBg: '#FBF0DA', iconType: 'coffee'  },
-  Dinner:     { gradient: 'linear-gradient(90deg,#A78BFA,#C4B0FF)', accent: '#A78BFA', accentBg: '#F0EBFF', iconType: 'dinner'  },
-  Movies:     { gradient: 'linear-gradient(90deg,#FF6B4A,#FF9A7A)', accent: '#FF6B4A', accentBg: '#FFEFE9', iconType: 'movies'  },
-  'Hang out': { gradient: 'linear-gradient(90deg,#EC6A9C,#F28CB8)', accent: '#EC6A9C', accentBg: '#FDEAF3', iconType: 'hangout' },
-  Outdoors:   { gradient: 'linear-gradient(90deg,#12B886,#38D3A0)', accent: '#0E9C6B', accentBg: '#E4F6EE', iconType: 'outdoors'},
-  Trip:       { gradient: 'linear-gradient(90deg,#5B7CFA,#7C9AFF)', accent: '#5B7CFA', accentBg: '#EAF1FF', iconType: 'trip'    },
-}
-
-function smartDateLabel(iso) {
-  if (!iso) return null
-  const today = new Date(); today.setHours(0,0,0,0)
-  const d = new Date(iso); d.setHours(0,0,0,0)
-  const diff = Math.round((d - today) / 86400000)
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Tomorrow'
-  if (diff <= 6) return `In ${diff} days`
-  if (diff <= 13) return 'In a week'
-  if (diff <= 20) return 'In 2 weeks'
-  if (diff <= 45) return 'Next month'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-function CategoryIcon({ type, color = '#1F2933', size = 22 }) {
-  const s = { width: size, height: size, fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  if (type === 'coffee')   return <svg viewBox="0 0 24 24" style={s}><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>
-  if (type === 'dinner')   return <svg viewBox="0 0 24 24" style={s}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
-  if (type === 'movies')   return <svg viewBox="0 0 24 24" style={s}><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>
-  if (type === 'hangout')  return <svg viewBox="0 0 24 24" style={s}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-  if (type === 'outdoors') return <svg viewBox="0 0 24 24" style={s}><path d="M3 20h18M8 20V9l4-6 4 6v11"/><path d="M12 14h.01"/></svg>
-  if (type === 'trip')     return <svg viewBox="0 0 24 24" style={s}><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.5.1-.8.5-.6.9l2 4c.2.4.6.6 1 .4l2.5-1.2 2.7 2.7-1.2 2.5c-.2.4 0 .8.4 1l4 2c.4.2.8.1.9-.4Z"/></svg>
-  return null
-}
-
-function CategoryIconBadge({ type, color, bg }) {
-  return (
-    <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <CategoryIcon type={type} color={color}/>
-    </div>
-  )
+  Coffee:     { emoji: '☕',  gradient: 'linear-gradient(135deg,#F5A623,#F7C05A)', accent: '#C8841A' },
+  Dinner:     { emoji: '🍽️', gradient: 'linear-gradient(135deg,#A78BFA,#C4B0FF)', accent: '#A78BFA' },
+  Movies:     { emoji: '🎬', gradient: 'linear-gradient(135deg,#FF6B4A,#FF9070)', accent: '#FF6B4A' },
+  'Hang out': { emoji: '🏠', gradient: 'linear-gradient(135deg,#EC6A9C,#F28CB8)', accent: '#EC6A9C' },
+  Outdoors:   { emoji: '🌿', gradient: 'linear-gradient(135deg,#12B886,#3DCCA0)', accent: '#0E9C6B' },
+  Trip:       { emoji: '✈️', gradient: 'linear-gradient(135deg,#5B7CFA,#7A9AFF)', accent: '#5B7CFA' },
 }
 
 // ─── FeedCard ────────────────────────────────────────────────────────────────
-function FeedCard({ plan, onOpen, onDelete }) {
-  const cat = CATEGORY_CONFIG[plan.vibe]
-  const past = plan.starts_at && new Date(plan.starts_at) < new Date(new Date().toDateString())
+function FeedCard({ plan, onOpen, onDelete, onRsvp }) {
+  const cat = CATEGORY_CONFIG[plan.vibe] || { emoji: '📅', gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)', accent: '#9A9087' }
+  const past = plan.starts_at && new Date(plan.starts_at) < new Date()
   const [showDelConfirm, setShowDelConfirm] = useState(false)
 
-  const RSVP_BADGE = {
-    going:   { label: "You're in",     color: '#0E9C6B', bg: '#E4F6EE' },
-    late:    { label: 'Going, late',   color: '#C8841A', bg: '#FBF0DA' },
-    cant:    { label: "Can't make it", color: '#8A94A0', bg: '#EFEBE7' },
-    invited: { label: 'Pending',       color: '#8A94A0', bg: '#EFEBE7' },
+  const RSVP = [
+    { val: 'going', label: 'Going', activeColor: '#0E9C6B', ghostBorder: '#CDEBDD', ghostText: '#0E9C6B', activeShadow: 'rgba(14,156,107,.25)' },
+    { val: 'late',  label: 'Late',  activeColor: '#C8841A', ghostBorder: '#F0D9B5', ghostText: '#C8841A', activeShadow: 'rgba(200,132,26,.25)' },
+    { val: 'cant',  label: "Can't", activeColor: '#E5484D', ghostBorder: '#F3C9C9', ghostText: '#E5484D', activeShadow: 'rgba(229,72,77,.25)' },
+  ]
+
+  // avatar stack: host + invitees, up to 4
+  const avatars = []
+  if (plan.hostColor || plan.hostName) {
+    avatars.push({ initials: initials(plan.hostName || ''), color: plan.hostColor || '#5B7CFA' })
   }
-  const rsvpBadge = !plan.isHost && plan.myRsvp ? (RSVP_BADGE[plan.myRsvp] || RSVP_BADGE.invited) : null
-  const dateLabel = smartDateLabel(plan.starts_at)
-  const timeStr = plan.starts_at ? new Date(plan.starts_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''
+  ;(plan.inviteeProfiles || []).slice(0, 3).forEach(p => {
+    avatars.push({ initials: initials(`${p.first_name || ''}`), color: p.avatar_color || '#A78BFA' })
+  })
+
+  const totalAttendees = plan.goingCount || 0
+  const extraCount = Math.max(0, totalAttendees - 4)
 
   return (
-    <div onClick={onOpen} style={{ background: '#fff', borderRadius: 22, overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 22px -10px rgba(20,24,30,.22)', opacity: past ? 0.72 : 1 }}>
-      <div style={{ height: 5, background: cat ? cat.gradient : '#EBE4DC', opacity: past ? 0.4 : 1 }}/>
-      <div style={{ padding: '16px 17px 17px' }}>
+    <div style={{ position: 'relative', marginBottom: 0 }}>
+      {/* Unread badge */}
+      {plan.unreadCount > 0 && (
+        <div style={{ position: 'absolute', top: -9, right: 16, zIndex: 2, background: '#FF6B4A', borderRadius: 20, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 4px 10px rgba(255,107,74,.4)' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{plan.unreadCount}</span>
+        </div>
+      )}
 
-        {/* TOP ROW */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 11 }}>
-          {/* LEFT: title + host chip */}
-          <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-            <div style={{ font: "600 21px 'Fredoka'", color: '#1F2933', marginBottom: 3 }}>{plan.title || 'Untitled'}</div>
-            {plan.isHost ? (
-              <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: '#E14F2E', background: '#FFE7E0', padding: '4px 9px', borderRadius: 20 }}>Hosting</span>
-            ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, font: "600 11px 'Plus Jakarta Sans'", color: '#5B6770', background: '#F2EFEC', padding: '4px 9px', borderRadius: 20 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: plan.hostColor || '#A78BFA', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 8px 'Plus Jakarta Sans'", flexShrink: 0 }}>{plan.hostInitials}</span>
-                by {plan.hostName}
-              </span>
-            )}
+      <div
+        style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 3px rgba(0,0,0,.05), 0 8px 22px rgba(0,0,0,.05)', overflow: 'visible', opacity: past ? 0.72 : 1 }}
+      >
+        {/* Main info row */}
+        <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '16px 16px 13px', cursor: 'pointer' }}>
+          {/* Emoji tile */}
+          <div style={{ width: 50, height: 50, borderRadius: 15, background: cat.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+            {cat.emoji}
           </div>
-          {/* RIGHT: trash (host) or rsvp badge, then category icon */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, marginTop: 2, flexShrink: 0 }}>
-            {plan.isHost && !showDelConfirm ? (
-              <div onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }} style={{ padding: '2px 4px', cursor: 'pointer', borderRadius: 8 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-              </div>
-            ) : rsvpBadge ? (
-              <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: rsvpBadge.color, background: rsvpBadge.bg, padding: '4px 9px', borderRadius: 20 }}>{rsvpBadge.label}</span>
-            ) : null}
-            {cat && <CategoryIconBadge type={cat.iconType} color={cat.accent} bg={cat.accentBg}/>}
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title}</div>
+            <div style={{ fontSize: 13, color: '#9A9087', marginTop: 2 }}>{friendlyDate(plan.starts_at)}</div>
+          </div>
+          {/* Avatar stack + chevron */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <div style={{ display: 'flex' }}>
+              {avatars.slice(0, 4).map((a, i) => (
+                <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: a.color, border: '2px solid #fff', marginLeft: i === 0 ? 0 : -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 4 - i }}>
+                  {a.initials}
+                </div>
+              ))}
+              {extraCount > 0 && (
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#ECE6E0', border: '2px solid #fff', marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A9087', fontSize: 9, fontWeight: 700 }}>
+                  +{extraCount}
+                </div>
+              )}
+            </div>
+            <svg width="9" height="15" viewBox="0 0 10 17" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 1 7 7.5L2 16"/></svg>
           </div>
         </div>
 
-        {/* host delete confirm */}
+        {/* Host delete confirm */}
         {plan.isHost && showDelConfirm && (
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, padding: '10px 12px', marginBottom: 10 }}>
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, margin: '0 14px 12px', padding: '10px 12px' }}>
             <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan?</span>
-            <button onClick={() => onDelete?.()} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
+            <button onClick={() => { onDelete?.(); setShowDelConfirm(false) }} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
             <button onClick={() => setShowDelConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
           </div>
         )}
 
-        {/* LOCATION */}
-        {plan.place_name && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>{plan.place_name}</span>
+        {/* RSVP row */}
+        {!plan.isHost && !past && (
+          <div style={{ display: 'flex', gap: 8, padding: '0 14px 14px' }}>
+            {RSVP.map(r => {
+              const sel = plan.myRsvp === r.val
+              return (
+                <button key={r.val} onClick={() => onRsvp(plan.id, r.val)}
+                  style={{ flex: 1, height: 40, border: `1.5px solid ${sel ? r.activeColor : r.ghostBorder}`, borderRadius: 11, background: sel ? r.activeColor : '#fff', color: sel ? '#fff' : r.ghostText, font: '600 14px -apple-system', cursor: 'pointer', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${r.activeShadow}` : 'none' }}>
+                  {r.label}
+                </button>
+              )
+            })}
           </div>
         )}
-
-        {/* DATE */}
-        {dateLabel && (
-          <div style={{ fontSize: 13, color: '#7B7268', marginBottom: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-            <b style={{ color: '#1F2933' }}>{dateLabel}</b>{timeStr && <> · {timeStr}</>}
+        {plan.isHost && !past && (
+          <div style={{ padding: '0 14px 14px' }}>
+            <div
+              onClick={e => { e.stopPropagation(); setShowDelConfirm(true) }}
+              style={{ height: 40, borderRadius: 11, background: '#E4F6EE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', cursor: 'pointer' }}
+            >
+              <span style={{ font: '600 14px -apple-system', color: '#0E9C6B' }}>You're hosting</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </div>
           </div>
         )}
-
-        {/* STATUS PILLS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          {plan.goingCount > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#0E9C6B', background: '#E4F6EE', padding: '4px 10px', borderRadius: 20 }}>{plan.goingCount} going</span>}
-          {plan.lateCount  > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#C8841A', background: '#FBF0DA', padding: '4px 10px', borderRadius: 20 }}>{plan.lateCount} late</span>}
-          {plan.cantCount  > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#8A94A0', background: '#EFEBE7', padding: '4px 10px', borderRadius: 20 }}>{plan.cantCount} can't</span>}
-        </div>
       </div>
     </div>
   )
 }
 
 // ─── HomeScreen ──────────────────────────────────────────────────────────────
-export default function HomeScreen({ session, refreshTrigger, onStartCreate, onGoFriends, onOpenPlan, onOpenAddFriend, requestCount, onPlanCancelled }) {
-  const [profile, setProfile]         = useState(null)
-  const [circles, setCircles]         = useState([])
-  const [feed, setFeed]               = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [createCircleOpen, setCreateCircleOpen] = useState(false)
-  const [viewCircle, setViewCircle] = useState(null) // { id, name, color }
-  const [circleMembers, setCircleMembers] = useState([])
-  const [loadingMembers, setLoadingMembers] = useState(false)
-  const [viewMemberId, setViewMemberId] = useState(null)
-  const [notifs, setNotifs]     = useState([])
-  const [showSheet, setShowSheet] = useState(false)
-  const pushOn = getPref('notif_push', false)
-  const subRef = useRef(null)
-
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
-  const unreadCount = notifs.filter(n => !n.read).length
+export default function HomeScreen({ session, refreshTrigger, onStartCreate, onGoFriends, onOpenPlan, onPlanCancelled, onUnreadChatCount }) {
+  const [profile, setProfile] = useState(null)
+  const [feed, setFeed]       = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!session || refreshTrigger === 0) return
@@ -294,66 +156,11 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   useEffect(() => {
     if (!session) return
     loadData()
-    loadNotifs()
-
-    // realtime: new notifications + new plan invites
-    subRef.current = supabase
-      .channel('home-realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `recipient=eq.${session.user.id}`,
-      }, payload => {
-        setNotifs(prev => [payload.new, ...prev])
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'plan_invitees',
-        filter: `invitee=eq.${session.user.id}`,
-      }, () => { loadFeed() })
-      .subscribe()
-
-    return () => { subRef.current?.unsubscribe() }
   }, [session])
-
-  async function loadNotifs() {
-    const { data } = await supabase
-      .from('notifications')
-      .select('id, kind, body, read, created_at, plan_id')
-      .eq('recipient', session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(50)
-    // preserve any locally-marked-as-read state to avoid re-appearing on remount
-    setNotifs(prev => {
-      const alreadyRead = new Set(prev.filter(n => n.read).map(n => n.id))
-      return (data || []).map(n => alreadyRead.has(n.id) ? { ...n, read: true } : n)
-    })
-  }
-
-  async function openSheet() {
-    setShowSheet(true)
-    const unreadIds = notifs.filter(n => !n.read).map(n => n.id)
-    if (unreadIds.length) {
-      setNotifs(prev => prev.map(n => ({ ...n, read: true })))
-      await supabase.from('notifications').update({ read: true }).in('id', unreadIds)
-    }
-  }
-
-  async function clearAll() {
-    await supabase.from('notifications').delete().eq('recipient', session.user.id)
-    setNotifs([])
-  }
-
-  async function dismissOne(id) {
-    await supabase.from('notifications').delete().eq('id', id)
-    setNotifs(prev => prev.filter(n => n.id !== id))
-  }
 
   async function loadData(silent = false) {
     if (!silent) setLoading(true)
-    await Promise.all([loadProfile(), loadCircles(), loadFeed()])
+    await Promise.all([loadProfile(), loadFeed()])
     if (!silent) setLoading(false)
   }
 
@@ -364,57 +171,6 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
       .eq('id', session.user.id)
       .single()
     if (data) setProfile(data)
-  }
-
-  async function loadCircles() {
-    const { data: groups } = await supabase
-      .from('groups')
-      .select('id, name, color')
-      .eq('owner', session.user.id)
-      .order('created_at')
-
-    if (!groups?.length) { setCircles([]); return }
-
-    const { data: friendships } = await supabase
-      .from('friendships')
-      .select('requester, addressee')
-      .or(`requester.eq.${session.user.id},addressee.eq.${session.user.id}`)
-      .eq('status', 'accepted')
-    const friendIds = new Set((friendships || []).map(f => f.requester === session.user.id ? f.addressee : f.requester))
-
-    const { data: members } = await supabase
-      .from('group_members')
-      .select('group_id, member')
-      .in('group_id', groups.map(g => g.id))
-
-    const counts = {}
-    members?.forEach(m => {
-      if (friendIds.has(m.member)) counts[m.group_id] = (counts[m.group_id] || 0) + 1
-    })
-
-    setCircles(groups.map((g, i) => ({
-      ...g,
-      color: g.color || CIRCLE_COLORS[i % CIRCLE_COLORS.length],
-      count: counts[g.id] || 0,
-    })))
-  }
-
-  async function loadCircleMembers(circleId) {
-    setLoadingMembers(true)
-    const { data: members } = await supabase
-      .from('group_members')
-      .select('member')
-      .eq('group_id', circleId)
-    if (!members?.length) { setCircleMembers([]); setLoadingMembers(false); return }
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, username, avatar_color')
-      .in('id', members.map(m => m.member))
-    setCircleMembers((profiles || []).map(p => ({
-      ...p,
-      name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username,
-    })))
-    setLoadingMembers(false)
   }
 
   async function loadFeed() {
@@ -463,25 +219,67 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
 
     if (!unique.length) { setFeed([]); return }
 
+    // Host profiles
     const hostIds = [...new Set(unique.map(p => p.host))]
     const { data: hostProfiles } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, avatar_color')
       .in('id', hostIds)
-
     const hostMap = {}
     hostProfiles?.forEach(p => { hostMap[p.id] = p })
 
+    // RSVP counts
     const { data: rsvps } = await supabase
       .from('plan_invitees')
-      .select('plan_id, rsvp')
+      .select('plan_id, rsvp, invitee')
       .in('plan_id', unique.map(p => p.id))
-
     const rsvpByPlan = {}
     rsvps?.forEach(r => {
       if (!rsvpByPlan[r.plan_id]) rsvpByPlan[r.plan_id] = []
       rsvpByPlan[r.plan_id].push(r)
     })
+
+    // Unread message counts
+    const planIds = unique.map(p => p.id)
+    const { data: reads } = await supabase
+      .from('plan_message_reads')
+      .select('plan_id, last_read_at')
+      .eq('user_id', session.user.id)
+      .in('plan_id', planIds)
+    const readMap = {}
+    reads?.forEach(r => { readMap[r.plan_id] = r.last_read_at })
+
+    const unreadResults = await Promise.all(planIds.map(async id => {
+      let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true }).eq('plan_id', id)
+      if (readMap[id]) q = q.gt('created_at', readMap[id])
+      const { count } = await q
+      return [id, count || 0]
+    }))
+    const unreadMap = Object.fromEntries(unreadResults)
+    const totalUnread = Object.values(unreadMap).reduce((s, n) => s + n, 0)
+    onUnreadChatCount?.(totalUnread)
+
+    // Invitee avatar profiles (up to 4 per plan)
+    const allInviteeIds = []
+    const inviteeIdsByPlan = {}
+    rsvps?.forEach(r => {
+      if (r.invitee !== session.user.id) {
+        if (!inviteeIdsByPlan[r.plan_id]) inviteeIdsByPlan[r.plan_id] = []
+        if (inviteeIdsByPlan[r.plan_id].length < 4) {
+          inviteeIdsByPlan[r.plan_id].push(r.invitee)
+          allInviteeIds.push(r.invitee)
+        }
+      }
+    })
+    const uniqueInviteeIds = [...new Set(allInviteeIds)]
+    let inviteeProfileMap = {}
+    if (uniqueInviteeIds.length) {
+      const { data: inviteeProfiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, avatar_color')
+        .in('id', uniqueInviteeIds)
+      inviteeProfiles?.forEach(p => { inviteeProfileMap[p.id] = p })
+    }
 
     setFeed(unique.slice(0, 5).map(plan => {
       const host = hostMap[plan.host]
@@ -491,6 +289,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
       const goingCount = planRsvps.filter(r => r.rsvp === 'going').length + (isHost ? 1 : 0)
       const lateCount = planRsvps.filter(r => r.rsvp === 'late').length
       const cantCount = planRsvps.filter(r => r.rsvp === 'cant').length
+      const inviteeProfiles = (inviteeIdsByPlan[plan.id] || []).map(id => inviteeProfileMap[id]).filter(Boolean)
       return {
         ...plan,
         isHost,
@@ -501,6 +300,8 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         lateCount,
         cantCount,
         myRsvp: isHost ? 'going' : (myRsvpByPlan[plan.id] || null),
+        unreadCount: unreadMap[plan.id] || 0,
+        inviteeProfiles,
       }
     }))
   }
@@ -511,241 +312,77 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     onPlanCancelled?.(planId)
   }
 
-  const greeting = profile?.first_name
-    ? `Hey, ${profile.first_name}`
-    : session.user.email?.split('@')[0]
-      ? `Hey, ${session.user.email.split('@')[0]}`
-      : 'Hey there'
+  async function saveRsvp(planId, val) {
+    const plan = feed.find(p => p.id === planId)
+    if (!plan || plan.isHost) return
+    const newVal = plan.myRsvp === val ? null : val
+    // optimistic update
+    setFeed(prev => prev.map(p => p.id === planId ? { ...p, myRsvp: newVal } : p))
+    if (newVal) {
+      await supabase.from('plan_invitees')
+        .upsert({ plan_id: planId, invitee: session.user.id, rsvp: newVal }, { onConflict: 'plan_id,invitee' })
+    } else {
+      await supabase.from('plan_invitees')
+        .update({ rsvp: 'invited' })
+        .eq('plan_id', planId).eq('invitee', session.user.id)
+    }
+  }
 
   return (
-    <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 22px 24px' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 24px' }} className="no-scrollbar">
 
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 0 18px' }}>
+        {/* Header */}
+        <div style={{ padding: '16px 20px 14px' }}>
+          <div style={{ fontSize: 14, color: '#9A9087', marginBottom: 4 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </div>
+          <div style={{ font: '700 28px -apple-system', color: '#1A1A1A' }}>
+            Hey, {profile?.first_name || 'there'} 👋
+          </div>
+        </div>
+
+        {/* Let's Meet Banner */}
+        <div onClick={onStartCreate} style={{ position: 'relative', margin: '0 20px 20px', borderRadius: 20, background: 'linear-gradient(110deg, #FF5E3A, #FF7A52 60%, #FF8E63)', padding: '20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 24px rgba(255,94,58,.28)', cursor: 'pointer', overflow: 'hidden', minHeight: 80 }}>
+          <div style={{ position: 'absolute', right: -20, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,.12)' }}/>
           <div>
-            <p style={{ margin: 0, fontSize: 13, color: '#9A9087' }}>{today}</p>
-            <h2 style={{ margin: '2px 0 0', font: "600 25px 'Fredoka'", color: '#1F2933' }}>{greeting}</h2>
+            <div style={{ font: '700 24px -apple-system', color: '#fff', marginBottom: 4 }}>Let's Meet</div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,.9)' }}>Start a plan in seconds</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* notifications bell */}
-            <div
-              onClick={openSheet}
-              style={{
-                position: 'relative', width: 46, height: 46, borderRadius: 14,
-                background: '#fff', border: `1px solid ${unreadCount > 0 ? '#FFD5C8' : '#F1E8E2'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', boxShadow: '0 6px 16px -10px rgba(20,24,30,.3)',
-              }}
-            >
-              <BellIcon active={unreadCount > 0}/>
-              {unreadCount > 0 && (
-                <div style={{
-                  position: 'absolute', top: -4, right: -4,
-                  minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9,
-                  background: '#FF6B4A', border: '2px solid #FBF7F4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', font: "700 10px 'Plus Jakarta Sans'",
-                }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </div>
-              )}
-            </div>
-            {/* add friend */}
-            <div
-              onClick={onOpenAddFriend}
-              style={{
-                position: 'relative', width: 46, height: 46, borderRadius: 14,
-                background: '#fff', border: '1px solid #F1E8E2',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', boxShadow: '0 6px 16px -10px rgba(20,24,30,.3)',
-              }}
-            >
-              <AddFriendIcon/>
-              {requestCount > 0 && (
-                <div style={{
-                  position: 'absolute', top: -4, right: -4,
-                  minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9,
-                  background: '#FF6B4A', border: '2px solid #FBF7F4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', font: "700 10px 'Plus Jakarta Sans'",
-                }}>
-                  {requestCount}
-                </div>
-              )}
-            </div>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </div>
         </div>
 
-        {/* Let's Meet CTA */}
-        <button
-          onClick={onStartCreate}
-          style={{
-            position: 'relative', width: '100%', border: 'none', borderRadius: 24,
-            padding: 22, background: 'linear-gradient(120deg,#FF6B4A,#FF8A5B)',
-            color: '#fff', cursor: 'pointer', textAlign: 'left', overflow: 'hidden',
-            boxShadow: '0 16px 32px -14px rgba(255,107,74,.8)',
-          }}
-        >
-          <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,.13)' }}/>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-            <div>
-              <div style={{ font: "600 24px 'Fredoka'" }}>Let's Meet</div>
-              <div style={{ fontSize: 14, opacity: .92, marginTop: 3 }}>Start a plan in seconds</div>
-            </div>
-            <div style={{
-              width: 54, height: 54, borderRadius: '50%',
-              background: 'rgba(255,255,255,.22)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <PlusIcon/>
-            </div>
-          </div>
-        </button>
-
-        {/* circles */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '26px 0 13px' }}>
-          <h3 style={{ margin: 0, font: "600 18px 'Fredoka'", color: '#1F2933' }}>Your circles</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div onClick={() => setCreateCircleOpen(true)} style={{ width: 28, height: 28, borderRadius: 9, background: '#FFEFE9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            </div>
-            <span onClick={onGoFriends} style={{ fontSize: 13, fontWeight: 600, color: '#FF6B4A', cursor: 'pointer' }}>See all</span>
-          </div>
+        {/* Your plans */}
+        <div style={{ padding: '0 20px', marginBottom: 14 }}>
+          <div style={{ font: '700 19px -apple-system', color: '#1A1A1A' }}>Your plans</div>
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', gap: 11, overflow: 'hidden' }}>
-            {[1,2,3].map(i => (
-              <div key={i} style={{ flexShrink: 0, width: 120, height: 56, borderRadius: 16, background: '#F1E8E2' }}/>
-            ))}
-          </div>
-        ) : circles.length === 0 ? (
-          <div
-            onClick={() => setCreateCircleOpen(true)}
-            style={{
-              background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 16,
-              padding: '14px 16px', cursor: 'pointer', textAlign: 'center',
-              color: '#9A9087', fontSize: 13.5, fontWeight: 600,
-            }}
-          >
-            + Create your first circle
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 11, overflowX: 'auto', margin: '0 -22px', padding: '2px 22px 4px' }}>
-            {circles.map(c => (
-              <div key={c.id} onClick={() => { setViewCircle(c); loadCircleMembers(c.id) }} style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9,
-                padding: '11px 16px 11px 12px', background: '#fff',
-                border: '1px solid #F1E8E2', borderRadius: 16,
-                boxShadow: '0 6px 16px -12px rgba(20,24,30,.3)', cursor: 'pointer',
-              }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: c.color, opacity: .16 }}/>
-                <div>
-                  <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', whiteSpace: 'nowrap' }}>{c.name}</div>
-                  <div style={{ fontSize: 12, color: '#9A9087' }}>{c.count} {c.count === 1 ? 'person' : 'people'}</div>
-                </div>
-              </div>
-            ))}
-            <div
-              onClick={() => setCreateCircleOpen(true)}
-              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '11px 16px', background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 16, cursor: 'pointer' }}
-            >
-              <span style={{ font: "600 13.5px 'Plus Jakarta Sans'", color: '#9A9087', whiteSpace: 'nowrap' }}>+ New</span>
-            </div>
-          </div>
-        )}
-
-        {/* feed */}
-        <h3 style={{ margin: '26px 0 13px', font: "600 18px 'Fredoka'", color: '#1F2933' }}>
-          Happening in your circles
-        </h3>
-
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[1,2].map(i => (
-              <div key={i} style={{ height: 130, borderRadius: 22, background: '#F1E8E2' }}/>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A', animation: 'spin .7s linear infinite' }}/>
           </div>
         ) : feed.length === 0 ? (
-          <div style={{
-            background: '#fff', border: '1px solid #F1E8E2', borderRadius: 22,
-            padding: '28px 20px', textAlign: 'center',
-          }}>
-            <p style={{ margin: '0 0 4px', font: "600 16px 'Fredoka'", color: '#1F2933' }}>No plans yet</p>
-            <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>
-              Tap <b style={{ color: '#FF6B4A' }}>Let's Meet</b> to start one.
-            </p>
+          <div style={{ textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>🗓️</div>
+            <p style={{ font: '600 17px -apple-system', color: '#1A1A1A', margin: '0 0 6px' }}>No plans yet</p>
+            <p style={{ fontSize: 14, color: '#9A9087', margin: 0 }}>Tap the banner above to start one.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 20px' }}>
             {feed.map(plan => (
-              <FeedCard key={plan.id} plan={plan} onOpen={() => onOpenPlan(plan.id)} onDelete={() => deletePlan(plan.id)} />
+              <FeedCard
+                key={plan.id}
+                plan={plan}
+                onOpen={() => onOpenPlan(plan.id)}
+                onDelete={() => deletePlan(plan.id)}
+                onRsvp={saveRsvp}
+              />
             ))}
           </div>
         )}
       </div>
-
-      {/* notifications sheet */}
-      {showSheet && (
-        <NotificationsSheet
-          notifs={notifs}
-          onClose={() => setShowSheet(false)}
-          onClearAll={clearAll}
-          onDismiss={dismissOne}
-          onOpenPlan={onOpenPlan}
-          onOpenFriends={onGoFriends}
-        />
-      )}
-
-      {viewCircle && (
-        <div onClick={() => setViewCircle(null)} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(20,24,30,.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '80%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%', background: viewCircle.color, flexShrink: 0 }}/>
-                <h3 style={{ margin: 0, font: "600 22px 'Fredoka'", color: '#1F2933' }}>{viewCircle.name}</h3>
-              </div>
-              {loadingMembers ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-                  <div className="spin" style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid #F0E5DE', borderTopColor: '#FF6B4A' }}/>
-                </div>
-              ) : circleMembers.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#9A9087', fontSize: 14, padding: '20px 0' }}>No friends in this circle yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {circleMembers.map(m => (
-                    <div key={m.id} onClick={() => setViewMemberId(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '12px 14px', cursor: 'pointer' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ color: '#fff', font: "700 14px 'Plus Jakarta Sans'" }}>{m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'}</span>
-                      </div>
-                      <div>
-                        <div style={{ font: "600 15px 'Plus Jakarta Sans'", color: '#1F2933' }}>{m.name}</div>
-                        {m.username && <div style={{ fontSize: 12.5, color: '#9A9087' }}>@{m.username}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {viewMemberId && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9100 }}>
-          <UserProfileSheet userId={viewMemberId} myId={session.user.id} onClose={() => setViewMemberId(null)} />
-        </div>
-      )}
-
-      {createCircleOpen && (
-        <CreateCircleSheet
-          session={session}
-          onClose={() => setCreateCircleOpen(false)}
-          onCreated={() => { setCreateCircleOpen(false); loadCircles() }}
-        />
-      )}
     </div>
   )
 }

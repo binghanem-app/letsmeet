@@ -10,8 +10,8 @@ body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background: #EAE7E2;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #F9F4F0;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }

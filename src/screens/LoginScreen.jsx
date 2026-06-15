@@ -108,7 +108,7 @@ function EmailModal({ onClose, onDone }) {
                 <path d="m5 13 4 4L19 7"/>
               </svg>
             </div>
-            <h3 style={{ margin: '0 0 8px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>
+            <h3 style={{ margin: '0 0 8px', font: "600 22px -apple-system", color: '#1F2933' }}>
               Check your email
             </h3>
             <p style={{ margin: '0 0 24px', fontSize: 14.5, color: '#7B7268', lineHeight: 1.5 }}>
@@ -119,7 +119,7 @@ function EmailModal({ onClose, onDone }) {
           </div>
         ) : (
           <form onSubmit={submit}>
-            <h3 style={{ margin: '0 0 6px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>
+            <h3 style={{ margin: '0 0 6px', font: "600 22px -apple-system", color: '#1F2933' }}>
               {mode === 'signup' ? 'Create account' : 'Sign in'}
             </h3>
             <p style={{ margin: '0 0 22px', fontSize: 14, color: '#7B7268' }}>
@@ -177,18 +177,18 @@ const btnPrimary = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 11,
   width: '100%', padding: 16, border: 'none', borderRadius: 17,
   background: '#FF6B4A', color: '#fff',
-  font: "600 16px 'Plus Jakarta Sans'", cursor: 'pointer',
+  font: "600 16px -apple-system", cursor: 'pointer',
   boxShadow: '0 10px 22px -8px rgba(255,107,74,.7)',
 }
 const btnOutline = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 11,
   width: '100%', padding: 16, border: '1.5px solid #E7DED7', borderRadius: 17,
   background: '#fff', color: '#1F2933',
-  font: "600 16px 'Plus Jakarta Sans'", cursor: 'pointer',
+  font: "600 16px -apple-system", cursor: 'pointer',
 }
 const inputStyle = {
   width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14,
-  padding: '13px 15px', font: "500 16px 'Plus Jakarta Sans'",
+  padding: '13px 15px', font: "500 16px -apple-system",
   color: '#1F2933', outline: 'none', background: '#fff',
 }
 
@@ -251,7 +251,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
         }}>
           <PeopleIcon />
         </div>
-        <span style={{ font: "600 21px 'Fredoka'", color: '#1F2933' }}>Let's Meet</span>
+        <span style={{ font: "600 21px -apple-system", color: '#1F2933' }}>Let's Meet</span>
       </div>
 
       {/* hero */}
@@ -280,7 +280,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
                 width: 50, height: 50, borderRadius: '50%', background: color,
                 border: '3px solid #fff', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', color: '#fff',
-                font: `600 ${label.startsWith('+') ? '15px' : '17px'} 'Plus Jakarta Sans'`,
+                font: `600 ${label.startsWith('+') ? '15px' : '17px'} -apple-system`,
                 marginLeft: label === 'AM' ? 0 : -14,
               }}>
                 {label}
@@ -291,7 +291,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
           {/* pill */}
           <div style={{
             zIndex: 2, background: '#F4F7EE', color: '#0E9C6B',
-            font: "600 13px 'Plus Jakarta Sans'",
+            font: "600 13px -apple-system",
             padding: '7px 14px', borderRadius: 20,
           }}>
             50k+ plans made this month
@@ -300,7 +300,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
 
         {/* headline */}
         <div>
-          <h1 style={{ margin: '0 0 10px', font: "600 33px/1.12 'Fredoka'", color: '#1F2933', letterSpacing: '-.3px' }}>
+          <h1 style={{ margin: '0 0 10px', font: "600 33px/1.12 -apple-system", color: '#1F2933', letterSpacing: '-.3px' }}>
             Make plans that<br/>actually happen.
           </h1>
           <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.5, color: '#7B7268' }}>

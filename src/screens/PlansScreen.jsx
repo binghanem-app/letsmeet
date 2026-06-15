@@ -47,14 +47,14 @@ function PlaceSearchMini({ value, onChange }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: results.length ? 0 : 14 }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
         <input value={query} onChange={e => handleType(e.target.value)} placeholder="Search a place…"
-          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}/>
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px -apple-system", color: '#1F2933', padding: '10px 0' }}/>
         {query && <span onClick={clear} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer', lineHeight: 1 }}>×</span>}
       </div>
       {results.length > 0 && !isSelected && (
         <div style={{ background: '#fff', border: '1px solid #F1E8E2', borderRadius: 14, marginBottom: 14, overflow: 'hidden' }}>
           {results.map((p, i) => (
             <div key={i} onClick={() => pick(p)} style={{ padding: '11px 14px', borderBottom: i < results.length - 1 ? '1px solid #F5F0EB' : 'none', cursor: 'pointer' }}>
-              <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>{p.name}</div>
+              <div style={{ font: "600 14px -apple-system", color: '#1F2933' }}>{p.name}</div>
               <div style={{ fontSize: 12, color: '#9A9087', marginTop: 2 }}>{p.address}</div>
             </div>
           ))}
@@ -118,7 +118,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '88%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px 32px' }} className="no-scrollbar">
-          <h3 style={{ margin: '0 0 18px', font: "600 22px 'Fredoka'", color: '#1F2933' }}>Edit plan</h3>
+          <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>Edit plan</h3>
 
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             <div style={{ flex: '0 0 calc(50% - 6px)', minWidth: 0, overflow: 'hidden' }}>
@@ -137,7 +137,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
           </div>
 
           <button onClick={save} disabled={saving}
-            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: saving ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px 'Fredoka'", cursor: saving ? 'default' : 'pointer', boxShadow: saving ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
+            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: saving ? '#E7DED7' : '#FF6B4A', color: '#fff', font: "600 16px -apple-system", cursor: saving ? 'default' : 'pointer', boxShadow: saving ? 'none' : '0 10px 22px -8px rgba(255,107,74,.7)', transition: 'all .2s' }}>
             {saving ? 'Saving…' : 'Save changes'}
           </button>
 
@@ -150,7 +150,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
               </div>
             ) : (
               <button onClick={() => setShowCancelConfirm(true)}
-                style={{ marginTop: 12, width: '100%', padding: '11px', border: '1px solid #FAD5CF', borderRadius: 16, background: '#FEF0EE', color: '#E14F2E', font: "600 16px 'Plus Jakarta Sans'", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ marginTop: 12, width: '100%', padding: '11px', border: '1px solid #FAD5CF', borderRadius: 16, background: '#FEF0EE', color: '#E14F2E', font: "600 16px -apple-system", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
                 </svg>
@@ -321,12 +321,12 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 11 }}>
           {/* LEFT: title + chip */}
           <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-            <div style={{ font: "600 21px 'Fredoka'", color: '#1F2933', marginBottom: 3 }}>{plan.title || 'Untitled'}</div>
+            <div style={{ font: "600 21px -apple-system", color: '#1F2933', marginBottom: 3 }}>{plan.title || 'Untitled'}</div>
             {isHost ? (
-              groupLabel && <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: cat?.accent || '#FF6B4A', background: cat?.accentBg || '#FFEFE9', padding: '4px 9px', borderRadius: 20 }}>{groupLabel}</span>
+              groupLabel && <span style={{ font: "700 11px -apple-system", color: cat?.accent || '#FF6B4A', background: cat?.accentBg || '#FFEFE9', padding: '4px 9px', borderRadius: 20 }}>{groupLabel}</span>
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, font: "600 11px 'Plus Jakarta Sans'", color: '#5B6770', background: '#F2EFEC', padding: '4px 9px', borderRadius: 20 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: plan.hostColor || '#A78BFA', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 8px 'Plus Jakarta Sans'", flexShrink: 0 }}>{initials(plan.hostName || '')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, font: "600 11px -apple-system", color: '#5B6770', background: '#F2EFEC', padding: '4px 9px', borderRadius: 20 }}>
+                <span style={{ width: 16, height: 16, borderRadius: '50%', background: plan.hostColor || '#A78BFA', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 8px -apple-system", flexShrink: 0 }}>{initials(plan.hostName || '')}</span>
                 by {plan.hostName || 'Someone'}
               </span>
             )}
@@ -337,7 +337,7 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
             {isHost ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: '#E14F2E', background: '#FFE7E0', padding: '4px 9px', borderRadius: 20 }}>Hosting</span>
+                  <span style={{ font: "700 11px -apple-system", color: '#E14F2E', background: '#FFE7E0', padding: '4px 9px', borderRadius: 20 }}>Hosting</span>
                   {!past && (
                     <button onClick={e => { e.stopPropagation(); setShowConfirm(s => !s) }}
                       style={{ width: 30, height: 30, borderRadius: 9, background: '#FEF0EE', border: '1px solid #FAD5CF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -351,7 +351,7 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
               </>
             ) : (
               <>
-                <span style={{ font: "700 11px 'Plus Jakarta Sans'", color: rsvpBadge.color, background: rsvpBadge.bg, padding: '4px 9px', borderRadius: 20 }}>{rsvpBadge.label}</span>
+                <span style={{ font: "700 11px -apple-system", color: rsvpBadge.color, background: rsvpBadge.bg, padding: '4px 9px', borderRadius: 20 }}>{rsvpBadge.label}</span>
                 {cat && <CategoryIconBadge type={cat.iconType} color={cat.accent} bg={cat.accentBg}/>}
               </>
             )}
@@ -362,7 +362,7 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
         {plan.place && (
           <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>{plan.place}</span>
+            <span style={{ font: "600 18px -apple-system", color: '#1F2933' }}>{plan.place}</span>
           </div>
         )}
 
@@ -376,15 +376,15 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
 
         {/* STATUS PILLS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: isHost ? 0 : 11 }}>
-          {goingCount > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#0E9C6B', background: '#E4F6EE', padding: '4px 10px', borderRadius: 20 }}>{goingCount} going</span>}
-          {lateCount  > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#C8841A', background: '#FBF0DA', padding: '4px 10px', borderRadius: 20 }}>{lateCount} late</span>}
-          {cantCount  > 0 && <span style={{ font: "700 11.5px 'Plus Jakarta Sans'", color: '#8A94A0', background: '#EFEBE7', padding: '4px 10px', borderRadius: 20 }}>{cantCount} can't</span>}
+          {goingCount > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#0E9C6B', background: '#E4F6EE', padding: '4px 10px', borderRadius: 20 }}>{goingCount} going</span>}
+          {lateCount  > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#C8841A', background: '#FBF0DA', padding: '4px 10px', borderRadius: 20 }}>{lateCount} late</span>}
+          {cantCount  > 0 && <span style={{ font: "700 11.5px -apple-system", color: '#8A94A0', background: '#EFEBE7', padding: '4px 10px', borderRadius: 20 }}>{cantCount} can't</span>}
         </div>
 
         {/* EDIT RESPONSE — guest + upcoming */}
         {!isHost && !past && (
           <button onClick={e => { e.stopPropagation(); onEditResponse() }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 10, border: '1.5px solid #EBE4DC', borderRadius: 12, background: '#FBF7F4', color: '#1F2933', font: "600 13px 'Plus Jakarta Sans'", cursor: 'pointer', marginTop: 11 }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', padding: 10, border: '1.5px solid #EBE4DC', borderRadius: 12, background: '#FBF7F4', color: '#1F2933', font: "600 13px -apple-system", cursor: 'pointer', marginTop: 11 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
             Edit my response
           </button>
@@ -394,8 +394,8 @@ function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
         {isHost && showConfirm && (
           <div style={{ background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 13, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, marginTop: 11 }}>
             <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan? Everyone will be notified.</span>
-            <button onClick={e => { e.stopPropagation(); onDelete?.() }} style={{ background: '#E14F2E', color: '#fff', border: 'none', font: "700 12px 'Plus Jakarta Sans'", padding: '8px 13px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Confirm</button>
-            <button onClick={e => { e.stopPropagation(); setShowConfirm(false) }} style={{ border: '1.5px solid #FAD5CF', background: '#fff', color: '#7B7268', font: "600 12px 'Plus Jakarta Sans'", padding: '8px 12px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Keep</button>
+            <button onClick={e => { e.stopPropagation(); onDelete?.() }} style={{ background: '#E14F2E', color: '#fff', border: 'none', font: "700 12px -apple-system", padding: '8px 13px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Confirm</button>
+            <button onClick={e => { e.stopPropagation(); setShowConfirm(false) }} style={{ border: '1.5px solid #FAD5CF', background: '#fff', color: '#7B7268', font: "600 12px -apple-system", padding: '8px 12px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>Keep</button>
           </div>
         )}
       </div>
@@ -432,7 +432,7 @@ function RsvpButtons({ current, onChange, saving }) {
             }}>
               {opt.icon(sel)}
             </div>
-            <span style={{ font: "600 13px 'Plus Jakarta Sans'", color: sel ? opt.color : '#9A9087', transition: 'color .15s' }}>
+            <span style={{ font: "600 13px -apple-system", color: sel ? opt.color : '#9A9087', transition: 'color .15s' }}>
               {opt.label}
             </span>
           </button>
@@ -447,7 +447,7 @@ function AttendeeRow({ name, color, avatarUrl, pill, onTap }) {
   return (
     <div onClick={onTap} style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: onTap ? 'pointer' : 'default', borderRadius: 12, padding: '2px 0' }}>
       <Avatar url={avatarUrl} name={name} color={color} size={38}/>
-      <span style={{ flex: 1, font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>{name || 'Unknown'}</span>
+      <span style={{ flex: 1, font: "600 14px -apple-system", color: '#1F2933' }}>{name || 'Unknown'}</span>
       <span style={{ fontSize: 12, fontWeight: 700, color: pill.color, background: pill.bg, borderRadius: 20, padding: '3px 10px', flexShrink: 0 }}>{pill.label}</span>
     </div>
   )
@@ -498,7 +498,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
       <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '28px 28px 0 0', maxHeight: '75%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '12px auto 0', flexShrink: 0 }}/>
         <div style={{ padding: '16px 20px 12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, font: "600 22px 'Fredoka'", color: '#1F2933' }}>Invite more</h3>
+          <h3 style={{ margin: 0, font: "600 22px -apple-system", color: '#1F2933' }}>Invite more</h3>
           {selected.length > 0 && <span style={{ fontSize: 12.5, fontWeight: 700, color: '#FF6B4A', background: '#FFF1EC', borderRadius: 20, padding: '4px 12px' }}>{selected.length} selected</span>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 16px' }} className="no-scrollbar">
@@ -514,10 +514,10 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
                 const sel = selected.includes(f.id)
                 return (
                   <div key={f.id} onClick={() => toggle(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
-                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 13px 'Plus Jakarta Sans'", flexShrink: 0 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 13px -apple-system", flexShrink: 0 }}>
                       {f.displayName.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
-                    <span style={{ flex: 1, font: "600 14.5px 'Plus Jakarta Sans'", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</span>
+                    <span style={{ flex: 1, font: "600 14.5px -apple-system", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</span>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
                     </div>
@@ -529,7 +529,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
         </div>
         <div style={{ padding: '12px 20px 24px', flexShrink: 0, borderTop: '1px solid #F1E8E2' }}>
           <button onClick={confirm} disabled={sending || !selected.length}
-            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: selected.length ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 16px 'Fredoka'", cursor: selected.length && !sending ? 'pointer' : 'default', boxShadow: selected.length ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none', transition: 'all .2s' }}>
+            style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: selected.length ? '#FF6B4A' : '#E7DED7', color: '#fff', font: "600 16px -apple-system", cursor: selected.length && !sending ? 'pointer' : 'default', boxShadow: selected.length ? '0 10px 22px -8px rgba(255,107,74,.7)' : 'none', transition: 'all .2s' }}>
             {sending ? 'Sending…' : selected.length ? `Invite ${selected.length} friend${selected.length === 1 ? '' : 's'}` : 'Select friends to invite'}
           </button>
         </div>
@@ -539,16 +539,25 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
 }
 
 // ─── Plan detail — full page ──────────────────────────────────────────────────
+const CAT = {
+  Coffee:     { emoji: '☕',  gradient: 'linear-gradient(135deg,#F5A623,#F7C05A)' },
+  Dinner:     { emoji: '🍽️', gradient: 'linear-gradient(135deg,#A78BFA,#C4B0FF)' },
+  Movies:     { emoji: '🎬', gradient: 'linear-gradient(135deg,#FF6B4A,#FF9070)' },
+  'Hang out': { emoji: '🏠', gradient: 'linear-gradient(135deg,#EC6A9C,#F28CB8)' },
+  Outdoors:   { emoji: '🌿', gradient: 'linear-gradient(135deg,#12B886,#3DCCA0)' },
+  Trip:       { emoji: '✈️', gradient: 'linear-gradient(135deg,#5B7CFA,#7A9AFF)' },
+}
+
 function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan }) {
   const isHost = plan.host === myId
   const myInvite = plan.invitees?.find(i => i.invitee === myId)
   const myRsvp = myInvite?.rsvp || (isHost ? 'going' : 'invited')
   const [rsvp, setRsvp]               = useState(myRsvp)
   const [saving, setSaving]           = useState(false)
-  const [showAll, setShowAll]         = useState(false)
   const [showEdit, setShowEdit]       = useState(false)
   const [showInviteMore, setShowInviteMore] = useState(false)
   const [viewUserId, setViewUserId]   = useState(null)
+  const [whosInOpen, setWhosInOpen]   = useState(false)
   const [messages, setMessages]       = useState([])
   const [msgProfiles, setMsgProfiles] = useState({})
   const [msgBody, setMsgBody]         = useState('')
@@ -735,248 +744,184 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     onUpdated?.()
   }
 
-  const allAttendees = [
-    ...going,
-    ...late,
-    ...(showAll ? [...cant, ...pending] : []),
-  ]
-
-  const relBadge = relativeLabel(plan.date)
-  const addrShort = shortAddr(plan.place_address)
-  const dayName = plan.date ? new Date(plan.date).toLocaleDateString('en-US', { weekday: 'long' }) : ''
-
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#EEEAE4' }}>
 
-      {/* ── sticky header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px 11px', background: '#FBF7F4', borderBottom: '1px solid #E8E2DA', flexShrink: 0 }}>
-        <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 3, border: 'none', background: 'transparent', padding: '6px 4px', font: "600 14px 'Plus Jakarta Sans'", color: '#7B7268', cursor: 'pointer', flexShrink: 0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <h2 style={{ flex: 1, margin: 0, font: "700 19px 'Fredoka'", color: '#1F2933', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {plan.title || 'Untitled'}
-        </h2>
-        {isHost && !past && (
-          <button onClick={() => setShowEdit(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', border: '1.5px solid #E8E2DA', borderRadius: 10, background: '#fff', font: "600 12.5px 'Plus Jakarta Sans'", color: '#7B7268', cursor: 'pointer', flexShrink: 0 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-            Edit
+      {/* ── compact header ── */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #EFE8E2', flexShrink: 0, padding: '14px 16px 12px' }}>
+        {/* Row 1: back + edit */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.4" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
-        )}
-      </div>
-
-      {/* ── scrollable body ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px 16px' }} className="no-scrollbar">
-
-        {/* ── host row ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 2px 10px' }}>
-          <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor} size={36}/>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, color: '#9A9087', fontWeight: 500, marginBottom: 1 }}>
-              {isHost ? "You're hosting" : 'Invited by'}
-            </div>
-            <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>
-              {isHost ? 'You' : plan.hostName || 'Unknown'}
-            </div>
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '3px 10px', flexShrink: 0 }}>
-            {isHost ? 'Hosting' : 'Invited'}
-          </span>
+          {isHost && !past && (
+            <button onClick={() => setShowEdit(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', border: '1.5px solid #E8E2DA', borderRadius: 10, background: '#fff', font: "600 13px -apple-system", color: '#7B7268', cursor: 'pointer' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+              Edit
+            </button>
+          )}
         </div>
-
-        {/* ── 2-column WHERE / WHEN grid ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-
-          {/* WHERE card */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHERE</span>
-            </div>
-            {plan.place ? (
-              <>
-                <div style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933', lineHeight: 1.3, marginBottom: 2 }}>{plan.place}</div>
-                {addrShort && <div style={{ fontSize: 11, color: '#9A9087', lineHeight: 1.4, marginBottom: 6 }}>{addrShort}</div>}
-              </>
-            ) : (
-              <div style={{ font: "600 13px 'Plus Jakarta Sans'", color: '#B6ADA4', marginBottom: 6 }}>TBD</div>
-            )}
-            {mapsUrl && plan.place && (
-              <a href={mapsUrl} target="_blank" rel="noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 700, color: '#FF6B4A', textDecoration: 'none', marginTop: 'auto' }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.5" strokeLinecap="round"><path d="m7 17 10-10M9 7h8v8"/></svg>
-                Open maps
-              </a>
-            )}
+        {/* Row 2: emoji + plan info */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CAT[plan.vibe] || { gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)' }).gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>
+            {(CAT[plan.vibe] || { emoji: '📅' }).emoji}
           </div>
-
-          {/* WHEN card */}
-          <div style={{ background: '#fff', borderRadius: 14, padding: '10px 11px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5B7CFA" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#B6ADA4', letterSpacing: .6 }}>WHEN</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
+            <div style={{ font: "700 22px -apple-system", color: '#1A1A1A', lineHeight: 1.2, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title}</div>
+            <div style={{ fontSize: 13, color: '#9A9087', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {[shortAddr(plan.place_address), plan.date ? shortDate(plan.date) + (plan.time_label ? ' · ' + plan.time_label : '') : null].filter(Boolean).join(' · ') || 'Date TBD'}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-              <span style={{ font: "600 12px 'Plus Jakarta Sans'", color: '#1F2933' }}>
-                {plan.date ? shortDate(plan.date) : 'TBD'}
-              </span>
-              {relBadge && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#0E9C6B' : '#5B7CFA', background: relBadge === 'Today' || relBadge === 'Tomorrow' ? '#E4F6EE' : '#EEF2FF', borderRadius: 20, padding: '2px 6px' }}>
-                  {relBadge}
-                </span>
-              )}
-            </div>
-            {plan.time_label && (
-              <div style={{ font: "700 18px 'Fredoka'", color: '#1F2933', lineHeight: 1.15, marginBottom: 1 }}>{plan.time_label}</div>
-            )}
-            {dayName && (
-              <div style={{ fontSize: 11, color: '#9A9087', marginTop: 1 }}>{dayName}</div>
-            )}
           </div>
         </div>
-
-        {/* ── Add to calendar ── */}
-        {!past && plan.date && (
-          <div
-            onClick={() => {
-              const d = new Date(plan.date)
-              const pad = n => String(n).padStart(2, '0')
-              const dtStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
-              const params = new URLSearchParams({ title: plan.title || 'Plan', date: dtStr, place: plan.place || '' })
-              window.open(`https://wmexrzdrsrbahprczmsv.supabase.co/functions/v1/create-ics?${params}`, '_system')
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FFF4E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8922A" strokeWidth="2.2" strokeLinecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12 14v4M10 16h4"/></svg>
+        {/* Row 3: avatar stack + counts */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex' }}>
+            {/* host avatar */}
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: plan.hostColor || '#5B7CFA', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 10 }}>
+              {(plan.hostName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
             </div>
-            <span style={{ flex: 1, font: "600 13px 'Plus Jakarta Sans'", color: '#1F2933' }}>Add to calendar</span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round"><path d="m9 6 6 6-6 6"/></svg>
-          </div>
-        )}
-
-        {/* ── RSVP card ── */}
-        {!isHost && !past && (
-          <div style={{ background: '#fff', borderRadius: 18, padding: '14px 13px 13px', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ font: "600 14px 'Plus Jakarta Sans'", color: '#1F2933' }}>
-                {rsvp === 'invited' ? "Are you going?" : `You're ${rsvp === 'going' ? 'going' : rsvp === 'late' ? 'going (late)' : 'not going'}`}
-              </span>
-              {rsvp !== 'invited' && <span style={{ fontSize: 11.5, color: '#B6ADA4' }}>Tap to change</span>}
-            </div>
-            {/* RSVP buttons — Going is taller+filled, Late/Can't are outlined */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-              {RSVP_CFG.map(opt => {
-                const sel = rsvp === opt.val
-                const isGoing = opt.val === 'going'
-                return (
-                  <button
-                    key={opt.val}
-                    onClick={() => saveRsvp(opt.val)}
-                    disabled={saving}
-                    style={{
-                      flex: 1,
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      gap: isGoing ? 8 : 6,
-                      padding: isGoing ? '18px 8px' : '12px 8px',
-                      borderRadius: 14,
-                      border: sel && !isGoing ? `1.5px solid ${opt.border}` : isGoing && sel ? 'none' : '1.5px solid #EDE7E0',
-                      background: isGoing && sel ? '#0E9C6B' : sel ? opt.bg : '#fff',
-                      cursor: saving ? 'default' : 'pointer',
-                      transition: 'all .15s',
-                    }}
-                  >
-                    <div style={{
-                      width: 30, height: 30, borderRadius: '50%',
-                      background: isGoing && sel ? 'rgba(255,255,255,.22)' : sel ? opt.iconBg : '#F5F2EE',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {isGoing && sel
-                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
-                        : opt.icon(sel)
-                      }
-                    </div>
-                    <span style={{ font: "600 12.5px 'Plus Jakarta Sans'", color: isGoing && sel ? '#fff' : sel ? opt.color : '#9A9087' }}>
-                      {opt.label}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── WHO'S COMING ── */}
-        <div style={{ background: '#EEF2FF', borderRadius: 18, padding: '12px 12px 14px', marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px 10px' }}>
-            <span style={{ font: "600 18px 'Fredoka'", color: '#1F2933' }}>Who's coming</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              {isHost && !past && (
-                <button onClick={() => setShowInviteMore(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1.5px solid #FF6B4A', borderRadius: 20, background: '#FFF1EC', font: "600 11.5px 'Plus Jakarta Sans'", color: '#FF6B4A', cursor: 'pointer' }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                  Invite
-                </button>
-              )}
-              {goingCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '2px 8px' }}>{goingCount} going</span>}
-              {late.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#E8922A', background: '#FFF4E3', borderRadius: 20, padding: '2px 8px' }}>{late.length} late</span>}
-              {cant.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#9A9087', background: '#F5F2EE', borderRadius: 20, padding: '2px 8px' }}>{cant.length} can't</span>}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px' }}>
-              <AttendeeRow name={isHost ? 'You' : plan.hostName} color={plan.hostColor} avatarUrl={plan.hostAvatarUrl} pill={{ label: 'Hosting', color: '#FF6B4A', bg: '#FFF1EC' }} onTap={plan.host !== myId ? () => setViewUserId(plan.host) : undefined}/>
-            </div>
-            {allAttendees.map(a => (
-              <div key={a.invitee} style={{ background: '#fff', borderRadius: 14, padding: '10px 14px' }}>
-                <AttendeeRow name={a.invitee === myId ? 'You' : a.name} color={a.avatar_color} avatarUrl={a.avatar_url} pill={PILL[a.rsvp] || PILL.invited} onTap={a.invitee !== myId ? () => setViewUserId(a.invitee) : undefined}/>
+            {/* invitee going avatars, up to 3 */}
+            {going.slice(0, 3).map((inv, i) => (
+              <div key={inv.invitee} style={{ width: 26, height: 26, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', border: '2.5px solid #fff', marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 9 - i }}>
+                {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
               </div>
             ))}
           </div>
-          {(cant.length > 0 || pending.length > 0) && (
-            <div onClick={() => setShowAll(s => !s)} style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: '#9A9087', cursor: 'pointer', textAlign: 'center', padding: '4px 0' }}>
-              {showAll ? 'Show less' : `+${cant.length + pending.length} more`}
+          {goingCount > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '3px 9px' }}>{goingCount} going</span>}
+          {late.length > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#C8841A', background: '#FFF4E3', borderRadius: 20, padding: '3px 9px' }}>{late.length} late</span>}
+          {isHost && !past && (
+            <button onClick={() => setShowInviteMore(true)} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1.5px solid #FF6B4A', borderRadius: 20, background: '#FFF1EC', font: "600 11.5px -apple-system", color: '#FF6B4A', cursor: 'pointer', flexShrink: 0 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Invite
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── scrollable body ── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px' }} className="no-scrollbar">
+
+        {/* ── RSVP row ── */}
+        {!isHost && !past && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {RSVP_CFG.map(opt => {
+              const sel = rsvp === opt.val
+              return (
+                <button key={opt.val} onClick={() => saveRsvp(opt.val)} disabled={saving}
+                  style={{ flex: 1, height: 44, border: `1.5px solid ${sel ? opt.border : '#E8E2DA'}`, borderRadius: 12, background: sel ? (opt.val === 'going' ? '#0E9C6B' : opt.bg) : '#fff', color: sel ? (opt.val === 'going' ? '#fff' : opt.color) : '#9A9087', font: "600 14px -apple-system", cursor: saving ? 'default' : 'pointer', transition: 'all .15s', boxShadow: sel ? `0 3px 10px ${opt.iconBg}66` : 'none' }}>
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {isHost && !past && (
+          <div style={{ height: 44, borderRadius: 12, background: '#E4F6EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <span style={{ font: "600 14px -apple-system", color: '#0E9C6B' }}>You're hosting</span>
+          </div>
+        )}
+
+        {/* ── Who's in (collapsible) ── */}
+        <div style={{ background: '#fff', borderRadius: 16, marginBottom: 14, overflow: 'hidden' }}>
+          <div onClick={() => setWhosInOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', cursor: 'pointer' }}>
+            <span style={{ font: "600 15px -apple-system", color: '#1A1A1A', flex: 1 }}>Who's in</span>
+            <span style={{ fontSize: 13, color: '#9A9087', marginRight: 4 }}>
+              {goingCount + late.length > 0 ? `${goingCount + late.length} people` : 'No RSVPs yet'}
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: whosInOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          {whosInOpen && (
+            <div style={{ borderTop: '1px solid #F5F0EB', padding: '8px 12px 12px' }}>
+              {/* Host row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: plan.hostColor || '#5B7CFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                  {(plan.hostName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                </div>
+                <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{plan.host === myId ? 'You' : plan.hostName}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#FF6B4A', background: '#FFF1EC', borderRadius: 20, padding: '2px 8px' }}>Hosting</span>
+              </div>
+              {/* Going */}
+              {going.map(inv => (
+                <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '2px 8px' }}>Going</span>
+                </div>
+              ))}
+              {/* Late */}
+              {late.map(inv => (
+                <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#C8841A', background: '#FFF4E3', borderRadius: 20, padding: '2px 8px' }}>Late</span>
+                </div>
+              ))}
+              {/* Can't */}
+              {cant.map(inv => (
+                <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#E5484D', background: '#FEE9E9', borderRadius: 20, padding: '2px 8px' }}>Can't</span>
+                </div>
+              ))}
+              {/* Pending / invited */}
+              {pending.map(inv => (
+                <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#D0C9C2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ flex: 1, font: "500 14px -apple-system", color: '#9A9087' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#B6ADA4', background: '#F5F0EB', borderRadius: 20, padding: '2px 8px' }}>Invited</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* ── CHAT ── */}
-        <div style={{ background: '#FFF8F0', borderRadius: 18, padding: '12px 12px 14px', marginBottom: 8 }}>
-          <div style={{ font: "600 18px 'Fredoka'", color: '#1F2933', padding: '0 2px 10px' }}>Chat</div>
-          {messages.length === 0 ? (
-            <div style={{ background: '#fff', borderRadius: 14, padding: '18px 14px', textAlign: 'center', fontSize: 13, color: '#B6ADA4' }}>
-              No messages yet — say hi!
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {messages.map(msg => {
-                const isMe = msg.sender === myId
-                const sender = msgProfiles[msg.sender]
-                const senderName = sender?.name || 'Unknown'
-                return (
-                  <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8 }}>
-                    {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
-                    <div style={{ maxWidth: '74%' }}>
-                      {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
-                      {msg.photo_url ? (
-                        <img
-                          src={msg.photo_url}
-                          onClick={() => setFullImg(msg.photo_url)}
-                          style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <div style={{ background: isMe ? '#FF6B4A' : '#fff', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px 'Plus Jakarta Sans'", lineHeight: 1.45 }}>
-                          {msg.body}
+        {/* ── Chat section ── */}
+        <div style={{ background: '#fff', borderRadius: 16, marginBottom: 8, overflow: 'hidden' }}>
+          <div style={{ font: "600 15px -apple-system", color: '#1A1A1A', padding: '13px 16px 10px', borderBottom: '1px solid #F5F0EB' }}>Chat</div>
+          <div style={{ padding: '10px 12px 12px' }}>
+            {messages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: '#B6ADA4' }}>No messages yet — say hi!</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {messages.map(msg => {
+                  const isMe = msg.sender === myId
+                  const sender = msgProfiles[msg.sender]
+                  const senderName = sender?.name || 'Unknown'
+                  return (
+                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8 }}>
+                      {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
+                      <div style={{ maxWidth: '74%' }}>
+                        {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
+                        {msg.photo_url ? (
+                          <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                        ) : (
+                          <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
+                            {msg.body}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
+                          {fmtTime(msg.created_at)}
                         </div>
-                      )}
-                      <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
-                        {fmtTime(msg.created_at)}
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-              <div ref={chatEndRef}/>
-            </div>
-          )}
+                  )
+                })}
+                <div ref={chatEndRef}/>
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
@@ -1012,7 +957,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             onChange={e => setMsgBody(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
             placeholder="Message the group…"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px 'Plus Jakarta Sans'", color: '#1F2933', padding: '10px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "500 16px -apple-system", color: '#1F2933', padding: '10px 0' }}
           />
         </div>
         <button
@@ -1028,17 +973,17 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       {showPhotoSheet && (
         <div onClick={() => setShowPhotoSheet(false)} style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', padding: '20px 16px 36px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ font: "600 16px 'Fredoka'", color: '#1F2933', textAlign: 'center', marginBottom: 4 }}>Send a photo</div>
+            <div style={{ font: "600 16px -apple-system", color: '#1F2933', textAlign: 'center', marginBottom: 4 }}>Send a photo</div>
             <button onClick={() => { setShowPhotoSheet(false); pickAndSendPhoto(CameraSource.Camera) }}
-              style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+              style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px -apple-system", cursor: 'pointer' }}>
               Take Photo
             </button>
             <button onClick={() => { setShowPhotoSheet(false); pickAndSendPhoto(CameraSource.Photos) }}
-              style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px 'Fredoka'", cursor: 'pointer' }}>
+              style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px -apple-system", cursor: 'pointer' }}>
               Choose from Library
             </button>
             <button onClick={() => setShowPhotoSheet(false)}
-              style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#9A9087', font: "600 14px 'Plus Jakarta Sans'", cursor: 'pointer' }}>
+              style={{ width: '100%', padding: 13, border: 'none', borderRadius: 16, background: 'transparent', color: '#9A9087', font: "600 14px -apple-system", cursor: 'pointer' }}>
               Cancel
             </button>
           </div>
@@ -1060,9 +1005,6 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       )}
       {showInviteMore && (
         <InviteMoreSheet plan={plan} myId={myId} onClose={() => setShowInviteMore(false)} onDone={() => onUpdated?.()}/>
-      )}
-      {viewUserId && (
-        <UserProfileSheet userId={viewUserId} myId={myId} onClose={() => setViewUserId(null)}/>
       )}
     </div>
   )
@@ -1244,7 +1186,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 22px 24px' }} className="no-scrollbar">
 
-          <h2 style={{ margin: '6px 0 18px', font: "600 25px 'Fredoka'", color: '#1F2933' }}>Your plans</h2>
+          <h2 style={{ margin: '6px 0 18px', font: "600 25px -apple-system", color: '#1F2933' }}>Your plans</h2>
 
           <div style={{ display: 'flex', gap: 0, background: '#F0EBE5', borderRadius: 14, padding: 4, marginBottom: 22 }}>
             {[
@@ -1254,7 +1196,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
               const active = tab === t.key
               return (
                 <div key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 10px', borderRadius: 11, background: active ? '#fff' : 'transparent', cursor: 'pointer', boxShadow: active ? '0 1px 4px rgba(0,0,0,.08)' : 'none', transition: 'all .15s' }}>
-                  <span style={{ font: "600 16px 'Plus Jakarta Sans'", color: active ? '#1F2933' : '#9A9087' }}>
+                  <span style={{ font: "600 16px -apple-system", color: active ? '#1F2933' : '#9A9087' }}>
                     {t.label}
                   </span>
                 </div>
@@ -1269,7 +1211,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
           ) : shown.length === 0 ? (
             <div style={{ background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 20, padding: '40px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>{tab === 'past' ? '📅' : '🗓️'}</div>
-              <p style={{ margin: '0 0 6px', font: "600 17px 'Fredoka'", color: '#1F2933' }}>
+              <p style={{ margin: '0 0 6px', font: "600 17px -apple-system", color: '#1F2933' }}>
                 {tab === 'past' ? 'No past plans' : 'No upcoming plans'}
               </p>
               <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087' }}>

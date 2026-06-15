@@ -24,7 +24,7 @@ export default function Avatar({ url, name, color, size = 38, style: extra }) {
       ...base,
       background: color || '#A78BFA',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', font: `700 ${Math.round(size * 0.34)}px 'Plus Jakarta Sans'`,
+      color: '#fff', font: `700 ${Math.round(size * 0.34)}px -apple-system`,
     }}>
       {initials(name)}
     </div>

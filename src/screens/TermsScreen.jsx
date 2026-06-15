@@ -6,7 +6,7 @@ export default function TermsScreen({ onBack }) {
         <div onClick={onBack} style={{ width: 36, height: 36, borderRadius: 11, background: '#F5F2EE', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.2" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
         </div>
-        <h2 style={{ margin: 0, font: "600 20px 'Fredoka'", color: '#1F2933' }}>Terms of Service</h2>
+        <h2 style={{ margin: 0, font: "600 20px -apple-system", color: '#1F2933' }}>Terms of Service</h2>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px 40px' }} className="no-scrollbar">
@@ -68,7 +68,7 @@ export default function TermsScreen({ onBack }) {
 const body = { fontSize: 14, color: '#4A4540', lineHeight: 1.7, margin: '0 0 14px' }
 const P  = ({ children }) => <p style={body}>{children}</p>
 const B  = ({ children }) => <strong style={{ color: '#1F2933' }}>{children}</strong>
-const H  = ({ children }) => <h3 style={{ margin: '22px 0 8px', font: "600 17px 'Fredoka'", color: '#1F2933' }}>{children}</h3>
+const H  = ({ children }) => <h3 style={{ margin: '22px 0 8px', font: "600 17px -apple-system", color: '#1F2933' }}>{children}</h3>
 const meta = { fontSize: 12.5, color: '#B6ADA4', margin: '0 0 20px' }
 function UL({ items }) {
   return (
