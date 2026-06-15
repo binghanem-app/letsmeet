@@ -688,11 +688,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       return
     }
     try {
-      const permKey = source === CameraSource.Camera ? 'camera' : 'photos'
-      const perm = await Camera.requestPermissions({ permissions: [permKey] })
-      if (perm[permKey] === 'denied') {
-        alert("Access was denied. Please go to Settings → Let's Meet and enable access.")
-        return
+      if (source === CameraSource.Camera) {
+        const perm = await Camera.requestPermissions({ permissions: ['camera'] })
+        if (perm.camera === 'denied') {
+          alert("Camera access was denied. Please go to Settings → Let's Meet and enable Camera.")
+          return
+        }
       }
       const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
       await uploadAndSendPhoto(photo.dataUrl, photo.format)
