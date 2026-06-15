@@ -288,7 +288,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
 
   useEffect(() => {
     if (!session || refreshTrigger === 0) return
-    loadData()
+    loadData(true)
   }, [refreshTrigger])
 
   useEffect(() => {
@@ -351,10 +351,10 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     setNotifs(prev => prev.filter(n => n.id !== id))
   }
 
-  async function loadData() {
-    setLoading(true)
+  async function loadData(silent = false) {
+    if (!silent) setLoading(true)
     await Promise.all([loadProfile(), loadCircles(), loadFeed()])
-    setLoading(false)
+    if (!silent) setLoading(false)
   }
 
   async function loadProfile() {

@@ -192,7 +192,7 @@ export default function App() {
   }
 
   const tabNav = (key) => ({
-    onHome:    () => setScreen('home'),
+    onHome:    () => { setScreen('home'); setHomeRefresh(r => r + 1) },
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
     onPlans:   () => { setScreen('plans'); setPlansRefresh(r => r + 1); setPlansBackToList(r => r + 1) },
@@ -227,7 +227,7 @@ export default function App() {
           </div>
           {screen === 'create' && (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1); setPlansRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }} />
+              <CreateScreen session={session} onDone={() => { setScreen('home'); setHomeRefresh(r => r + 1); setPlansRefresh(r => r + 1) }} onCancel={() => setScreen('home')} onViewPlan={id => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1); setHomeRefresh(r => r + 1) }} />
             </div>
           )}
           <div style={show('plans')}>
