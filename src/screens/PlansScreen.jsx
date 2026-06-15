@@ -1068,14 +1068,15 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, cancelledPlanIds }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
   const [selectedId, setSelectedId] = useState(null)
   const [startRsvp, setStartRsvp]   = useState(false)
 
-  const selected = plans.find(p => p.id === selectedId) || null
+  const visiblePlans = cancelledPlanIds?.size ? plans.filter(p => !cancelledPlanIds.has(p.id)) : plans
+  const selected = visiblePlans.find(p => p.id === selectedId) || null
 
   async function deletePlan(planId) {
     const plan = plans.find(p => p.id === planId)
@@ -1219,8 +1220,8 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
     setLoading(false)
   }
 
-  const upcoming = plans.filter(p => !isPast(p.date))
-  const past     = plans.filter(p => isPast(p.date))
+  const upcoming = visiblePlans.filter(p => !isPast(p.date))
+  const past     = visiblePlans.filter(p => isPast(p.date))
   const shown    = tab === 'upcoming' ? upcoming : past
 
   return (

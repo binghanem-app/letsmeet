@@ -268,7 +268,7 @@ function FeedCard({ plan, onOpen, onDelete }) {
 }
 
 // ─── HomeScreen ──────────────────────────────────────────────────────────────
-export default function HomeScreen({ session, refreshTrigger, onStartCreate, onGoFriends, onOpenPlan, onOpenAddFriend, requestCount }) {
+export default function HomeScreen({ session, refreshTrigger, onStartCreate, onGoFriends, onOpenPlan, onOpenAddFriend, requestCount, onPlanCancelled }) {
   const [profile, setProfile]         = useState(null)
   const [circles, setCircles]         = useState([])
   const [feed, setFeed]               = useState([])
@@ -508,6 +508,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   async function deletePlan(planId) {
     await supabase.from('plans').update({ cancelled: true }).eq('id', planId)
     setFeed(f => f.filter(p => p.id !== planId))
+    onPlanCancelled?.(planId)
   }
 
   const greeting = profile?.first_name
