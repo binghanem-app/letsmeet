@@ -688,10 +688,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       return
     }
     try {
-      const perm = await Camera.checkPermissions()
       const permKey = source === CameraSource.Camera ? 'camera' : 'photos'
+      const perm = await Camera.requestPermissions({ permissions: [permKey] })
       if (perm[permKey] === 'denied') {
-        alert("Camera access was denied. Please go to Settings → Privacy → Camera and enable Let's Meet.")
+        alert("Access was denied. Please go to Settings → Let's Meet and enable access.")
         return
       }
       const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
@@ -700,7 +700,6 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       const msg = e?.message || ''
       if (msg === 'User cancelled photos app' || msg === 'User cancelled') return
       console.error('Camera error:', e)
-      alert("Camera access was denied. Please go to Settings → Privacy → Camera and enable Let's Meet.")
     }
   }
 
