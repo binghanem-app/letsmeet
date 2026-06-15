@@ -14,7 +14,6 @@ class ErrorBoundary extends Component {
   }
 }
 import { supabase } from './lib/supabase'
-import { PlanDetailOverlay } from './screens/PlansScreen'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
 import FriendsScreen, { AddFriendSheet } from './screens/FriendsScreen'
@@ -82,19 +81,6 @@ export default function App() {
   const [screen, setScreen]             = useState('home')
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [openPlanId, setOpenPlanId]     = useState(null)
-  const [overlayPlanId, setOverlayPlanId] = useState(null)
-
-  useEffect(() => {
-    if (overlayPlanId) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
-    } else {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
-    }
-  }, [overlayPlanId])
   const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
@@ -229,7 +215,7 @@ export default function App() {
               refreshTrigger={homeRefresh}
               onStartCreate={() => setScreen('create')}
               onGoFriends={() => setScreen('friends')}
-              onOpenPlan={(id) => setOverlayPlanId(id)}
+              onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
               onOpenAddFriend={() => { setOpenAddFriend(true); setPendingCount(0) }}
               requestCount={pendingCount}
               onPlanCancelled={(id) => setCancelledPlanIds(s => new Set([...s, id]))}
@@ -259,15 +245,7 @@ export default function App() {
     <ErrorBoundary>
     <ResponsiveLayout>
       {renderScreen()}
-      {overlayPlanId && session && (
-        <PlanDetailOverlay
-          planId={overlayPlanId}
-          session={session}
-          onClose={() => setOverlayPlanId(null)}
-          onUpdated={() => setHomeRefresh(r => r + 1)}
-        />
-      )}
-      {openAddFriend && session && screen !== 'friends' && (
+{openAddFriend && session && screen !== 'friends' && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 70 }}>
           <AddFriendSheet
             session={session}
