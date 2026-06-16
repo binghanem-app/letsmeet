@@ -103,7 +103,10 @@ Deno.serve(async (req) => {
       .eq('id', record.recipient)
       .single()
 
-    if (!profile?.apns_token) return new Response('No token', { status: 200 })
+    if (!profile?.apns_token) {
+      console.log(`No apns_token for recipient ${record.recipient} (kind=${record.kind})`)
+      return new Response('No token', { status: 200 })
+    }
 
     // Respect per-kind opt-outs
     if (record.kind === 'message' && profile.notif_chat  === false) return new Response('Opted out', { status: 200 })
@@ -115,6 +118,7 @@ Deno.serve(async (req) => {
     if (record.plan_id) data.plan_id = record.plan_id
 
     const status = await sendPush(profile.apns_token, title, body, data)
+    console.log(`APNs response: ${status} for ${record.kind} → ${record.recipient}`)
 
     return new Response(JSON.stringify({ apns_status: status }), {
       status: 200,

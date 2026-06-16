@@ -80,7 +80,25 @@ workflows:
           plutil -create xml1 ios/App/App/App.entitlements
           plutil -insert aps-environment -string production ios/App/App/App.entitlements
           echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
-          ruby -e "require 'xcodeproj'; p = Xcodeproj::Project.open('ios/App/App.xcodeproj'); p.targets.select { |t| t.name == 'App' }.each { |t| t.build_configurations.each { |c| c.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'; puts 'Patched: ' + c.name } }; p.save"
+          python3 - <<'PYEOF'
+import re, sys
+path = 'ios/App/App.xcodeproj/project.pbxproj'
+with open(path) as f:
+    content = f.read()
+patched = re.sub(
+    r'(PRODUCT_BUNDLE_IDENTIFIER = com\.binghanem\.letsmeet;)',
+    r'CODE_SIGN_ENTITLEMENTS = "App/App.entitlements";\n\t\t\t\t\1',
+    content
+)
+count = patched.count('CODE_SIGN_ENTITLEMENTS')
+if count == 0:
+    print('ERROR: PRODUCT_BUNDLE_IDENTIFIER not found - patch failed', file=sys.stderr)
+    sys.exit(1)
+with open(path, 'w') as f:
+    f.write(patched)
+print(f'CODE_SIGN_ENTITLEMENTS set in {count} location(s)')
+PYEOF
+          echo "=== Verify patch ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "PATCH FAILED - not found"
 
       - name: Set export compliance, URL scheme, and privacy descriptions
         script: |
