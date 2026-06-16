@@ -612,11 +612,11 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     setMsgSending(false)
   }
 
-  async function uploadAndSendPhoto(dataUrl, format) {
+  async function uploadAndSendPhoto(src, format) {
     setDividerVisible(false)
     setMsgSending(true)
     try {
-      const res = await fetch(dataUrl)
+      const res = await fetch(src)
       const blob = await res.blob()
       const ext = format || 'jpeg'
       const path = `${plan.id}/${Date.now()}.${ext}`
@@ -671,8 +671,9 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           return
         }
       }
-      const photo = await Camera.getPhoto({ resultType: CameraResultType.DataUrl, source, quality: 80, width: 1200 })
-      await uploadAndSendPhoto(photo.dataUrl, photo.format)
+      const photo = await Camera.getPhoto({ resultType: CameraResultType.Uri, source, quality: 80, width: 1200 })
+      const webPath = Capacitor.convertFileSrc(photo.path)
+      await uploadAndSendPhoto(webPath, photo.format)
     } catch (e) {
       const msg = e?.message || ''
       if (msg === 'User cancelled photos app' || msg === 'User cancelled') return
@@ -987,14 +988,15 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onUnreadCount, latestMessage, latestInvite }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onUnreadCount, latestMessage, latestInvite }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
   const [selectedId, setSelectedId] = useState(null)
   const [startRsvp, setStartRsvp]   = useState(false)
-  const viewedPlanIds = useRef(new Set())
-  const selectedIdRef = useRef(null)
+  const viewedPlanIds   = useRef(new Set())
+  const selectedIdRef   = useRef(null)
+  const fromExternalRef = useRef(false)
 
   const visiblePlans = cancelledPlanIds?.size ? plans.filter(p => !cancelledPlanIds.has(p.id)) : plans
   const selected = visiblePlans.find(p => p.id === selectedId) || null
@@ -1066,6 +1068,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
     if (openPlanId && plans.length) {
       const target = plans.find(p => p.id === openPlanId)
       if (target) {
+        fromExternalRef.current = true
         setSelectedId(target.id); selectedIdRef.current = target.id; setStartRsvp(false); onPlanOpened?.()
         viewedPlanIds.current.add(target.id)
         setPlans(ps => ps.map(q => q.id === target.id ? { ...q, unreadCount: 0 } : q))
@@ -1214,6 +1217,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
             setPlans(ps => ps.map(p => p.id === viewedId ? { ...p, unreadCount: 0 } : p))
             onPlanViewed?.(viewedId)
             load(true)
+            if (fromExternalRef.current) { fromExternalRef.current = false; onBack?.() }
           }}
           onUpdated={load}
           onDeletePlan={() => deletePlan(selected.id)}
@@ -1261,6 +1265,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
                   plan={p}
                   myId={session.user.id}
                   onOpen={() => {
+                    fromExternalRef.current = false
                     setSelectedId(p.id); selectedIdRef.current = p.id; setStartRsvp(false)
                     viewedPlanIds.current.add(p.id)
                     setPlans(ps => ps.map(q => q.id === p.id ? { ...q, unreadCount: 0 } : q))

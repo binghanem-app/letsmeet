@@ -75,6 +75,12 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Add push notifications entitlement
+        script: |
+          plutil -create xml1 ios/App/App/App.entitlements
+          plutil -insert aps-environment -string production ios/App/App/App.entitlements
+          node -e "const fs=require('fs');const p='ios/App/App.xcodeproj/project.pbxproj';let c=fs.readFileSync(p,'utf8');if(!c.includes('CODE_SIGN_ENTITLEMENTS')){c=c.split('CODE_SIGN_IDENTITY = \"Apple Distribution\";').join('CODE_SIGN_ENTITLEMENTS = App/App.entitlements; CODE_SIGN_IDENTITY = \"Apple Distribution\";');fs.writeFileSync(p,c);}console.log('Entitlements patched');"
+
       - name: Set export compliance, URL scheme, and privacy descriptions
         script: |
           plutil -replace ITSAppUsesNonExemptEncryption -bool NO ios/App/App/Info.plist

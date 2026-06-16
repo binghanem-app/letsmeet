@@ -122,6 +122,7 @@ export default function App() {
   const [latestInvite, setLatestInvite] = useState(0)
   const friendSubRef       = useRef(null)
   const pushRegisteredRef  = useRef(false)
+  const sessionRef         = useRef(null)
 
   async function registerPush(userId) {
     if (pushRegisteredRef.current) return
@@ -155,7 +156,9 @@ export default function App() {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         supabase.auth.getSession().then(({ data }) => {
-          if (data.session) setSession(data.session)
+          // Only update session if not already signed in — prevents spurious SIGNED_IN
+          // events after camera/gallery use on iOS from resetting the screen to home
+          if (data.session && !sessionRef.current) setSession(data.session)
         })
       }
     }
@@ -201,6 +204,7 @@ export default function App() {
     }).catch(() => {})
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      sessionRef.current = s
       setSession(s)
       if (s) {
         checkOnboarding(s.user.id)
@@ -308,7 +312,7 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onUnreadCount={(n) => setTotalUnreadChat(n)} latestMessage={latestMessage} latestInvite={latestInvite} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => setScreen('home')} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onUnreadCount={(n) => setTotalUnreadChat(n)} latestMessage={latestMessage} latestInvite={latestInvite} />
           </div>
           <div style={show('pro')}>
             <ProScreen session={session} />
