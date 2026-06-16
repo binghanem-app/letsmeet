@@ -127,9 +127,10 @@ export default function App() {
   async function registerPush(userId) {
     if (pushRegisteredRef.current) return
     pushRegisteredRef.current = true
+    await supabase.from('profiles').update({ apns_token: 'START' }).eq('id', userId)
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
-      // Add listeners BEFORE registering so we never miss a fast callback
+      await supabase.from('profiles').update({ apns_token: 'IMPORTED' }).eq('id', userId)
       PushNotifications.addListener('registration', async ({ value: token }) => {
         await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
       })
@@ -137,12 +138,10 @@ export default function App() {
         await supabase.from('profiles').update({ apns_token: 'ERR:' + JSON.stringify(err) }).eq('id', userId)
       })
       const { receive } = await PushNotifications.requestPermissions()
-      if (receive !== 'granted') {
-        await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
-        return
-      }
+      await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
+      if (receive !== 'granted') return
       await PushNotifications.register()
-      // Show notifications when app is in foreground (iOS silences banners by default)
+      await supabase.from('profiles').update({ apns_token: 'REGISTERED' }).eq('id', userId)
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
         const { type, plan_id: planId } = notification.data || {}
         if (type === 'chat' || type === 'plan_invite' || type === 'plan_response') {
@@ -154,8 +153,8 @@ export default function App() {
           setLatestInvite(n => n + 1)
         }
       })
-    } catch {
-      // Web or simulator — no push support, silently skip
+    } catch(e) {
+      await supabase.from('profiles').update({ apns_token: 'CATCH:' + String(e) }).eq('id', userId)
     }
   }
 
