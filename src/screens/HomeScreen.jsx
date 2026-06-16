@@ -208,6 +208,20 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     await supabase.from('plan_invitees')
       .update({ rsvp: newVal })
       .eq('plan_id', planId).eq('invitee', session.user.id)
+    // Notify the host that I responded (skip when un-RSVPing back to "invited")
+    if (newVal !== 'invited' && plan.host !== session.user.id) {
+      const name = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || profile?.username || 'Someone'
+      const bodyMap = {
+        going: `${name} is going to your ${plan.title}`,
+        late:  `${name} is going (a bit late) to your ${plan.title}`,
+        cant:  `${name} can't make it to your ${plan.title}`,
+      }
+      const b = bodyMap[newVal]
+      if (b) {
+        const { error } = await supabase.from('notifications').insert({ recipient: plan.host, actor: session.user.id, kind: 'rsvp', plan_id: plan.id, body: b })
+        if (error) console.error('RSVP notif insert failed:', error)
+      }
+    }
   }
 
   return (
