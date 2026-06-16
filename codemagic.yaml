@@ -69,19 +69,24 @@ workflows:
 
       - name: Install CocoaPods
         script: cd ios/App && pod install
+      - name: Configure push notifications (entitlement + AppDelegate)
+        script: |
+          # 1. aps-environment entitlement so iOS issues a production APNs token
+          plutil -create xml1 ios/App/App/App.entitlements
+          plutil -insert aps-environment -string production ios/App/App/App.entitlements
+          echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
+          # 2. Point the App target at the entitlements file (xcodeproj gem)
+          ruby scripts/add_entitlements.rb
+          echo "=== Verify CODE_SIGN_ENTITLEMENTS ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "MISSING — entitlement not set"
+          # 3. Forward APNs registration callbacks to the Capacitor plugin
+          python3 scripts/patch_appdelegate.py
+          echo "=== Verify AppDelegate methods ===" && grep -c "didRegisterForRemoteNotifications" ios/App/App/AppDelegate.swift || echo "0 — AppDelegate NOT patched"
       - name: Set up code signing
         script: xcode-project use-profiles
       - name: Set build number
         script: |
           cd ios/App
           agvtool new-version -all $(($BUILD_NUMBER + 1))
-      - name: Add push notifications entitlement
-        script: |
-          plutil -create xml1 ios/App/App/App.entitlements
-          plutil -insert aps-environment -string production ios/App/App/App.entitlements
-          echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
-          python3 -c 'import re,sys; path="ios/App/App.xcodeproj/project.pbxproj"; txt=open(path).read(); out=re.sub(r"PRODUCT_BUNDLE_IDENTIFIER = com\.binghanem\.letsmeet;",lambda m:"CODE_SIGN_ENTITLEMENTS = \"App/App.entitlements\";" + chr(10) + chr(9)*4 + m.group(),txt); n=out.count("CODE_SIGN_ENTITLEMENTS"); (sys.exit("ERROR: bundle id not found in pbxproj") if not n else None); open(path,"w").write(out); print("CODE_SIGN_ENTITLEMENTS set in",n,"location(s)")'
-          echo "=== Verify patch ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "PATCH FAILED - not found"
 
       - name: Set export compliance, URL scheme, and privacy descriptions
         script: |
