@@ -129,20 +129,19 @@ export default function App() {
     pushRegisteredRef.current = true
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
-      const { receive } = await PushNotifications.requestPermissions()
-      await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
-      if (receive !== 'granted') return
-      await PushNotifications.register()
+      // Add listeners BEFORE registering so we never miss a fast callback
       PushNotifications.addListener('registration', async ({ value: token }) => {
-        const { error } = await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
-        if (error) console.error('apns_token save failed:', error)
-        else console.log('APNs token saved:', token.slice(0, 8) + '...')
+        await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
       })
       PushNotifications.addListener('registrationError', async (err) => {
-        const msg = 'ERR:' + JSON.stringify(err)
-        console.error('APNs registration error:', msg)
-        await supabase.from('profiles').update({ apns_token: msg }).eq('id', userId)
+        await supabase.from('profiles').update({ apns_token: 'ERR:' + JSON.stringify(err) }).eq('id', userId)
       })
+      const { receive } = await PushNotifications.requestPermissions()
+      if (receive !== 'granted') {
+        await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
+        return
+      }
+      await PushNotifications.register()
       // Show notifications when app is in foreground (iOS silences banners by default)
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
         const { type, plan_id: planId } = notification.data || {}
