@@ -701,7 +701,10 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
 // ─── CircleDetailScreen ───────────────────────────────────────────────────────
 function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onDeleted }) {
   const [name, setName] = useState(circle.name)
-  const [editingName, setEditingName] = useState(false)
+  const [color, setColor] = useState(circle.color || CIRCLE_COLORS[0])
+  const [editOpen, setEditOpen] = useState(false)
+  const [editName, setEditName] = useState(circle.name)
+  const [editColor, setEditColor] = useState(circle.color || CIRCLE_COLORS[0])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
@@ -709,8 +712,6 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
   const [selectedToAdd, setSelectedToAdd] = useState([])
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  const color = circle.color || '#5B7CFA'
 
   useEffect(() => { loadMembers() }, [circle.id])
 
@@ -733,10 +734,14 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
     await supabase.from('group_members').delete().eq('group_id', circle.id).eq('member', memberId)
   }
 
-  async function saveName() {
-    if (!name.trim() || name.trim() === circle.name) { setEditingName(false); return }
-    await supabase.from('groups').update({ name: name.trim() }).eq('id', circle.id)
-    setEditingName(false)
+  async function saveEdit() {
+    if (!editName.trim()) return
+    setSaving(true)
+    await supabase.from('groups').update({ name: editName.trim(), color: editColor }).eq('id', circle.id)
+    setName(editName.trim())
+    setColor(editColor)
+    setSaving(false)
+    setEditOpen(false)
     onSaved?.()
   }
 
@@ -773,19 +778,8 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2.4" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }}/>
-          {editingName ? (
-            <input
-              autoFocus
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onBlur={saveName}
-              onKeyDown={e => e.key === 'Enter' && saveName()}
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: '700 20px -apple-system', color: '#1A1A1A', padding: 0 }}
-            />
-          ) : (
-            <span style={{ flex: 1, font: '700 20px -apple-system', color: '#1A1A1A' }}>{name}</span>
-          )}
-          <button onClick={() => setEditingName(true)}
+          <span style={{ flex: 1, font: '700 20px -apple-system', color: '#1A1A1A' }}>{name}</span>
+          <button onClick={() => { setEditName(name); setEditColor(color); setEditOpen(true) }}
             style={{ width: 36, height: 36, borderRadius: 10, background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
           </button>
@@ -851,6 +845,52 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
           </button>
         )}
       </div>
+
+      {/* Edit circle sheet */}
+      {editOpen && (
+        <div onClick={() => setEditOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(20,24,30,.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#F9F4F0', borderRadius: '28px 28px 0 0', padding: '0 0 32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+              <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF' }}/>
+            </div>
+            <div style={{ padding: '14px 20px 20px', font: '700 20px -apple-system', color: '#1A1A1A' }}>Edit circle</div>
+
+            {/* Name input */}
+            <div style={{ padding: '0 20px 20px' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', letterSpacing: .3, marginBottom: 8 }}>NAME</div>
+              <input
+                autoFocus
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                placeholder="Circle name"
+                style={{ width: '100%', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 16px', font: '600 16px -apple-system', color: '#1A1A1A', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Color swatches */}
+            <div style={{ padding: '0 20px 24px' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', letterSpacing: .3, marginBottom: 14 }}>COLOR</div>
+              <div style={{ display: 'flex', gap: 16 }}>
+                {CIRCLE_COLORS.map(c => (
+                  <div key={c} onClick={() => setEditColor(c)}
+                    style={{ width: 44, height: 44, borderRadius: '50%', background: c, cursor: 'pointer', outline: c === editColor ? `3px solid ${c}` : 'none', outlineOffset: 3, boxShadow: c === editColor ? `0 4px 14px ${c}66` : 'none', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {c === editColor && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Save button */}
+            <div style={{ padding: '0 20px' }}>
+              <button onClick={saveEdit} disabled={saving || !editName.trim()}
+                style={{ width: '100%', padding: 15, border: 'none', borderRadius: 16, background: editName.trim() ? editColor : '#E7DED7', color: '#fff', font: '600 16px -apple-system', cursor: editName.trim() ? 'pointer' : 'default', boxShadow: editName.trim() ? `0 10px 22px -8px ${editColor}99` : 'none', transition: 'all .2s' }}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add people sub-sheet */}
       {addOpen && (
