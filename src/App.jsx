@@ -29,7 +29,7 @@ import TermsScreen from './screens/TermsScreen'
 function ResponsiveLayout({ screen, children }) {
   return (
     <div style={{ width: '100%', height: '100vh', background: '#FBF7F4', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: screen === 'pro' ? '#1A1A1A' : '#FFEFE9' }}/>
+      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: screen === 'pro' ? '#1A1A1A' : '#FBF7F4' }}/>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
         {children}
       </div>
