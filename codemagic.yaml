@@ -79,7 +79,9 @@ workflows:
         script: |
           plutil -create xml1 ios/App/App/App.entitlements
           plutil -insert aps-environment -string production ios/App/App/App.entitlements
-          node -e "const fs=require('fs');const p='ios/App/App.xcodeproj/project.pbxproj';let c=fs.readFileSync(p,'utf8');if(c.includes('CODE_SIGN_ENTITLEMENTS')){console.log('Already patched');process.exit(0);}const out=c.split('\n').flatMap(l=>{if(l.includes('PRODUCT_BUNDLE_IDENTIFIER')&&l.includes('com.binghanem.letsmeet')){const ws=l.length-l.trimStart().length;return[l.slice(0,ws)+'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',l];}return[l];}).join('\n');fs.writeFileSync(p,out);console.log('Patched');"
+          echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
+          node -e "const fs=require('fs');const p='ios/App/App.xcodeproj/project.pbxproj';let c=fs.readFileSync(p,'utf8');if(c.includes('CODE_SIGN_ENTITLEMENTS')){console.log('Already patched');process.exit(0);}const out=c.split('\n').flatMap(l=>{if(l.includes('PRODUCT_BUNDLE_IDENTIFIER')&&l.includes('com.binghanem.letsmeet')){const ws=l.length-l.trimStart().length;return[l.slice(0,ws)+'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',l];}return[l];}).join('\n');fs.writeFileSync(p,out);console.log('Patched '+out.split('\n').filter(l=>l.includes('CODE_SIGN_ENTITLEMENTS')).length+' locations');"
+          echo "=== CODE_SIGN_ENTITLEMENTS in pbxproj ===" && grep 'CODE_SIGN_ENTITLEMENTS' ios/App/App.xcodeproj/project.pbxproj || echo "WARNING: not found"
 
       - name: Set export compliance, URL scheme, and privacy descriptions
         script: |

@@ -138,6 +138,18 @@ export default function App() {
       PushNotifications.addListener('registrationError', (err) => {
         console.warn('APNs registration error:', err)
       })
+      // Show notifications when app is in foreground (iOS silences banners by default)
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        const { type, plan_id: planId } = notification.data || {}
+        if (type === 'chat' || type === 'plan_invite' || type === 'plan_response') {
+          if (planId) {
+            setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 }))
+            setTotalUnreadChat(n => n + 1)
+          }
+          setHomeRefresh(r => r + 1)
+          setLatestInvite(n => n + 1)
+        }
+      })
     } catch {
       // Web or simulator — no push support, silently skip
     }
