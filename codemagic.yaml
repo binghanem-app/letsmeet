@@ -97,8 +97,7 @@ workflows:
           fi
           /usr/libexec/PlistBuddy -c "Add :aps-environment string production" "$ENTITLEMENTS" 2>/dev/null || \
           /usr/libexec/PlistBuddy -c "Set :aps-environment production" "$ENTITLEMENTS"
-          python3 -c "
-import re
+          python3 << 'PYEOF'
 path = 'ios/App/App.xcodeproj/project.pbxproj'
 with open(path, 'r') as f:
     content = f.read()
@@ -112,7 +111,7 @@ if 'CODE_SIGN_ENTITLEMENTS' not in content:
     print('Added CODE_SIGN_ENTITLEMENTS')
 else:
     print('CODE_SIGN_ENTITLEMENTS already present')
-"
+PYEOF
       - name: Build IPA
         script: |
           xcode-project build-ipa \
