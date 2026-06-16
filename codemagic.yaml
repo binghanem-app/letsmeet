@@ -92,30 +92,17 @@ workflows:
       - name: Add push notification entitlement
         script: |
           ENTITLEMENTS="ios/App/App/App.entitlements"
-          # Create entitlements file if it doesn't exist
           if [ ! -f "$ENTITLEMENTS" ]; then
-            cat > "$ENTITLEMENTS" << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-          </dict>
-          </plist>
-          PLIST
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n</dict>\n</plist>\n' > "$ENTITLEMENTS"
           fi
-          # Add aps-environment = production (required for push notifications)
-          plutil -insert aps-environment -string production "$ENTITLEMENTS" 2>/dev/null || \
-          plutil -replace aps-environment -string production "$ENTITLEMENTS"
-          # Wire the entitlements file to the Xcode target
-          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
-          if ! grep -q "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ"; then
-            sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;/PRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App\/App.entitlements;/g' "$PBXPROJ"
-          fi
+          /usr/libexec/PlistBuddy -c "Add :aps-environment string production" "$ENTITLEMENTS" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :aps-environment production" "$ENTITLEMENTS"
       - name: Build IPA
         script: |
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --xcargs "CODE_SIGN_ENTITLEMENTS=App/App.entitlements"
     artifacts:
       - "**/*.ipa"
       - /tmp/xcodebuild_logs/*.log

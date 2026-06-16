@@ -881,7 +881,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
                         <div style={{ maxWidth: '74%' }}>
                           {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
                           {msg.photo_url ? (
-                            <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                            <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', width: 160, height: 110, borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
                           ) : (
                             <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
                               {msg.body}
