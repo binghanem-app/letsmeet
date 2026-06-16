@@ -617,11 +617,13 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     setMsgSending(true)
     try {
       const res = await fetch(src)
+      if (!res.ok) { alert(`Fetch failed (${res.status}): ${src}`); setMsgSending(false); return }
       const blob = await res.blob()
+      if (!blob.size) { alert(`Empty blob from: ${src}`); setMsgSending(false); return }
       const ext = format || 'jpeg'
       const path = `${plan.id}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
-      if (upErr) { console.error(upErr); setMsgSending(false); return }
+      if (upErr) { alert(`Upload error: ${upErr.message}`); console.error(upErr); setMsgSending(false); return }
       const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path)
       const { data: newMsg } = await supabase.from('plan_messages').insert({
         plan_id: plan.id, sender: myId, photo_url: publicUrl,
@@ -653,6 +655,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         }
       }
     } catch (e) {
+      alert(`Photo error: ${e?.message || String(e)}`)
       console.error(e)
     }
     setMsgSending(false)
@@ -672,8 +675,9 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         }
       }
       const photo = await Camera.getPhoto({ resultType: CameraResultType.Uri, source, quality: 80, width: 1200 })
-      const webPath = Capacitor.convertFileSrc(photo.path)
-      await uploadAndSendPhoto(webPath, photo.format)
+      const src = photo.webPath || Capacitor.convertFileSrc(photo.path)
+      if (!src) throw new Error('No image path returned from camera')
+      await uploadAndSendPhoto(src, photo.format)
     } catch (e) {
       const msg = e?.message || ''
       if (msg === 'User cancelled photos app' || msg === 'User cancelled') return

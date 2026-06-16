@@ -210,7 +210,9 @@ export default function App() {
         checkOnboarding(s.user.id)
         loadPendingCount(s.user.id)
         subscribeFriendRequests(s.user.id)
-        if (_e === 'SIGNED_IN') { setScreen('home'); registerPush(s.user.id) }
+        // registerPush on every sign-in; don't call setScreen('home') here
+        // because it fires again after camera/gallery use on iOS and resets navigation
+        if (_e === 'SIGNED_IN') { registerPush(s.user.id) }
       } else {
         setNeedsOnboarding(false)
         setPendingCount(0)
