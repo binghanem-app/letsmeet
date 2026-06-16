@@ -97,21 +97,7 @@ workflows:
           fi
           /usr/libexec/PlistBuddy -c "Add :aps-environment string production" "$ENTITLEMENTS" 2>/dev/null || \
           /usr/libexec/PlistBuddy -c "Set :aps-environment production" "$ENTITLEMENTS"
-          python3 << 'PYEOF'
-path = 'ios/App/App.xcodeproj/project.pbxproj'
-with open(path, 'r') as f:
-    content = f.read()
-if 'CODE_SIGN_ENTITLEMENTS' not in content:
-    content = content.replace(
-        'PRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;',
-        'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;'
-    )
-    with open(path, 'w') as f:
-        f.write(content)
-    print('Added CODE_SIGN_ENTITLEMENTS')
-else:
-    print('CODE_SIGN_ENTITLEMENTS already present')
-PYEOF
+          node -e "const fs=require('fs'),p='ios/App/App.xcodeproj/project.pbxproj';let c=fs.readFileSync(p,'utf8');if(!c.includes('CODE_SIGN_ENTITLEMENTS')){c=c.split('PRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;').join('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.binghanem.letsmeet;');fs.writeFileSync(p,c);console.log('Added');}else{console.log('Already present');}"
       - name: Build IPA
         script: |
           xcode-project build-ipa \
