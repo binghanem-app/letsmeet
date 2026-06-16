@@ -130,6 +130,7 @@ export default function App() {
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
       const { receive } = await PushNotifications.requestPermissions()
+      await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
       if (receive !== 'granted') return
       await PushNotifications.register()
       PushNotifications.addListener('registration', async ({ value: token }) => {
