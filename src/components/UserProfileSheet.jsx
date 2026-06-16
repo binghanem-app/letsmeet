@@ -92,11 +92,9 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
 
   async function sendRequest() {
     setActing(true)
+    // The 'request' notification is created server-side by the
+    // on_friendship_request trigger, so no client-side notification insert here.
     await supabase.from('friendships').insert({ requester: myId, addressee: userId, status: 'pending' })
-    // create notification for them
-    const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', myId).single()
-    const name = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'Someone' : 'Someone'
-    await supabase.from('notifications').insert({ recipient: userId, actor: myId, kind: 'request', body: `${name} sent you a friend request` })
     setFriendship({ status: 'pending' })
     setActing(false)
   }

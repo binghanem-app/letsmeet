@@ -47,7 +47,7 @@ async function sendPush(
   title: string,
   body: string,
   data: Record<string, string>
-): Promise<number> {
+): Promise<{ status: number; text: string }> {
   const jwt = await makeApnsJwt()
 
   const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
@@ -65,7 +65,8 @@ async function sendPush(
     }),
   })
 
-  return res.status
+  const text = await res.text()
+  return { status: res.status, text }
 }
 
 // ── Notification copy by kind ─────────────────────────────────────────────────
@@ -80,6 +81,23 @@ function titleForKind(kind: string): string {
     plan_update: 'Plan update',
   }
   return map[kind] ?? "Let's Meet"
+}
+
+// ── Map DB notification kind -> the data.type string the app listens for ─────────
+// The iOS app (App.jsx) routes pushes by data.type using these literals:
+//   'chat' | 'plan_invite' | 'plan_response' | 'friend_request'
+// The DB stores kinds as: message | invite | rsvp | plan_update | request | reminder
+// Without this remap, every push fails in-app routing / foreground handling.
+function typeForKind(kind: string): string {
+  const map: Record<string, string> = {
+    message:     'chat',
+    invite:      'plan_invite',
+    rsvp:        'plan_response',
+    plan_update: 'plan_response',
+    request:     'friend_request',
+    reminder:    'reminder',
+  }
+  return map[kind] ?? kind
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -108,17 +126,29 @@ Deno.serve(async (req) => {
       return new Response('No token', { status: 200 })
     }
 
+    // Ignore debug sentinel values that may be stored in apns_token
+    if (!/^[0-9a-fA-F]{64}$/.test(profile.apns_token)) {
+      console.log(`apns_token is not a valid device token (kind=${record.kind}): ${profile.apns_token.slice(0, 16)}`)
+      return new Response('Invalid token', { status: 200 })
+    }
+
     // Respect per-kind opt-outs
     if (record.kind === 'message' && profile.notif_chat  === false) return new Response('Opted out', { status: 200 })
     if (record.kind === 'invite'  && profile.notif_invite === false) return new Response('Opted out', { status: 200 })
 
     const title  = titleForKind(record.kind)
     const body   = record.body ?? ''
-    const data: Record<string, string> = { type: record.kind }
+    const data: Record<string, string> = { type: typeForKind(record.kind) }
     if (record.plan_id) data.plan_id = record.plan_id
 
-    const status = await sendPush(profile.apns_token, title, body, data)
-    console.log(`APNs response: ${status} for ${record.kind} → ${record.recipient}`)
+    const { status, text } = await sendPush(profile.apns_token, title, body, data)
+    console.log(`APNs response: ${status} (type=${data.type}) → ${record.recipient} ${text}`)
+
+    // APNs 410 = device token no longer valid; clear it so we stop trying.
+    if (status === 410) {
+      await supabase.from('profiles').update({ apns_token: null }).eq('id', record.recipient)
+      console.log(`Cleared dead apns_token for ${record.recipient}`)
+    }
 
     return new Response(JSON.stringify({ apns_status: status }), {
       status: 200,
