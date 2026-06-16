@@ -105,52 +105,35 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
 
     if (!unique.length) { setFeed([]); return }
 
-    // Host profiles + viewer's nicknames for those hosts
+    const planIds = unique.map(p => p.id)
     const hostIds = [...new Set(unique.map(p => p.host))]
-    const [{ data: hostProfiles }, { data: nicknames }] = await Promise.all([
+
+    // These four reads are independent — run them together to cut round-trips:
+    // host profiles, the viewer's nicknames, RSVP rows, and last-read markers.
+    const [
+      { data: hostProfiles },
+      { data: nicknames },
+      { data: rsvps },
+      { data: reads },
+    ] = await Promise.all([
       supabase.from('profiles').select('id, first_name, last_name, avatar_color, avatar_url').in('id', hostIds),
       supabase.from('friend_nicknames').select('friend_id, nickname').eq('user_id', session.user.id),
+      supabase.from('plan_invitees').select('plan_id, rsvp, invitee').in('plan_id', planIds),
+      supabase.from('plan_message_reads').select('plan_id, last_read_at').eq('user_id', session.user.id).in('plan_id', planIds),
     ])
     const nickMap = {}
     nicknames?.forEach(n => { nickMap[n.friend_id] = n.nickname })
     const hostMap = {}
     hostProfiles?.forEach(p => { hostMap[p.id] = p })
-
-    // RSVP counts
-    const { data: rsvps } = await supabase
-      .from('plan_invitees')
-      .select('plan_id, rsvp, invitee')
-      .in('plan_id', unique.map(p => p.id))
     const rsvpByPlan = {}
     rsvps?.forEach(r => {
       if (!rsvpByPlan[r.plan_id]) rsvpByPlan[r.plan_id] = []
       rsvpByPlan[r.plan_id].push(r)
     })
-
-    // Unread message counts
-    const planIds = unique.map(p => p.id)
-    const { data: reads } = await supabase
-      .from('plan_message_reads')
-      .select('plan_id, last_read_at')
-      .eq('user_id', session.user.id)
-      .in('plan_id', planIds)
     const readMap = {}
     reads?.forEach(r => { readMap[r.plan_id] = r.last_read_at })
 
-    const unreadResults = await Promise.all(planIds.map(async id => {
-      // No read record = chat never opened, so every message from others is unseen.
-      let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true })
-        .eq('plan_id', id)
-        .neq('sender', session.user.id)
-      if (readMap[id]) q = q.gt('created_at', readMap[id])
-      const { count } = await q
-      return [id, count || 0]
-    }))
-    const unreadMap = Object.fromEntries(unreadResults)
-    const totalUnread = Object.values(unreadMap).reduce((s, n) => s + n, 0)
-    onUnreadChatCount?.(totalUnread)
-
-    // Invitee avatar profiles (up to 4 per plan)
+    // Invitee avatar profile IDs (up to 4 per plan), derived from the RSVP rows
     const allInviteeIds = []
     const inviteeIdsByPlan = {}
     rsvps?.forEach(r => {
@@ -161,14 +144,27 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
       }
     })
     const uniqueInviteeIds = [...new Set(allInviteeIds)]
-    let inviteeProfileMap = {}
-    if (uniqueInviteeIds.length) {
-      const { data: inviteeProfiles } = await supabase
-        .from('profiles')
-        .select('id, first_name, avatar_color, avatar_url')
-        .in('id', uniqueInviteeIds)
-      inviteeProfiles?.forEach(p => { inviteeProfileMap[p.id] = p })
-    }
+
+    // Final batch in parallel: per-plan unread counts + invitee avatar profiles
+    const [unreadResults, { data: inviteeProfiles }] = await Promise.all([
+      Promise.all(planIds.map(async id => {
+        // No read record = chat never opened, so every message from others is unseen.
+        let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true })
+          .eq('plan_id', id)
+          .neq('sender', session.user.id)
+        if (readMap[id]) q = q.gt('created_at', readMap[id])
+        const { count } = await q
+        return [id, count || 0]
+      })),
+      uniqueInviteeIds.length
+        ? supabase.from('profiles').select('id, first_name, avatar_color, avatar_url').in('id', uniqueInviteeIds)
+        : Promise.resolve({ data: [] }),
+    ])
+    const unreadMap = Object.fromEntries(unreadResults)
+    const totalUnread = Object.values(unreadMap).reduce((s, n) => s + n, 0)
+    onUnreadChatCount?.(totalUnread)
+    const inviteeProfileMap = {}
+    ;(inviteeProfiles || []).forEach(p => { inviteeProfileMap[p.id] = p })
 
     setFeed(unique.slice(0, 5).map(plan => {
       const host = hostMap[plan.host]
