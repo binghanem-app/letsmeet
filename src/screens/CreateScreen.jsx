@@ -738,15 +738,24 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
       await supabase.from('plan_invitees').insert(
         invitees.map(uid => ({ plan_id: plan.id, invitee: uid, rsvp: 'invited' }))
       )
-      const { data: hp } = await supabase.from('profiles').select('first_name, last_name').eq('id', session.user.id).single()
-      const hostName = hp ? `${hp.first_name || ''} ${hp.last_name || ''}`.trim() || 'Someone' : 'Someone'
+      const { data: hp } = await supabase.from('profiles').select('first_name, last_name, username').eq('id', session.user.id).single()
+      const hostName = hp ? (`${hp.first_name || ''} ${hp.last_name || ''}`.trim() || hp.username || 'Someone') : 'Someone'
+      // Each invitee may have set a private nickname for the host — prefer it.
+      const { data: nicks } = await supabase
+        .from('friend_nicknames')
+        .select('user_id, nickname')
+        .eq('friend_id', session.user.id)
+        .in('user_id', invitees)
+      const nickFor = {}; (nicks || []).forEach(n => { nickFor[n.user_id] = n.nickname })
+      // Show the place (Google Maps pick or typed name), falling back to the title.
+      const placeLabel = place?.name || title.trim()
       await supabase.from('notifications').insert(
         invitees.map(uid => ({
           recipient: uid,
           actor: session.user.id,
           kind: 'invite',
           plan_id: plan.id,
-          body: `${hostName} invited you to "${title.trim()}"`,
+          body: `${nickFor[uid] || hostName} invited you to "${placeLabel}"`,
         }))
       )
       invitees.forEach(uid => {

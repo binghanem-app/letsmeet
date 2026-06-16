@@ -369,10 +369,19 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
     if (!selected.length) return
     setSending(true)
     await supabase.from('plan_invitees').insert(selected.map(uid => ({ plan_id: plan.id, invitee: uid, rsvp: 'invited' })))
-    const { data: hp } = await supabase.from('profiles').select('first_name, last_name').eq('id', myId).single()
-    const hostName = hp ? `${hp.first_name || ''} ${hp.last_name || ''}`.trim() || 'Someone' : 'Someone'
+    const { data: hp } = await supabase.from('profiles').select('first_name, last_name, username').eq('id', myId).single()
+    const hostName = hp ? (`${hp.first_name || ''} ${hp.last_name || ''}`.trim() || hp.username || 'Someone') : 'Someone'
+    // Each invitee may have set a private nickname for the inviter — prefer it.
+    const { data: nicks } = await supabase
+      .from('friend_nicknames')
+      .select('user_id, nickname')
+      .eq('friend_id', myId)
+      .in('user_id', selected)
+    const nickFor = {}; (nicks || []).forEach(n => { nickFor[n.user_id] = n.nickname })
+    // Show the place (Google Maps pick or typed name), falling back to the title.
+    const placeLabel = plan.place_name || plan.place || plan.title
     await supabase.from('notifications').insert(
-      selected.map(uid => ({ recipient: uid, actor: myId, kind: 'invite', plan_id: plan.id, body: `${hostName} invited you to "${plan.title}"` }))
+      selected.map(uid => ({ recipient: uid, actor: myId, kind: 'invite', plan_id: plan.id, body: `${nickFor[uid] || hostName} invited you to "${placeLabel}"` }))
     )
     selected.forEach(uid => {
       supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_invite', payload: { plan_id: plan.id } })
