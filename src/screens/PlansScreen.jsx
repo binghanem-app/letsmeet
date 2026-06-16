@@ -1022,6 +1022,10 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
 
   const visiblePlans = cancelledPlanIds?.size ? plans.filter(p => !cancelledPlanIds.has(p.id)) : plans
   const selected = visiblePlans.find(p => p.id === selectedId) || null
+  // We've been asked to open a plan that isn't the selected one yet. Suppress the
+  // stale plan's chat for the one render before selectedId catches up, so another
+  // plan's messages can never flash on screen (privacy).
+  const opening = !!openPlanId && !!selectedId && openPlanId !== selectedId
 
   // Sync total unread count to parent whenever plans change (avoids calling onUnreadCount inside setPlans updaters)
   useEffect(() => {
@@ -1227,7 +1231,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
 
   return (
     <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {selected ? (
+      {opening ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A', animation: 'spin .7s linear infinite' }}/>
+        </div>
+      ) : selected ? (
         <PlanDetail
           key={selected.id}
           plan={selected}
