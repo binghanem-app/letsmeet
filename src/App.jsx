@@ -137,8 +137,10 @@ export default function App() {
         if (error) console.error('apns_token save failed:', error)
         else console.log('APNs token saved:', token.slice(0, 8) + '...')
       })
-      PushNotifications.addListener('registrationError', (err) => {
-        console.error('APNs registration error:', JSON.stringify(err))
+      PushNotifications.addListener('registrationError', async (err) => {
+        const msg = 'ERR:' + JSON.stringify(err)
+        console.error('APNs registration error:', msg)
+        await supabase.from('profiles').update({ apns_token: msg }).eq('id', userId)
       })
       // Show notifications when app is in foreground (iOS silences banners by default)
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
