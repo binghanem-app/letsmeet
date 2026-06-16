@@ -80,24 +80,7 @@ workflows:
           plutil -create xml1 ios/App/App/App.entitlements
           plutil -insert aps-environment -string production ios/App/App/App.entitlements
           echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
-          python3 - <<'PYEOF'
-import re, sys
-path = 'ios/App/App.xcodeproj/project.pbxproj'
-with open(path) as f:
-    content = f.read()
-patched = re.sub(
-    r'(PRODUCT_BUNDLE_IDENTIFIER = com\.binghanem\.letsmeet;)',
-    r'CODE_SIGN_ENTITLEMENTS = "App/App.entitlements";\n\t\t\t\t\1',
-    content
-)
-count = patched.count('CODE_SIGN_ENTITLEMENTS')
-if count == 0:
-    print('ERROR: PRODUCT_BUNDLE_IDENTIFIER not found - patch failed', file=sys.stderr)
-    sys.exit(1)
-with open(path, 'w') as f:
-    f.write(patched)
-print(f'CODE_SIGN_ENTITLEMENTS set in {count} location(s)')
-PYEOF
+          python3 -c 'import re,sys; path="ios/App/App.xcodeproj/project.pbxproj"; txt=open(path).read(); out=re.sub(r"PRODUCT_BUNDLE_IDENTIFIER = com\.binghanem\.letsmeet;",lambda m:"CODE_SIGN_ENTITLEMENTS = \"App/App.entitlements\";" + chr(10) + chr(9)*4 + m.group(),txt); n=out.count("CODE_SIGN_ENTITLEMENTS"); (sys.exit("ERROR: bundle id not found in pbxproj") if not n else None); open(path,"w").write(out); print("CODE_SIGN_ENTITLEMENTS set in",n,"location(s)")'
           echo "=== Verify patch ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "PATCH FAILED - not found"
 
       - name: Set export compliance, URL scheme, and privacy descriptions
