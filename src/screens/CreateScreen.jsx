@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Avatar from '../components/Avatar'
 
 const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
 
@@ -503,7 +504,7 @@ function StepInvite({ session, selectedIds, onToggle }) {
 
     if (fIds.length) {
       const [{ data: profiles }, { data: nicks }, { data: memberships }] = await Promise.all([
-        supabase.from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', fIds),
+        supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', fIds),
         supabase.from('friend_nicknames').select('friend_id, nickname').eq('user_id', session.user.id).in('friend_id', fIds),
         supabase.from('group_members').select('group_id, member').in('member', fIds),
       ])
@@ -588,9 +589,7 @@ function StepInvite({ session, selectedIds, onToggle }) {
               const viaCircle = circles.find(c => f.groupIds.includes(c.id))
               return (
                 <div key={f.id} onClick={() => onToggle(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '11px 14px', cursor: 'pointer' }}>
-                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 14px -apple-system", flexShrink: 0 }}>
-                    {initials(f.displayName)}
-                  </div>
+                  <Avatar url={f.avatar_url} name={f.displayName} color={f.avatar_color} size={42} />
                   <div style={{ flex: 1 }}>
                     <div style={{ font: "600 14.5px -apple-system", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</div>
                     {viaCircle && <div style={{ fontSize: 12, color: '#9A9087', marginTop: 1 }}>via {viaCircle.name}</div>}
@@ -750,6 +749,9 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
           body: `${hostName} invited you to "${title.trim()}"`,
         }))
       )
+      invitees.forEach(uid => {
+        supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_invite', payload: { plan_id: plan.id } })
+      })
     }
     setCreatedPlanId(plan?.id)
     setSending(false)

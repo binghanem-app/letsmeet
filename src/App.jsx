@@ -19,16 +19,17 @@ import HomeScreen from './screens/HomeScreen'
 import FriendsScreen, { AddFriendSheet } from './screens/FriendsScreen'
 import CreateScreen from './screens/CreateScreen'
 import PlansScreen from './screens/PlansScreen'
+import ProScreen from './screens/ProScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 import TermsScreen from './screens/TermsScreen'
 
 // Phone chrome — wraps every screen in the same outer shell
-function ResponsiveLayout({ children }) {
+function ResponsiveLayout({ screen, children }) {
   return (
     <div style={{ width: '100%', height: '100vh', background: '#FBF7F4', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: '#FFEFE9' }}/>
+      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: screen === 'pro' ? '#1A1A1A' : '#FFEFE9' }}/>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
         {children}
       </div>
@@ -37,7 +38,7 @@ function ResponsiveLayout({ children }) {
 }
 
 // Bottom tab bar — shared across all post-login screens
-function TabBar({ active, onHome, onFriends, onCreate, onPlans, onProfile, friendsBadge, plansBadge }) {
+function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friendsBadge, plansBadge }) {
   const tabs = [
     { key: 'home',    label: 'Home',    onClick: onHome,    badge: 0,
       icon: (sel) => sel
@@ -49,10 +50,10 @@ function TabBar({ active, onHome, onFriends, onCreate, onPlans, onProfile, frien
         ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" fill="#FF6B4A" stroke="none"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8" stroke="#FF6B4A"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6" stroke="#FF6B4A"/><path d="M18.5 19c0-2.6-1.3-4.2-3.2-4.6" stroke="#FF6B4A"/></svg>
         : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M18.5 19c0-2.6-1.3-4.2-3.2-4.6"/></svg>
     },
-    { key: 'plans',   label: 'Plans',   onClick: onPlans,   badge: plansBadge,
+    { key: 'pro',     label: 'Pro',     onClick: onPro,     badge: 0,
       icon: (sel) => sel
-        ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3" fill="#FF6B4A" fillOpacity=".15"/><path d="M8 3v4M16 3v4M4 10h16" stroke="#FF6B4A"/></svg>
-        : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+        ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#FF6B4A" stroke="#FF6B4A"/></svg>
+        : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
     },
     { key: 'profile', label: 'You',     onClick: onProfile, badge: 0,
       icon: (sel) => sel
@@ -116,7 +117,30 @@ export default function App() {
   const [plansBackToList, setPlansBackToList] = useState(0)
   const [cancelledPlanIds, setCancelledPlanIds] = useState(new Set())
   const [totalUnreadChat, setTotalUnreadChat] = useState(0)
-  const friendSubRef = useRef(null)
+  const [viewedPlanIds, setViewedPlanIds] = useState(() => new Set())
+  const [latestMessage, setLatestMessage] = useState(null)
+  const [latestInvite, setLatestInvite] = useState(0)
+  const friendSubRef       = useRef(null)
+  const pushRegisteredRef  = useRef(false)
+
+  async function registerPush(userId) {
+    if (pushRegisteredRef.current) return
+    pushRegisteredRef.current = true
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications')
+      const { receive } = await PushNotifications.requestPermissions()
+      if (receive !== 'granted') return
+      await PushNotifications.register()
+      PushNotifications.addListener('registration', async ({ value: token }) => {
+        await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
+      })
+      PushNotifications.addListener('registrationError', (err) => {
+        console.warn('APNs registration error:', err)
+      })
+    } catch {
+      // Web or simulator — no push support, silently skip
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -125,6 +149,7 @@ export default function App() {
         checkOnboarding(data.session.user.id)
         loadPendingCount(data.session.user.id)
         subscribeFriendRequests(data.session.user.id)
+        registerPush(data.session.user.id)
       }
     })
     const handleVisibility = () => {
@@ -135,6 +160,27 @@ export default function App() {
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
+
+    // Route to the right screen when user taps a push notification
+    let pushTapListener
+    import('@capacitor/push-notifications').then(({ PushNotifications }) => {
+      PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
+        const data = notification.data || {}
+        const { type, plan_id: planId } = data
+        if (type === 'chat' || type === 'plan_response' || type === 'plan_invite') {
+          if (planId) {
+            setOpenPlanId(planId)
+            setScreen('plans')
+            setPlansRefresh(r => r + 1)
+          } else {
+            setScreen('home')
+            setHomeRefresh(r => r + 1)
+          }
+        } else if (type === 'friend_request') {
+          setScreen('friends')
+        }
+      }).then(listener => { pushTapListener = listener }).catch(() => {})
+    }).catch(() => {})
 
     // Capture OAuth deep link on native (letsmeet://localhost#access_token=...)
     let appUrlListener
@@ -160,7 +206,7 @@ export default function App() {
         checkOnboarding(s.user.id)
         loadPendingCount(s.user.id)
         subscribeFriendRequests(s.user.id)
-        if (_e === 'SIGNED_IN') setScreen('home')
+        if (_e === 'SIGNED_IN') { setScreen('home'); registerPush(s.user.id) }
       } else {
         setNeedsOnboarding(false)
         setPendingCount(0)
@@ -172,6 +218,7 @@ export default function App() {
       friendSubRef.current?.unsubscribe()
       document.removeEventListener('visibilitychange', handleVisibility)
       appUrlListener?.remove()
+      pushTapListener?.remove()
     }
   }, [])
 
@@ -224,7 +271,7 @@ export default function App() {
     onHome:    () => { setScreen('home'); setHomeRefresh(r => r + 1) },
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
-    onPlans:   () => { setScreen('plans'); setPlansRefresh(r => r + 1); setPlansBackToList(r => r + 1) },
+    onPro:     () => setScreen('pro'),
     onProfile: () => setScreen('profile'),
   })
 
@@ -247,7 +294,9 @@ export default function App() {
               onGoFriends={() => setScreen('friends')}
               onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
               onPlanCancelled={(id) => setCancelledPlanIds(s => new Set([...s, id]))}
-              onUnreadChatCount={(n) => setTotalUnreadChat(n)}
+              onNewChatMessage={(planId) => { setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 })); setTotalUnreadChat(n => n + 1) }}
+              onNewInvite={() => setLatestInvite(n => n + 1)}
+              viewedPlanIds={viewedPlanIds}
             />
           </div>
           <div style={show('friends')}>
@@ -259,20 +308,23 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={() => setHomeRefresh(r => r + 1)} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onUnreadCount={(n) => setTotalUnreadChat(n)} latestMessage={latestMessage} latestInvite={latestInvite} />
+          </div>
+          <div style={show('pro')}>
+            <ProScreen session={session} />
           </div>
           <div style={show('profile')}>
             <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
           </div>
         </div>
-        <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} plansBadge={totalUnreadChat} />
+        <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} />
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-    <ResponsiveLayout>
+    <ResponsiveLayout screen={screen}>
       {renderScreen()}
 {openAddFriend && session && screen !== 'friends' && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 70 }}>

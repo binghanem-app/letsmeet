@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, Fragment, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
+import PlanCard from '../components/PlanCard'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 
@@ -288,126 +289,6 @@ const PILL = {
   invited: { label: 'Invited', color: '#9A9087', bg: '#F5F2EE' },
 }
 
-// ─── Plan card ────────────────────────────────────────────────────────────────
-function PlanCard({ plan, myId, onOpen, onEditResponse, onDelete }) {
-  const isHost = plan.host === myId
-  const myInvite = plan.invitees?.find(i => i.invitee === myId)
-  const myRsvp = myInvite?.rsvp || (isHost ? 'going' : 'invited')
-  const past = isPast(plan.date)
-  const cat = CATEGORY_CONFIG[plan.vibe] || { emoji: '📅', gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)', accent: '#9A9087' }
-  const [showConfirm, setShowConfirm] = useState(false)
-
-  const isToday = plan.date && new Date(plan.date).toDateString() === new Date().toDateString()
-
-  const going = plan.invitees?.filter(i => i.rsvp === 'going') || []
-  const late  = plan.invitees?.filter(i => i.rsvp === 'late')  || []
-  const goingCount = going.length + (isHost ? 1 : 0)
-  const extraCount = Math.max(0, goingCount - 4)
-
-  // avatar stack: host + going, up to 4
-  const avatars = [
-    { initials: initials(plan.hostName || ''), color: plan.hostColor || '#5B7CFA' },
-    ...going.slice(0, 3).map(inv => ({ initials: initials(inv.name || ''), color: inv.avatar_color || '#A78BFA' })),
-  ]
-
-  const RSVP = [
-    { val: 'going', label: 'Going', activeColor: '#0E9C6B', ghostBorder: '#CDEBDD', ghostText: '#0E9C6B', activeShadow: 'rgba(14,156,107,.25)' },
-    { val: 'late',  label: 'Late',  activeColor: '#C8841A', ghostBorder: '#F0D9B5', ghostText: '#C8841A', activeShadow: 'rgba(200,132,26,.25)' },
-    { val: 'cant',  label: "Can't", activeColor: '#E5484D', ghostBorder: '#F3C9C9', ghostText: '#E5484D', activeShadow: 'rgba(229,72,77,.25)' },
-  ]
-
-  const dateStr = plan.date ? (() => {
-    const d = new Date(plan.date)
-    const now = new Date()
-    const tom = new Date(now); tom.setDate(now.getDate() + 1)
-    if (d.toDateString() === now.toDateString()) return 'Today · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    if (d.toDateString() === tom.toDateString()) return 'Tomorrow · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  })() : 'Date TBD'
-
-  return (
-    <div style={{ position: 'relative', marginBottom: 0 }}>
-      <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 3px rgba(0,0,0,.05), 0 8px 22px rgba(0,0,0,.05)', overflow: 'visible', opacity: past ? 0.72 : 1 }}>
-
-        {/* Main info row */}
-        <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '16px 16px 13px', cursor: 'pointer' }}>
-          {/* Emoji tile */}
-          <div style={{ width: 50, height: 50, borderRadius: 15, background: cat.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-            {cat.emoji}
-          </div>
-          {/* Text */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {plan.place || plan.title || 'No location'}
-            </div>
-            <div style={{ fontSize: 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 600 : 400 }}>
-              {dateStr}
-            </div>
-          </div>
-          {/* Avatar stack + chevron */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <div style={{ display: 'flex' }}>
-              {avatars.slice(0, 4).map((a, i) => (
-                <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', background: a.color, border: '2px solid #fff', marginLeft: i === 0 ? 0 : -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 4 - i }}>
-                  {a.initials}
-                </div>
-              ))}
-              {extraCount > 0 && (
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#ECE6E0', border: '2px solid #fff', marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A9087', fontSize: 9, fontWeight: 700 }}>
-                  +{extraCount}
-                </div>
-              )}
-            </div>
-            <svg width="9" height="15" viewBox="0 0 10 17" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 1 7 7.5L2 16"/></svg>
-          </div>
-        </div>
-
-        {/* Host cancel confirm */}
-        {isHost && showConfirm && (
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF0EE', border: '1px solid #FAD5CF', borderRadius: 12, margin: '0 14px 12px', padding: '10px 12px' }}>
-            <span style={{ flex: 1, fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>Cancel this plan for everyone?</span>
-            <button onClick={() => { onDelete?.(); setShowConfirm(false) }} style={{ background: '#E14F2E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, cursor: 'pointer' }}>Yes</button>
-            <button onClick={() => setShowConfirm(false)} style={{ background: '#fff', color: '#7B7268', border: '1.5px solid #FAD5CF', fontSize: 12, fontWeight: 600, padding: '7px 10px', borderRadius: 9, cursor: 'pointer' }}>No</button>
-          </div>
-        )}
-
-        {/* RSVP / host row */}
-        {!past && (
-          <div style={{ padding: '0 14px 14px' }}>
-            {isHost ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ flex: 1, height: 40, borderRadius: 11, background: '#E4F6EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ font: '600 14px -apple-system', color: '#0E9C6B' }}>You&apos;re hosting</span>
-                </div>
-                {!past && (
-                  <button onClick={e => { e.stopPropagation(); setShowConfirm(s => !s) }}
-                    style={{ width: 40, height: 40, borderRadius: 11, background: '#FEF0EE', border: '1px solid #FAD5CF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                {RSVP.map(r => {
-                  const sel = myRsvp === r.val
-                  return (
-                    <button key={r.val} onClick={e => { e.stopPropagation(); onEditResponse() }}
-                      style={{ flex: 1, height: 40, border: `1.5px solid ${sel ? r.activeColor : r.ghostBorder}`, borderRadius: 11, background: sel ? r.activeColor : '#fff', color: sel ? '#fff' : r.ghostText, font: '600 14px -apple-system', cursor: 'pointer', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${r.activeShadow}` : 'none' }}>
-                      {r.label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ─── RSVP buttons ─────────────────────────────────────────────────────────────
 function RsvpButtons({ current, onChange, saving }) {
   return (
@@ -477,7 +358,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
       .eq('status', 'accepted')
     const fIds = (fs || []).map(f => f.requester === myId ? f.addressee : f.requester).filter(id => !alreadyIn.has(id))
     if (!fIds.length) { setLoading(false); return }
-    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', fIds)
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', fIds)
     setFriends((profiles || []).map(p => ({ ...p, displayName: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username || 'Unknown' })))
     setLoading(false)
   }
@@ -493,6 +374,9 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
     await supabase.from('notifications').insert(
       selected.map(uid => ({ recipient: uid, actor: myId, kind: 'invite', plan_id: plan.id, body: `${hostName} invited you to "${plan.title}"` }))
     )
+    selected.forEach(uid => {
+      supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_invite', payload: { plan_id: plan.id } })
+    })
     setSending(false)
     onDone()
     onClose()
@@ -519,9 +403,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
                 const sel = selected.includes(f.id)
                 return (
                   <div key={f.id} onClick={() => toggle(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
-                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 13px -apple-system", flexShrink: 0 }}>
-                      {f.displayName.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
+                    <Avatar url={f.avatar_url} name={f.displayName} color={f.avatar_color} size={38} />
                     <span style={{ flex: 1, font: "600 14.5px -apple-system", color: sel ? '#FF6B4A' : '#1F2933' }}>{f.displayName}</span>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
@@ -544,14 +426,6 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
 }
 
 // ─── Plan detail — full page ──────────────────────────────────────────────────
-const CAT = {
-  Coffee:     { emoji: '☕',  gradient: 'linear-gradient(135deg,#F5A623,#F7C05A)' },
-  Dinner:     { emoji: '🍽️', gradient: 'linear-gradient(135deg,#A78BFA,#C4B0FF)' },
-  Movies:     { emoji: '🎬', gradient: 'linear-gradient(135deg,#FF6B4A,#FF9070)' },
-  'Hang out': { emoji: '🏠', gradient: 'linear-gradient(135deg,#EC6A9C,#F28CB8)' },
-  Outdoors:   { emoji: '🌿', gradient: 'linear-gradient(135deg,#12B886,#3DCCA0)' },
-  Trip:       { emoji: '✈️', gradient: 'linear-gradient(135deg,#5B7CFA,#7A9AFF)' },
-}
 
 function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan }) {
   const isHost = plan.host === myId
@@ -568,7 +442,18 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const [msgBody, setMsgBody]         = useState('')
   const [msgSending, setMsgSending]   = useState(false)
   const [fullImg, setFullImg]         = useState(null)
-  const chatEndRef  = useRef(null)
+  const chatChannelRef = useRef(null)
+  // undefined = still loading, null = no read record, string = ISO timestamp
+  const [lastReadAt, setLastReadAt]   = useState(undefined)
+  // Divider position frozen on first render with data — never moves after that
+  const frozenDividerIdx = useRef(-1)
+  const [dividerReady, setDividerReady] = useState(false)
+  const [dividerVisible, setDividerVisible] = useState(true)
+  const chatEndRef       = useRef(null)
+  const chatScrollRef    = useRef(null)
+  const initialScrollDone = useRef(false)
+  const newDividerRef    = useRef(null)
+  const lastMsgTimestampRef = useRef(null)
   const fileInputRef = useRef(null)
   const knownSenders = useRef(new Set())
   const past = isPast(plan.date)
@@ -577,49 +462,92 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const late    = plan.invitees?.filter(i => i.rsvp === 'late')  || []
   const cant    = plan.invitees?.filter(i => i.rsvp === 'cant')  || []
   const pending = plan.invitees?.filter(i => i.rsvp === 'invited') || []
-  const goingCount = going.length + (isHost ? 1 : 0)
+  const goingCount = going.length + 1
 
   const mapsUrl = plan.place && plan.place_lat
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.place + (plan.place_address ? ', ' + plan.place_address : ''))}`
     : null
 
   useEffect(() => {
+    // Fetch fresh RSVP in case home screen RSVP is still in flight
+    if (!isHost) {
+      supabase.from('plan_invitees').select('rsvp')
+        .eq('plan_id', plan.id).eq('invitee', myId).single()
+        .then(({ data }) => { if (data?.rsvp) setRsvp(data.rsvp) })
+    }
+    // Get old lastReadAt FIRST, then mark as read — sequential to avoid race condition
+    // where upsert commits before select returns and makes all msgs look already-read
+    supabase.from('plan_message_reads')
+      .select('last_read_at')
+      .eq('user_id', myId)
+      .eq('plan_id', plan.id)
+      .single()
+      .then(({ data }) => setLastReadAt(data?.last_read_at || null))
     loadMessages()
-    // Mark chat as read
-    supabase.from('plan_message_reads').upsert(
-      { user_id: myId, plan_id: plan.id, last_read_at: new Date().toISOString() },
-      { onConflict: 'user_id,plan_id' }
-    )
 
-    const channel = supabase.channel(`plan-detail-${plan.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'plan_messages',
-        filter: `plan_id=eq.${plan.id}`,
-      }, async payload => {
-        const msg = payload.new
-        // own messages are already added optimistically
-        if (msg.sender === myId) return
+    const channel = supabase.channel(`plan-chat-${plan.id}`)
+      .on('broadcast', { event: 'new_msg' }, async ({ payload: msg }) => {
+        if (!msg?.id || msg.sender === myId) return
         setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+        lastMsgTimestampRef.current = msg.created_at
+        setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
         if (!knownSenders.current.has(msg.sender)) {
           knownSenders.current.add(msg.sender)
           const { data: p } = await supabase.from('profiles')
             .select('id, first_name, last_name, avatar_color, avatar_url')
             .eq('id', msg.sender).single()
-          if (p) setMsgProfiles(prev => ({
-            ...prev,
-            [p.id]: { ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' },
-          }))
+          if (p) {
+            const nickMap = { [plan.host]: plan.hostName }
+            ;(plan.invitees || []).forEach(i => { nickMap[i.invitee] = i.name })
+            setMsgProfiles(prev => ({
+              ...prev,
+              [p.id]: { ...p, name: nickMap[p.id] || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' },
+            }))
+          }
         }
       })
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'plan_invitees',
-        filter: `plan_id=eq.${plan.id}`,
-      }, () => { onUpdated?.() })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    chatChannelRef.current = channel
+    return () => {
+      if (lastMsgTimestampRef.current) {
+        supabase.from('plan_message_reads').upsert(
+          { user_id: myId, plan_id: plan.id, last_read_at: lastMsgTimestampRef.current },
+          { onConflict: 'user_id,plan_id' }
+        ).then(() => {})
+      }
+      supabase.removeChannel(channel)
+      chatChannelRef.current = null
+    }
   }, [plan.id])
+
+  // Keep lastMsgTimestampRef in sync with the latest message (any sender)
+  useEffect(() => {
+    if (messages.length) lastMsgTimestampRef.current = messages[messages.length - 1].created_at
+  }, [messages])
+
+  // Freeze divider position once lastReadAt is ready (messages may still be empty)
+  useEffect(() => {
+    if (dividerReady || lastReadAt === undefined) return
+    if (messages.length && lastReadAt) {
+      frozenDividerIdx.current = messages.findIndex(m => m.sender !== myId && m.created_at > lastReadAt)
+    }
+    setDividerReady(true)
+  }, [messages, lastReadAt, dividerReady])
+
+  // Scroll to NEW divider (or bottom) once divider position is computed
+  useEffect(() => {
+    if (!dividerReady || initialScrollDone.current) return
+    initialScrollDone.current = true
+    setTimeout(() => {
+      if (!chatScrollRef.current) return
+      if (newDividerRef.current) {
+        chatScrollRef.current.scrollTop = newDividerRef.current.offsetTop - 20
+      } else {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+      }
+    }, 100)
+  }, [dividerReady])
 
   async function loadMessages() {
     const { data } = await supabase
@@ -627,14 +555,17 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       .select('id, sender, body, photo_url, created_at')
       .eq('plan_id', plan.id)
       .order('created_at', { ascending: true })
+    setMessages(data || [])
     if (!data?.length) return
-    setMessages(data)
     const ids = [...new Set(data.map(m => m.sender))]
     const { data: profiles } = await supabase
       .from('profiles').select('id, first_name, last_name, avatar_color, avatar_url').in('id', ids)
+    // Build nickname map from plan data (already nickname-resolved by the planner)
+    const nickMap = { [plan.host]: plan.hostName }
+    ;(plan.invitees || []).forEach(i => { nickMap[i.invitee] = i.name })
     const map = {}
     profiles?.forEach(p => {
-      map[p.id] = { ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' }
+      map[p.id] = { ...p, name: nickMap[p.id] || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' }
       knownSenders.current.add(p.id)
     })
     setMsgProfiles(map)
@@ -643,6 +574,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   async function sendMessage() {
     const body = msgBody.trim()
     if (!body || msgSending) return
+    setDividerVisible(false)
     setMsgSending(true)
     setMsgBody('')
     const { data: newMsg, error: msgErr } = await supabase.from('plan_messages').insert({
@@ -650,7 +582,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     }).select('id, sender, body, photo_url, created_at').single()
     if (newMsg) {
       setMessages(prev => [...prev, newMsg])
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+      setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
+      chatChannelRef.current?.send({ type: 'broadcast', event: 'new_msg', payload: newMsg })
     }
     if (!msgErr) {
       const recipients = [
@@ -673,12 +606,14 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           }))
         )
         if (notifErr) console.error('Message notif insert failed:', notifErr)
+        chatChannelRef.current?.send({ type: 'broadcast', event: 'new_chat', payload: { plan_id: plan.id } })
       }
     }
     setMsgSending(false)
   }
 
   async function uploadAndSendPhoto(dataUrl, format) {
+    setDividerVisible(false)
     setMsgSending(true)
     try {
       const res = await fetch(dataUrl)
@@ -693,7 +628,29 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       }).select('id, sender, body, photo_url, created_at').single()
       if (newMsg) {
         setMessages(prev => [...prev, newMsg])
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+        setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
+        chatChannelRef.current?.send({ type: 'broadcast', event: 'new_msg', payload: newMsg })
+        const recipients = [
+          ...(plan.host !== myId ? [plan.host] : []),
+          ...(plan.invitees || []).filter(i => i.invitee !== myId).map(i => i.invitee),
+        ]
+        if (recipients.length) {
+          let senderName = msgProfiles[myId]?.name
+          if (!senderName) {
+            const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', myId).single()
+            senderName = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'Someone' : 'Someone'
+          }
+          await supabase.from('notifications').insert(
+            recipients.map(uid => ({
+              recipient: uid,
+              actor: myId,
+              kind: 'message',
+              plan_id: plan.id,
+              body: `${senderName} sent a photo in "${plan.title}"`,
+            }))
+          )
+          chatChannelRef.current?.send({ type: 'broadcast', event: 'new_chat', payload: { plan_id: plan.id } })
+        }
       }
     } catch (e) {
       console.error(e)
@@ -773,8 +730,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         </div>
         {/* Row 2: emoji + plan info */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CAT[plan.vibe] || { gradient: 'linear-gradient(135deg,#B6ADA4,#D0C9C2)' }).gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>
-            {(CAT[plan.vibe] || { emoji: '📅' }).emoji}
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CATEGORY_CONFIG[plan.vibe] || { accentBg: '#D0C9C2' }).accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CategoryIcon type={(CATEGORY_CONFIG[plan.vibe] || {}).iconType} color={(CATEGORY_CONFIG[plan.vibe] || { accent: '#9A9087' }).accent} size={28} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
@@ -788,14 +745,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex' }}>
             {/* host avatar */}
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: plan.hostColor || '#5B7CFA', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 10 }}>
-              {(plan.hostName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-            </div>
+            <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor || '#5B7CFA'} size={26} style={{ border: '2.5px solid #fff', zIndex: 10 }} />
             {/* invitee going avatars, up to 3 */}
             {going.slice(0, 3).map((inv, i) => (
-              <div key={inv.invitee} style={{ width: 26, height: 26, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', border: '2.5px solid #fff', marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, zIndex: 9 - i }}>
-                {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-              </div>
+              <Avatar key={inv.invitee} url={inv.avatar_url} name={inv.name} color={inv.avatar_color || '#A78BFA'} size={26} style={{ border: '2.5px solid #fff', marginLeft: -8, zIndex: 9 - i }} />
             ))}
           </div>
           {goingCount > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '3px 9px' }}>{goingCount} going</span>}
@@ -809,8 +762,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
         </div>
       </div>
 
-      {/* ── scrollable body ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px' }} className="no-scrollbar">
+      {/* ── fixed info section (RSVP + Who's in) ── */}
+      <div style={{ flexShrink: 0, padding: '14px 14px 0', background: '#EEEAE4' }}>
 
         {/* ── RSVP row ── */}
         {!isHost && !past && (
@@ -840,16 +793,14 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ display: 'flex' }}>
                 {[
-                  { name: plan.hostName, color: plan.hostColor },
-                  ...going.slice(0, 3).map(inv => ({ name: inv.name, color: inv.avatar_color })),
+                  { name: plan.hostName, color: plan.hostColor, url: plan.hostAvatarUrl },
+                  ...(plan.invitees || []).slice(0, 3).map(inv => ({ name: inv.name, color: inv.avatar_color, url: inv.avatar_url })),
                 ].slice(0, 4).map((p, i) => (
-                  <div key={i} style={{ width: 22, height: 22, borderRadius: '50%', background: p.color || '#A78BFA', border: '2px solid #fff', marginLeft: i === 0 ? 0 : -7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700, zIndex: 4 - i, flexShrink: 0 }}>
-                    {(p.name || '?').split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar key={i} url={p.url} name={p.name} color={p.color || '#A78BFA'} size={22} style={{ border: '2px solid #fff', marginLeft: i === 0 ? 0 : -7, zIndex: 4 - i }} />
                 ))}
               </div>
               <span style={{ fontSize: 13, color: '#9A9087' }}>
-                {goingCount + late.length > 0 ? `${goingCount + late.length} people` : 'No RSVPs yet'}
+                {1 + (plan.invitees?.length || 0)} people
               </span>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: whosInOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>
@@ -860,18 +811,14 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             <div style={{ borderTop: '1px solid #F5F0EB', padding: '8px 12px 12px' }}>
               {/* Host row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: plan.hostColor || '#5B7CFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                  {(plan.hostName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                </div>
+                <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor || '#5B7CFA'} size={28} />
                 <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{plan.host === myId ? 'You' : plan.hostName}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#FF6B4A', background: '#FFF1EC', borderRadius: 20, padding: '2px 8px' }}>Hosting</span>
               </div>
               {/* Going */}
               {going.map(inv => (
                 <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar url={inv.avatar_url} name={inv.name} color={inv.avatar_color || '#A78BFA'} size={28} />
                   <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#0E9C6B', background: '#E4F6EE', borderRadius: 20, padding: '2px 8px' }}>Going</span>
                 </div>
@@ -879,9 +826,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               {/* Late */}
               {late.map(inv => (
                 <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar url={inv.avatar_url} name={inv.name} color={inv.avatar_color || '#A78BFA'} size={28} />
                   <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#C8841A', background: '#FFF4E3', borderRadius: 20, padding: '2px 8px' }}>Late</span>
                 </div>
@@ -889,9 +834,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               {/* Can't */}
               {cant.map(inv => (
                 <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar url={inv.avatar_url} name={inv.name} color={inv.avatar_color || '#A78BFA'} size={28} />
                   <span style={{ flex: 1, font: "500 14px -apple-system", color: '#1A1A1A' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#E5484D', background: '#FEE9E9', borderRadius: 20, padding: '2px 8px' }}>Can't</span>
                 </div>
@@ -899,9 +842,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               {/* Pending / invited */}
               {pending.map(inv => (
                 <div key={inv.invitee} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: inv.avatar_color || '#D0C9C2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                    {(inv.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar url={inv.avatar_url} name={inv.name} color={inv.avatar_color || '#D0C9C2'} size={28} />
                   <span style={{ flex: 1, font: "500 14px -apple-system", color: '#9A9087' }}>{inv.invitee === myId ? 'You' : inv.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: '#B6ADA4', background: '#F5F0EB', borderRadius: 20, padding: '2px 8px' }}>Invited</span>
                 </div>
@@ -910,7 +851,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           )}
         </div>
 
-        {/* ── Chat section ── */}
+      </div>{/* end fixed info section */}
+
+      {/* ── scrollable chat ── */}
+      <div ref={chatScrollRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px', background: '#EEEAE4' }} className="no-scrollbar">
         <div style={{ background: '#fff', borderRadius: 16, marginBottom: 8, overflow: 'hidden' }}>
           <div style={{ font: "600 15px -apple-system", color: '#1A1A1A', padding: '13px 16px 10px', borderBottom: '1px solid #F5F0EB' }}>Chat</div>
           <div style={{ padding: '10px 12px 12px' }}>
@@ -918,27 +862,37 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
               <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: '#B6ADA4' }}>No messages yet — say hi!</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {messages.map(msg => {
+                {messages.map((msg, idx) => {
                   const isMe = msg.sender === myId
                   const sender = msgProfiles[msg.sender]
                   const senderName = sender?.name || 'Unknown'
+                  const showNewDivider = dividerVisible && idx === frozenDividerIdx.current
                   return (
-                    <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8 }}>
-                      {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
-                      <div style={{ maxWidth: '74%' }}>
-                        {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
-                        {msg.photo_url ? (
-                          <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
-                        ) : (
-                          <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
-                            {msg.body}
+                    <Fragment key={msg.id}>
+                      {showNewDivider && (
+                        <div ref={newDividerRef} style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 4px' }}>
+                          <div style={{ flex: 1, height: 1, background: 'rgba(255,107,74,.4)' }}/>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.6 }}>NEW</span>
+                          <div style={{ flex: 1, height: 1, background: 'rgba(255,107,74,.4)' }}/>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8 }}>
+                        {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
+                        <div style={{ maxWidth: '74%' }}>
+                          {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
+                          {msg.photo_url ? (
+                            <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', maxWidth: '100%', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                          ) : (
+                            <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
+                              {msg.body}
+                            </div>
+                          )}
+                          <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
+                            {fmtTime(msg.created_at)}
                           </div>
-                        )}
-                        <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
-                          {fmtTime(msg.created_at)}
                         </div>
                       </div>
-                    </div>
+                    </Fragment>
                   )
                 })}
                 <div ref={chatEndRef}/>
@@ -946,8 +900,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             )}
           </div>
         </div>
-
-      </div>
+      </div>{/* end scrollable chat */}
 
       {/* hidden file input for web photo picking */}
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
@@ -1034,32 +987,31 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onUnreadCount, latestMessage, latestInvite }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
   const [selectedId, setSelectedId] = useState(null)
   const [startRsvp, setStartRsvp]   = useState(false)
+  const viewedPlanIds = useRef(new Set())
+  const selectedIdRef = useRef(null)
 
   const visiblePlans = cancelledPlanIds?.size ? plans.filter(p => !cancelledPlanIds.has(p.id)) : plans
   const selected = visiblePlans.find(p => p.id === selectedId) || null
 
+  // Sync total unread count to parent whenever plans change (avoids calling onUnreadCount inside setPlans updaters)
+  useEffect(() => {
+    onUnreadCount?.(plans.reduce((s, p) => s + (p.unreadCount || 0), 0))
+  }, [plans])
+
   async function deletePlan(planId) {
-    const plan = plans.find(p => p.id === planId)
-    if (plan?.invitees?.length) {
-      const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', session.user.id).single()
-      const name = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'The host' : 'The host'
-      await supabase.from('notifications').insert(
-        plan.invitees.map(i => ({
-          recipient: i.invitee,
-          actor: session.user.id,
-          kind: 'plan_update',
-          plan_id: null,
-          body: `${name} cancelled "${plan.title}"`,
-        }))
-      )
-    }
+    // Fetch invitees from DB before cascade-delete removes them
+    const { data: inviteeRows } = await supabase.from('plan_invitees').select('invitee').eq('plan_id', planId)
+    const inviteeIds = (inviteeRows || []).map(r => r.invitee)
     await supabase.from('plans').delete().eq('id', planId)
+    inviteeIds.forEach(uid => {
+      supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } })
+    })
     load()
   }
 
@@ -1071,7 +1023,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
   useEffect(() => {
     if (!session) return
     load()
-    const channel = supabase
+    const inviteChannel = supabase
       .channel('plans-invites')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -1080,18 +1032,45 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
         filter: `invitee=eq.${session.user.id}`,
       }, () => { load() })
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+
+    const feedChannel = supabase
+      .channel('plans-notifs')
+      .subscribe((status) => { if (status === 'SUBSCRIBED') load(true) })
+
+    return () => { supabase.removeChannel(inviteChannel); supabase.removeChannel(feedChannel) }
   }, [session])
 
   useEffect(() => {
+    if (!latestMessage?.planId) return
+    const planId = latestMessage.planId
+    if (selectedIdRef.current === planId) return
+    setPlans(prev => {
+      const idx = prev.findIndex(p => p.id === planId)
+      if (idx === -1 || viewedPlanIds.current.has(planId)) return prev
+      const updated = [...prev]
+      updated[idx] = { ...updated[idx], unreadCount: (updated[idx].unreadCount || 0) + 1 }
+      return updated
+    })
+  }, [latestMessage])
+
+  useEffect(() => {
+    if (latestInvite) load(true)
+  }, [latestInvite])
+
+  useEffect(() => {
     if (backToListTrigger === 0) return
-    setSelectedId(null)
+    setSelectedId(null); selectedIdRef.current = null
   }, [backToListTrigger])
 
   useEffect(() => {
     if (openPlanId && plans.length) {
       const target = plans.find(p => p.id === openPlanId)
-      if (target) { setSelectedId(target.id); setStartRsvp(false); onPlanOpened?.() }
+      if (target) {
+        setSelectedId(target.id); selectedIdRef.current = target.id; setStartRsvp(false); onPlanOpened?.()
+        viewedPlanIds.current.add(target.id)
+        setPlans(ps => ps.map(q => q.id === target.id ? { ...q, unreadCount: 0 } : q))
+        onPlanViewed?.(target.id)
+      }
     }
   }, [openPlanId, plans])
 
@@ -1120,7 +1099,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
 
     const [{ data: allInvitees }, { data: hostProfiles }] = await Promise.all([
       supabase.from('plan_invitees').select('plan_id, invitee, rsvp').in('plan_id', planIds),
-      supabase.from('profiles').select('id, first_name, last_name, avatar_color, avatar_url').in('id', hostIds),
+      supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', hostIds),
     ])
 
     // Detect which circle/group each hosted plan was shared with
@@ -1166,6 +1145,27 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
       inviteesByPlan[i.plan_id].push({ ...i, ...profileMap[i.invitee], name: profileMap[i.invitee]?.name || 'Unknown' })
     })
 
+    // Unread message counts per plan (same approach as HomeScreen)
+    const uniquePlanIds = [...new Set(planIds)]
+    const { data: myReads } = await supabase
+      .from('plan_message_reads')
+      .select('plan_id, last_read_at')
+      .eq('user_id', session.user.id)
+      .in('plan_id', uniquePlanIds)
+    const readMap = {}
+    ;(myReads || []).forEach(r => { readMap[r.plan_id] = r.last_read_at })
+    const unreadResults = await Promise.all(uniquePlanIds.map(async id => {
+      if (!readMap[id]) return [id, 0]
+      const { count } = await supabase
+        .from('plan_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('plan_id', id)
+        .neq('sender', session.user.id)
+        .gt('created_at', readMap[id])
+      return [id, count || 0]
+    }))
+    const unreadByPlan = Object.fromEntries(unreadResults)
+
     const seen = new Set()
     const built = allPlans
       .filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true })
@@ -1179,6 +1179,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
         hostAvatarUrl: profileMap[p.host]?.avatar_url,
         groupName: planGroupMap[p.id]?.name || null,
         groupColor: planGroupMap[p.id]?.color || null,
+        unreadCount: unreadByPlan[p.id] || 0,
       }))
       .sort((a, b) => {
         if (!a.date && !b.date) return 0
@@ -1187,7 +1188,10 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
         return new Date(a.date) - new Date(b.date)
       })
 
-    setPlans(built)
+    const finalBuilt = built.map(p =>
+      viewedPlanIds.current.has(p.id) ? { ...p, unreadCount: 0 } : p
+    )
+    setPlans(finalBuilt)
     setLoading(false)
   }
 
@@ -1199,10 +1203,18 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
     <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {selected ? (
         <PlanDetail
+          key={selected.id}
           plan={selected}
           myId={session.user.id}
           startOnRsvp={startRsvp}
-          onClose={() => { setSelectedId(null); onPlanViewed?.() }}
+          onClose={() => {
+            const viewedId = selected?.id
+            viewedPlanIds.current.add(viewedId)
+            setSelectedId(null); selectedIdRef.current = null
+            setPlans(ps => ps.map(p => p.id === viewedId ? { ...p, unreadCount: 0 } : p))
+            onPlanViewed?.(viewedId)
+            load(true)
+          }}
           onUpdated={load}
           onDeletePlan={() => deletePlan(selected.id)}
         />
@@ -1248,8 +1260,19 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, refresh
                   key={p.id}
                   plan={p}
                   myId={session.user.id}
-                  onOpen={() => { setSelectedId(p.id); setStartRsvp(false) }}
-                  onEditResponse={() => { setSelectedId(p.id); setStartRsvp(true) }}
+                  onOpen={() => {
+                    setSelectedId(p.id); selectedIdRef.current = p.id; setStartRsvp(false)
+                    viewedPlanIds.current.add(p.id)
+                    setPlans(ps => ps.map(q => q.id === p.id ? { ...q, unreadCount: 0 } : q))
+                    onPlanViewed?.(p.id)
+                  }}
+                  onRsvp={async (val) => {
+                    setPlans(prev => prev.map(q => q.id !== p.id ? q : {
+                      ...q,
+                      invitees: q.invitees.map(i => i.invitee === session.user.id ? { ...i, rsvp: val } : i),
+                    }))
+                    await supabase.from('plan_invitees').update({ rsvp: val }).eq('plan_id', p.id).eq('invitee', session.user.id)
+                  }}
                   onDelete={() => deletePlan(p.id)}
                 />
               ))}
@@ -1306,20 +1329,12 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   )
 
   async function deletePlan() {
-    if (plan?.invitees?.length) {
-      const { data: me } = await supabase.from('profiles').select('first_name, last_name').eq('id', session.user.id).single()
-      const hostName = me ? `${me.first_name || ''} ${me.last_name || ''}`.trim() || 'The host' : 'The host'
-      await supabase.from('notifications').insert(
-        plan.invitees.map(i => ({
-          recipient: i.invitee,
-          actor: session.user.id,
-          kind: 'plan_update',
-          plan_id: null,
-          body: `${hostName} cancelled "${plan.title}"`,
-        }))
-      )
-    }
+    const { data: inviteeRows } = await supabase.from('plan_invitees').select('invitee').eq('plan_id', planId)
+    const inviteeIds = (inviteeRows || []).map(r => r.invitee)
     await supabase.from('plans').delete().eq('id', planId)
+    inviteeIds.forEach(uid => {
+      supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } })
+    })
     onClose()
     onUpdated?.()
   }

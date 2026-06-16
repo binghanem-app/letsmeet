@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import UserProfileSheet from '../components/UserProfileSheet'
+import AvatarImg from '../components/Avatar'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -10,14 +11,8 @@ function initials(name = '') {
 const CIRCLE_COLORS = ['#FF6B4A','#5B7CFA','#12B886','#F5A623','#A78BFA','#EC6A9C']
 
 // ─── small shared bits ───────────────────────────────────────────────────────
-const Avatar = ({ name, color, size = 44 }) => (
-  <div style={{
-    width: size, height: size, borderRadius: '50%', background: color || '#A78BFA',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#fff', font: `600 ${Math.round(size * 0.34)}px -apple-system`, flexShrink: 0,
-  }}>
-    {initials(name)}
-  </div>
+const Avatar = ({ url, name, color, size = 44, style }) => (
+  <AvatarImg url={url} name={name} color={color} size={size} style={style} />
 )
 
 const Pill = ({ label, color }) => (
@@ -70,7 +65,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
         })
         // fetch requester profile
         supabase.from('profiles')
-          .select('id, first_name, last_name, username, avatar_color')
+          .select('id, first_name, last_name, username, avatar_color, avatar_url')
           .eq('id', row.requester).single()
           .then(({ data: p }) => {
             if (p) setPendingIn(prev => prev.map(r => r.requester === row.requester ? { ...r, profiles: p, _needsProfile: false } : r))
@@ -83,7 +78,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
   async function loadIncoming() {
     const { data } = await supabase
       .from('friendships')
-      .select('id, requester, profiles!friendships_requester_fkey(first_name, last_name, username, avatar_color)')
+      .select('id, requester, profiles!friendships_requester_fkey(first_name, last_name, username, avatar_color, avatar_url)')
       .eq('addressee', session.user.id)
       .eq('status', 'pending')
     setPendingIn(data || [])
@@ -96,7 +91,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
     if (!rows?.length) return
     const ids = rows.map(r => r.user_id)
     const { data: profiles } = await supabase
-      .from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+      .from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
     const countMap = {}; rows.forEach(r => { countMap[r.user_id] = Number(r.mutual_count) })
     setSuggestions((profiles || []).map(p => ({ ...p, mutuals: countMap[p.id] || 0 })))
   }
@@ -141,7 +136,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
     const clean = q.replace(/^@/, '')
     const { data } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, username, avatar_color')
+      .select('id, first_name, last_name, username, avatar_color, avatar_url')
       .ilike('username', `%${clean}%`)
       .neq('id', session.user.id)
       .limit(8)
@@ -197,7 +192,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
     const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '11px 13px' }}>
-        <Avatar name={name} color={u.avatar_color} size={44}/>
+        <Avatar url={u.avatar_url} name={name} color={u.avatar_color} size={44}/>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>{name}</div>
           <div style={{ fontSize: 12.5, color: '#9A9087' }}>
@@ -292,7 +287,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                       const isAccepted = accepted[r.requester]
                       return (
                         <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '11px 13px' }}>
-                          <Avatar name={name} color={p?.avatar_color} size={44}/>
+                          <Avatar url={p?.avatar_url} name={name} color={p?.avatar_color} size={44}/>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>{name}</div>
                             <div style={{ fontSize: 12.5, color: '#9A9087' }}>{p?.username}</div>
@@ -438,7 +433,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
         <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 18px' }}/>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 20 }}>
-          <Avatar name={displayName} color={friend.avatar_color} size={54}/>
+          <Avatar url={friend.avatar_url} name={displayName} color={friend.avatar_color} size={54}/>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#9A9087', marginBottom: 3 }}>FRIEND</div>
             <div style={{ font: "600 17px -apple-system", color: '#1F2933' }}>{displayName}</div>
@@ -559,7 +554,7 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
     const ids = (fs || []).map(f => f.requester === session.user.id ? f.addressee : f.requester)
     if (ids.length) {
       const { data: profiles } = await supabase
-        .from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+        .from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
       setFriends(profiles || [])
     }
     setLoadingFriends(false)
@@ -654,9 +649,7 @@ export function CreateCircleSheet({ session, onClose, onCreated }) {
                     return (
                       <div key={f.id} onClick={() => toggle(f.id)}
                         style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
-                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
-                          {fname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
+                        <Avatar url={f.avatar_url} name={fname} color={f.avatar_color} size={38} />
                         <span style={{ flex: 1, font: '600 14.5px -apple-system', color: sel ? '#FF6B4A' : '#1A1A1A' }}>{fname}</span>
                         <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
@@ -730,7 +723,7 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
     const ids = (rows || []).map(r => r.member)
     if (!ids.length) { setMembers([]); setLoading(false); return }
     const { data: profiles } = await supabase
-      .from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+      .from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
     setMembers(profiles || [])
     setLoading(false)
   }
@@ -824,9 +817,7 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
               const mname = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.username
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 14, padding: '11px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
-                    {mname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
+                  <Avatar url={m.avatar_url} name={mname} color={m.avatar_color} size={40} />
                   <span style={{ flex: 1, font: '600 15px -apple-system', color: '#1A1A1A' }}>{mname}</span>
                   <button onClick={() => removeMember(m.id)}
                     style={{ border: 'none', background: '#F2EFEC', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -880,9 +871,7 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
                     return (
                       <div key={f.id} onClick={() => setSelectedToAdd(prev => sel ? prev.filter(i => i !== f.id) : [...prev, f.id])}
                         style={{ display: 'flex', alignItems: 'center', gap: 12, background: sel ? '#FFF1EC' : '#fff', border: `1.5px solid ${sel ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 14, padding: '11px 14px', cursor: 'pointer' }}>
-                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: '600 13px -apple-system', flexShrink: 0 }}>
-                          {fname.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
+                        <Avatar url={f.avatar_url} name={fname} color={f.avatar_color} size={38} />
                         <span style={{ flex: 1, font: '600 14.5px -apple-system', color: sel ? '#FF6B4A' : '#1A1A1A' }}>{fname}</span>
                         <div style={{ width: 24, height: 24, borderRadius: '50%', background: sel ? '#FF6B4A' : '#F5F2EE', border: `2px solid ${sel ? '#FF6B4A' : '#E7DED7'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
@@ -961,7 +950,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
 
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, username, avatar_color')
+      .select('id, first_name, last_name, username, avatar_color, avatar_url')
       .in('id', friendIds)
 
     const { data: memberships } = await supabase
@@ -1003,7 +992,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   async function loadIncoming() {
     const { data } = await supabase
       .from('friendships')
-      .select('id, requester, profiles!friendships_requester_fkey(first_name, last_name, username, avatar_color)')
+      .select('id, requester, profiles!friendships_requester_fkey(first_name, last_name, username, avatar_color, avatar_url)')
       .eq('addressee', session.user.id)
       .eq('status', 'pending')
     setPendingIn(data || [])
@@ -1013,7 +1002,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
     const { data: rows } = await supabase.rpc('get_friend_suggestions', { p_user_id: session.user.id, p_limit: 6 })
     if (!rows?.length) return
     const ids = rows.map(r => r.user_id)
-    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
     const countMap = {}; rows.forEach(r => { countMap[r.user_id] = Number(r.mutual_count) })
     setSuggestions((profiles || []).map(p => ({ ...p, mutuals: countMap[p.id] || 0 })))
   }
@@ -1184,9 +1173,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
                 return (
                   <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 8px 12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
                     <div onClick={() => setViewFriendId(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer' }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: f.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "600 15px -apple-system", flexShrink: 0 }}>
-                        {displayName.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
+                      <AvatarImg url={f.avatar_url} name={displayName} color={f.avatar_color} size={44}/>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ font: "600 15px -apple-system", color: '#1A1A1A' }}>{displayName}</div>
                         {f.nickname && <div style={{ fontSize: 12, color: '#B6ADA4', marginBottom: 2 }}>{realName}</div>}

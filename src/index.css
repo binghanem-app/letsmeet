@@ -41,3 +41,28 @@ input, textarea { touch-action: manipulation; }
 .spin       { animation: spin .7s linear infinite; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes led-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes colon-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #FF6B4A, #F5A623, #FF6B4A);
+  background-size: 200% auto;
+  animation: shimmer 2.2s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.colon-blink { animation: colon-blink 1s ease-in-out infinite; }

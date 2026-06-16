@@ -221,7 +221,7 @@ function BlockedSheet({ myId, onClose }) {
       .eq('status', 'blocked')
     const ids = (data || []).map(f => f.requester === myId ? f.addressee : f.requester)
     if (!ids.length) { setBlocked([]); setLoading(false); return }
-    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color').in('id', ids)
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
     setBlocked((profiles || []).map(p => ({ ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username })))
     setLoading(false)
   }
@@ -247,9 +247,7 @@ function BlockedSheet({ myId, onClose }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {blocked.map(u => (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 42, height: 42, borderRadius: '50%', background: u.avatar_color || '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', font: "700 14px -apple-system", flexShrink: 0 }}>
-                {initials(u.name)}
-              </div>
+              <Avatar url={u.avatar_url} name={u.name} color={u.avatar_color} size={42} />
               <div style={{ flex: 1 }}>
                 <div style={{ font: "600 14.5px -apple-system", color: '#1F2933' }}>{u.name}</div>
                 <div style={{ fontSize: 12.5, color: '#9A9087' }}>@{u.username}</div>
@@ -401,15 +399,25 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
     push:           localStorage.getItem('notif_push')            === 'true',
     planResponses:  localStorage.getItem('notif_plan_responses')  !== 'false',
     friendRequests: localStorage.getItem('notif_friend_requests') !== 'false',
+    chat:    true,
+    invite:  true,
   }))
   const [discoveryOn, setDiscoveryOn] = useState(true)
 
-  function toggleNotifPref(key) {
+  async function toggleNotifPref(key) {
     const keyMap = { push: 'notif_push', planResponses: 'notif_plan_responses', friendRequests: 'notif_friend_requests' }
+    const supabaseKeys = { chat: 'notif_chat', invite: 'notif_invite' }
+    if (supabaseKeys[key]) {
+      const next = !notifPrefs[key]
+      setNotifPrefs(prev => ({ ...prev, [key]: next }))
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('profiles').update({ [supabaseKeys[key]]: next }).eq('id', user.id)
+      return
+    }
     setNotifPrefs(prev => {
       if (key === 'push') {
         const pushOn = !prev.push
-        const next = { push: pushOn, planResponses: pushOn, friendRequests: pushOn }
+        const next = { ...prev, push: pushOn, planResponses: pushOn, friendRequests: pushOn }
         Object.entries(keyMap).forEach(([k, lk]) => localStorage.setItem(lk, String(next[k])))
         if (pushOn) { try { Notification?.requestPermission?.() } catch (_) {} }
         return next
@@ -448,6 +456,11 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile({ ...(prof || {}), email: user.email })
       setDiscoveryOn(prof?.phone_discoverable ?? true)
+      setNotifPrefs(prev => ({
+        ...prev,
+        chat:   prof?.notif_chat   ?? true,
+        invite: prof?.notif_invite ?? true,
+      }))
     } catch (_) {}
   }
 
@@ -630,6 +643,24 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
             toggled={notifPrefs.friendRequests}
             onToggle={() => toggleNotifPref('friendRequests')}
             muted={!notifPrefs.push}
+          />
+          <Row
+            iconBg="#5B7CFA"
+            icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+            label="Chat messages"
+            value="New messages in your plans"
+            toggle
+            toggled={notifPrefs.chat}
+            onToggle={() => toggleNotifPref('chat')}
+          />
+          <Row
+            iconBg="#FF6B4A"
+            icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>}
+            label="Plan invites"
+            value="When someone invites you"
+            toggle
+            toggled={notifPrefs.invite}
+            onToggle={() => toggleNotifPref('invite')}
             last
           />
         </Section>
