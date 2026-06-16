@@ -138,11 +138,12 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
     reads?.forEach(r => { readMap[r.plan_id] = r.last_read_at })
 
     const unreadResults = await Promise.all(planIds.map(async id => {
-      if (!readMap[id]) return [id, 0]
-      const { count } = await supabase.from('plan_messages').select('id', { count: 'exact', head: true })
+      // No read record = chat never opened, so every message from others is unseen.
+      let q = supabase.from('plan_messages').select('id', { count: 'exact', head: true })
         .eq('plan_id', id)
         .neq('sender', session.user.id)
-        .gt('created_at', readMap[id])
+      if (readMap[id]) q = q.gt('created_at', readMap[id])
+      const { count } = await q
       return [id, count || 0]
     }))
     const unreadMap = Object.fromEntries(unreadResults)
