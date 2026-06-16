@@ -616,10 +616,20 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
     setDividerVisible(false)
     setMsgSending(true)
     try {
-      const res = await fetch(src)
-      if (!res.ok) { alert(`Fetch failed (${res.status}): ${src}`); setMsgSending(false); return }
-      const blob = await res.blob()
-      if (!blob.size) { alert(`Empty blob from: ${src}`); setMsgSending(false); return }
+      let blob
+      if (src.startsWith('data:') || src.startsWith('http') || src.startsWith('https')) {
+        // Web file input: data: URL, or standard http URL
+        const res = await fetch(src)
+        if (!res.ok) { alert(`Fetch failed (${res.status}): ${src}`); setMsgSending(false); return }
+        blob = await res.blob()
+      } else {
+        // Native camera/gallery: raw base64 string — convert directly, no fetch needed
+        const binary = atob(src)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+        blob = new Blob([bytes], { type: `image/${format || 'jpeg'}` })
+      }
+      if (!blob?.size) { alert('Empty image data'); setMsgSending(false); return }
       const ext = format || 'jpeg'
       const path = `${plan.id}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
@@ -674,10 +684,9 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
           return
         }
       }
-      const photo = await Camera.getPhoto({ resultType: CameraResultType.Uri, source, quality: 80, width: 1200 })
-      const src = photo.webPath || Capacitor.convertFileSrc(photo.path)
-      if (!src) throw new Error('No image path returned from camera')
-      await uploadAndSendPhoto(src, photo.format)
+      const photo = await Camera.getPhoto({ resultType: CameraResultType.Base64, source, quality: 80, width: 1200 })
+      if (!photo.base64String) throw new Error('No image data returned from camera')
+      await uploadAndSendPhoto(photo.base64String, photo.format)
     } catch (e) {
       const msg = e?.message || ''
       if (msg === 'User cancelled photos app' || msg === 'User cancelled') return
