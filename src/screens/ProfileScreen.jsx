@@ -215,11 +215,10 @@ function BlockedSheet({ myId, onClose }) {
 
   async function load() {
     const { data } = await supabase
-      .from('friendships')
-      .select('requester, addressee')
-      .or(`requester.eq.${myId},addressee.eq.${myId}`)
-      .eq('status', 'blocked')
-    const ids = (data || []).map(f => f.requester === myId ? f.addressee : f.requester)
+      .from('blocks')
+      .select('blocked')
+      .eq('blocker', myId)
+    const ids = (data || []).map(r => r.blocked)
     if (!ids.length) { setBlocked([]); setLoading(false); return }
     const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
     setBlocked((profiles || []).map(p => ({ ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username })))
@@ -227,9 +226,8 @@ function BlockedSheet({ myId, onClose }) {
   }
 
   async function unblock(id) {
-    await supabase.from('friendships').delete()
-      .or(`and(requester.eq.${myId},addressee.eq.${id}),and(requester.eq.${id},addressee.eq.${myId})`)
-      .eq('status', 'blocked')
+    await supabase.from('blocks').delete()
+      .eq('blocker', myId).eq('blocked', id)
     setBlocked(b => b.filter(u => u.id !== id))
   }
 

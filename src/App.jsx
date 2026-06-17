@@ -127,21 +127,14 @@ export default function App() {
   async function registerPush(userId) {
     if (pushRegisteredRef.current) return
     pushRegisteredRef.current = true
-    await supabase.from('profiles').update({ apns_token: 'START' }).eq('id', userId)
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
-      await supabase.from('profiles').update({ apns_token: 'IMPORTED' }).eq('id', userId)
       PushNotifications.addListener('registration', async ({ value: token }) => {
         await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
       })
-      PushNotifications.addListener('registrationError', async (err) => {
-        await supabase.from('profiles').update({ apns_token: 'ERR:' + JSON.stringify(err) }).eq('id', userId)
-      })
       const { receive } = await PushNotifications.requestPermissions()
-      await supabase.from('profiles').update({ apns_token: 'PERM:' + receive }).eq('id', userId)
       if (receive !== 'granted') return
       await PushNotifications.register()
-      await supabase.from('profiles').update({ apns_token: 'REGISTERED' }).eq('id', userId)
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
         const { type, plan_id: planId } = notification.data || {}
         if (type === 'chat' || type === 'plan_invite' || type === 'plan_response') {
@@ -154,7 +147,7 @@ export default function App() {
         }
       })
     } catch(e) {
-      await supabase.from('profiles').update({ apns_token: 'CATCH:' + String(e) }).eq('id', userId)
+      console.error('registerPush failed:', e)
     }
   }
 

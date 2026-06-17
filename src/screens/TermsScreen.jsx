@@ -40,6 +40,8 @@ export default function TermsScreen({ onBack }) {
           'Reverse-engineer or copy any part of the app',
         ]}/>
 
+        <P><B>There is zero tolerance for objectionable content or abusive users.</B> Reports are reviewed within 24 hours and offenders are removed from the platform.</P>
+
         <H>5. User Content</H>
         <P>You own the content you create (plan names, etc.). By using Let's Meet, you grant us a limited licence to store and display your content to the people you choose to share it with. We do not claim ownership of your content.</P>
 

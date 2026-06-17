@@ -14,7 +14,8 @@ project.targets.each do |target|
   next unless target.name == 'App'
   target.build_configurations.each do |config|
     config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
-    puts "Set CODE_SIGN_ENTITLEMENTS for #{config.name}"
+    config.build_settings['TARGETED_DEVICE_FAMILY'] = '1'
+    puts "Set CODE_SIGN_ENTITLEMENTS + TARGETED_DEVICE_FAMILY=1 (iPhone only) for #{config.name}"
     patched += 1
   end
 end

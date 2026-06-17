@@ -6,7 +6,7 @@ import PlanCard from '../components/PlanCard'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 
-const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
 
 // ─── Minimal place search for Edit sheet ─────────────────────────────────────
 function PlaceSearchMini({ value, onChange }) {
@@ -451,6 +451,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const [msgBody, setMsgBody]         = useState('')
   const [msgSending, setMsgSending]   = useState(false)
   const [fullImg, setFullImg]         = useState(null)
+  const [reportingMsg, setReportingMsg] = useState(null)
+  const [reportDone, setReportDone]   = useState(false)
   const chatChannelRef = useRef(null)
   // undefined = still loading, null = no read record, string = ISO timestamp
   const [lastReadAt, setLastReadAt]   = useState(undefined)
@@ -904,10 +906,20 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
                         <div style={{ maxWidth: '74%' }}>
                           {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
                           {msg.photo_url ? (
-                            <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', width: 160, height: 110, borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', width: 160, height: 110, borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                              {!isMe && <div onClick={() => setReportingMsg(msg)} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                              </div>}
+                            </div>
                           ) : (
-                            <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
-                              {msg.body}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                              <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
+                                {msg.body}
+                              </div>
+                              {!isMe && <div onClick={() => setReportingMsg(msg)} style={{ width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, opacity: 0.4 }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#7B7268"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                              </div>}
                             </div>
                           )}
                           <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
@@ -1005,6 +1017,36 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       {showInviteMore && (
         <InviteMoreSheet plan={plan} myId={myId} onClose={() => setShowInviteMore(false)} onDone={() => onUpdated?.()}/>
       )}
+
+      {/* ── report message / photo sheet ── */}
+      {reportingMsg && !reportDone && (
+        <div onClick={() => setReportingMsg(null)} style={{ position: 'absolute', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', padding: '20px 20px 36px' }}>
+            <div style={{ font: '600 17px -apple-system', color: '#1F2933', marginBottom: 6 }}>Report this {reportingMsg.photo_url ? 'photo' : 'message'}?</div>
+            <div style={{ fontSize: 13, color: '#9A9087', marginBottom: 20 }}>This will be reviewed within 24 hours. The sender won't be notified.</div>
+            {['Spam', 'Inappropriate content', 'Harassment', 'Hate speech', 'Other'].map(reason => (
+              <div key={reason} onClick={async () => {
+                await supabase.from('reports').insert({
+                  reporter: myId,
+                  reported: reportingMsg.sender,
+                  reason,
+                  plan_message_id: reportingMsg.id,
+                  content_type: reportingMsg.photo_url ? 'photo' : 'message',
+                })
+                setReportingMsg(null)
+                setReportDone(true)
+                setTimeout(() => setReportDone(false), 3000)
+              }} style={{ padding: '13px 0', borderBottom: '1px solid #F1E8E2', fontSize: 15, color: '#1F2933', cursor: 'pointer' }}>{reason}</div>
+            ))}
+            <div onClick={() => setReportingMsg(null)} style={{ marginTop: 14, padding: '13px 0', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#9A9087', cursor: 'pointer' }}>Cancel</div>
+          </div>
+        </div>
+      )}
+      {reportDone && (
+        <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#1F2933', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 400 }}>
+          Report submitted — thank you
+        </div>
+      )}
     </div>
   )
 }
@@ -1033,14 +1075,26 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
   }, [plans])
 
   async function deletePlan(planId) {
-    // Fetch invitees from DB before cascade-delete removes them
+    const plan = plans.find(p => p.id === planId)
+    const placeLabel = plan?.place_name || plan?.title || 'The plan'
     const { data: inviteeRows } = await supabase.from('plan_invitees').select('invitee').eq('plan_id', planId)
     const inviteeIds = (inviteeRows || []).map(r => r.invitee)
+    if (inviteeIds.length) {
+      await supabase.from('notifications').insert(
+        inviteeIds.map(uid => ({
+          recipient: uid,
+          actor: session.user.id,
+          kind: 'plan_update',
+          body: `"${placeLabel}" has been cancelled`,
+        }))
+      )
+    }
     await supabase.from('plans').delete().eq('id', planId)
     inviteeIds.forEach(uid => {
       supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } })
     })
     load()
+    onBack?.()
   }
 
   useEffect(() => {

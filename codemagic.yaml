@@ -101,6 +101,8 @@ workflows:
           plutil -replace NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos to your library when you download images from group chats." ios/App/App/Info.plist
           plutil -insert NSContactsUsageDescription -string "Let's Meet uses your contacts to help you find friends who are already on the app." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSContactsUsageDescription -string "Let's Meet uses your contacts to help you find friends who are already on the app." ios/App/App/Info.plist
+          plutil -insert NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist 2>/dev/null || \
+          plutil -replace NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist
 
 
       - name: Build IPA

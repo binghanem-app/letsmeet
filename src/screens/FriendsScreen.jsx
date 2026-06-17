@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import UserProfileSheet from '../components/UserProfileSheet'
 import AvatarImg from '../components/Avatar'
+import { Capacitor } from '@capacitor/core'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -309,8 +310,8 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                 </div>
               )}
 
-              {/* 2 — contacts section: button → results → mutual suggestions below */}
-              <div>
+              {/* 2 — contacts section: web only (navigator.contacts not available in iOS WKWebView) */}
+              {!Capacitor.isNativePlatform() && <div>
                 {/* scan button / loading state (shown until scan completes) */}
                 {contactsState !== 'done' && (
                   <div onClick={contactsState === 'loading' ? undefined : findFromContacts}
@@ -363,7 +364,7 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
 
             </>
           )}

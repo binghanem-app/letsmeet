@@ -193,6 +193,20 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   }
 
   async function deletePlan(planId) {
+    const plan = feed.find(p => p.id === planId)
+    const placeLabel = plan?.place_name || plan?.title || 'The plan'
+    const { data: inviteeRows } = await supabase.from('plan_invitees').select('invitee').eq('plan_id', planId)
+    const inviteeIds = (inviteeRows || []).map(r => r.invitee)
+    if (inviteeIds.length) {
+      await supabase.from('notifications').insert(
+        inviteeIds.map(uid => ({
+          recipient: uid,
+          actor: session.user.id,
+          kind: 'plan_update',
+          body: `"${placeLabel}" has been cancelled`,
+        }))
+      )
+    }
     await supabase.from('plans').update({ cancelled: true }).eq('id', planId)
     setFeed(f => f.filter(p => p.id !== planId))
     onPlanCancelled?.(planId)

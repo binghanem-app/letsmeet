@@ -119,7 +119,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
     setActing(true)
     await supabase.from('friendships').delete()
       .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
-    await supabase.from('friendships').insert({ requester: myId, addressee: userId, status: 'blocked' })
+    await supabase.from('blocks').insert({ blocker: myId, blocked: userId })
     onClose()
   }
 

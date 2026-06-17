@@ -95,7 +95,6 @@ export default function ProScreen({ session }) {
           <span style={{ fontSize: 18 }}>{onList ? '✅' : '🔔'}</span>
           {onList ? "You're on the list!" : joining ? 'Saving…' : "Notify me when it's ready"}
         </button>
-        <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,.25)', marginTop: 9 }}>$2.99 / month when it launches</div>
       </div>
 
       {/* ── Light body ──────────────────────────────────────────── */}
