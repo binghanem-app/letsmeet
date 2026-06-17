@@ -793,7 +793,23 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
             <div style={{ font: "700 22px -apple-system", color: '#1A1A1A', lineHeight: 1.2, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title}</div>
             <div style={{ fontSize: 13, color: '#9A9087', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {[shortAddr(plan.place_address), plan.date ? shortDate(plan.date) + (plan.time_label ? ' · ' + plan.time_label : '') : null].filter(Boolean).join(' · ') || 'Date TBD'}
+              {(() => {
+                const addr = shortAddr(plan.place_address)
+                const when = plan.date ? shortDate(plan.date) + (plan.time_label ? ' · ' + plan.time_label : '') : null
+                if (!addr && !when) return 'Date TBD'
+                return (
+                  <>
+                    {addr && (mapsUrl
+                      ? <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#FF6B4A', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                          {addr}
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 3, verticalAlign: '-1px' }}><path d="M7 17 17 7M9 7h8v8"/></svg>
+                        </a>
+                      : <span>{addr}</span>)}
+                    {addr && when ? ' · ' : ''}
+                    {when}
+                  </>
+                )
+              })()}
             </div>
           </div>
         </div>
