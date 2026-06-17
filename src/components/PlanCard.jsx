@@ -80,7 +80,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
 
   return (
     <div style={{ position: 'relative', marginBottom: 0 }}>
-      {plan.unreadCount > 0 && (
+      {plan.unreadCount > 0 && !past && (
         <div style={{ position: 'absolute', top: -10, right: 10, zIndex: 10, display: 'flex', alignItems: 'center', gap: 4, background: '#FF6B4A', borderRadius: 20, padding: '4px 9px 4px 7px', boxShadow: '0 2px 8px rgba(255,107,74,.4)' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
