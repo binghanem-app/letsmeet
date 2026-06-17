@@ -1189,17 +1189,35 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
   }, [backToListTrigger])
 
   useEffect(() => {
-    if (openPlanId && plans.length) {
-      const target = plans.find(p => p.id === openPlanId)
-      if (target) {
-        fromExternalRef.current = true
-        setSelectedId(target.id); selectedIdRef.current = target.id; setStartRsvp(false); onPlanOpened?.()
-        viewedPlanIds.current.add(target.id)
-        setPlans(ps => ps.map(q => q.id === target.id ? { ...q, unreadCount: 0 } : q))
-        onPlanViewed?.(target.id)
-      }
+    if (!openPlanId) return
+    // Search visiblePlans (not raw plans) so a cancelled plan is treated as absent
+    // and never selected into a detail that would then resolve to null.
+    const target = visiblePlans.find(p => p.id === openPlanId)
+    if (!target) return // not loaded yet, or gone — the give-up timeout below handles permanent absence
+    fromExternalRef.current = true
+    setSelectedId(target.id); selectedIdRef.current = target.id; setStartRsvp(false); onPlanOpened?.()
+    viewedPlanIds.current.add(target.id)
+    setPlans(ps => ps.map(q => q.id === target.id ? { ...q, unreadCount: 0 } : q))
+    onPlanViewed?.(target.id)
+  }, [openPlanId, plans, cancelledPlanIds])
+
+  // Give-up safety net: if a requested plan never resolves (deleted/cancelled/
+  // inaccessible, or the user has none), don't spin forever — return Home.
+  useEffect(() => {
+    if (!openPlanId || selectedId === openPlanId) return
+    const t = setTimeout(() => { onPlanOpened?.(); onBack?.() }, 5000)
+    return () => clearTimeout(t)
+  }, [openPlanId, selectedId])
+
+  // A plan we're viewing disappeared (host cancelled/deleted it via realtime, or it
+  // got filtered out) — leave the detail and go Home instead of falling through to
+  // the orphaned "Your plans" list. Skip while a fresh open is still resolving.
+  useEffect(() => {
+    if (selectedId && !opening && !selected) {
+      setSelectedId(null); selectedIdRef.current = null
+      onBack?.()
     }
-  }, [openPlanId, plans])
+  }, [selectedId, selected, opening])
 
   async function load(silent = false) {
     if (!silent) setLoading(true)
