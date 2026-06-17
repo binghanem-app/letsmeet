@@ -1132,6 +1132,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
       const ch = supabase.channel(`user-home-${uid}`)
       ch.send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } }).then(() => supabase.removeChannel(ch))
     })
+    // Tear down the detail view and return Home. Clearing selectedId first means
+    // the orphaned "Your plans" list (no longer a navigable screen) can't flash
+    // underneath while the screen switches.
+    setSelectedId(null); selectedIdRef.current = null
+    fromExternalRef.current = false
     load()
     onBack?.()
   }
