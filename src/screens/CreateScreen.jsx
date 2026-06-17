@@ -690,6 +690,7 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
   const [done, setDone] = useState(false)
   const [createdPlanId, setCreatedPlanId] = useState(null)
   const [sending, setSending] = useState(false)
+  const [err, setErr] = useState('')
 
   // form state
   const [title, setTitle] = useState('')
@@ -715,6 +716,7 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
 
   async function send() {
     setSending(true)
+    setErr('')
     const h24 = ampm === 'PM'
       ? (parseInt(hour) === 12 ? 12 : parseInt(hour) + 12)
       : (parseInt(hour) === 12 ? 0 : parseInt(hour))
@@ -734,35 +736,51 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
       vibe: vibe || null,
     }).select('id').single()
 
-    if (!error && invitees.length) {
-      await supabase.from('plan_invitees').insert(
+    // The plan itself failed to save — never show the success screen for a plan
+    // that doesn't exist (createdPlanId would be undefined).
+    if (error || !plan) {
+      console.error('Plan insert failed:', error)
+      setSending(false)
+      setErr('Could not create your plan. Please check your connection and try again.')
+      return
+    }
+
+    if (invitees.length) {
+      const { error: invErr } = await supabase.from('plan_invitees').insert(
         invitees.map(uid => ({ plan_id: plan.id, invitee: uid, rsvp: 'invited' }))
       )
-      const { data: hp } = await supabase.from('profiles').select('first_name, last_name, username').eq('id', session.user.id).single()
-      const hostName = hp ? (`${hp.first_name || ''} ${hp.last_name || ''}`.trim() || hp.username || 'Someone') : 'Someone'
-      // Each invitee may have set a private nickname for the host — prefer it.
-      const { data: nicks } = await supabase
-        .from('friend_nicknames')
-        .select('user_id, nickname')
-        .eq('friend_id', session.user.id)
-        .in('user_id', invitees)
-      const nickFor = {}; (nicks || []).forEach(n => { nickFor[n.user_id] = n.nickname })
-      // Show the place (Google Maps pick or typed name), falling back to the title.
-      const placeLabel = place?.name || title.trim()
-      await supabase.from('notifications').insert(
-        invitees.map(uid => ({
-          recipient: uid,
-          actor: session.user.id,
-          kind: 'invite',
-          plan_id: plan.id,
-          body: `${nickFor[uid] || hostName} invited you to "${placeLabel}"`,
-        }))
-      )
-      invitees.forEach(uid => {
-        supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_invite', payload: { plan_id: plan.id } })
-      })
+      // Only notify people who were actually added — otherwise invitees get an
+      // "invited you" push for a plan they're not on.
+      if (!invErr) {
+        const { data: hp } = await supabase.from('profiles').select('first_name, last_name, username').eq('id', session.user.id).single()
+        const hostName = hp ? (`${hp.first_name || ''} ${hp.last_name || ''}`.trim() || hp.username || 'Someone') : 'Someone'
+        // Each invitee may have set a private nickname for the host — prefer it.
+        const { data: nicks } = await supabase
+          .from('friend_nicknames')
+          .select('user_id, nickname')
+          .eq('friend_id', session.user.id)
+          .in('user_id', invitees)
+        const nickFor = {}; (nicks || []).forEach(n => { nickFor[n.user_id] = n.nickname })
+        // Show the place (Google Maps pick or typed name), falling back to the title.
+        const placeLabel = place?.name || title.trim()
+        const { error: notifErr } = await supabase.from('notifications').insert(
+          invitees.map(uid => ({
+            recipient: uid,
+            actor: session.user.id,
+            kind: 'invite',
+            plan_id: plan.id,
+            body: `${nickFor[uid] || hostName} invited you to "${placeLabel}"`,
+          }))
+        )
+        if (notifErr) console.error('Invite notif insert failed:', notifErr)
+        invitees.forEach(uid => {
+          supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_invite', payload: { plan_id: plan.id } })
+        })
+      } else {
+        console.error('plan_invitees insert failed:', invErr)
+      }
     }
-    setCreatedPlanId(plan?.id)
+    setCreatedPlanId(plan.id)
     setSending(false)
     setDone(true)
   }
@@ -820,9 +838,12 @@ export default function CreateScreen({ session, onDone, onCancel, onViewPlan }) 
             {step === 3 && invitees.length > 0 ? `Continue · ${invitees.length} invited` : 'Continue'}
           </button>
         ) : (
-          <button onClick={send} disabled={sending} style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px -apple-system", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)' }}>
-            {sending ? 'Sending…' : 'Send invites 🎉'}
-          </button>
+          <>
+            {err && <div style={{ marginBottom: 10, padding: '10px 14px', background: '#FEE9E9', border: '1px solid #FACAC4', borderRadius: 12, fontSize: 13.5, color: '#E14F2E', textAlign: 'center' }}>{err}</div>}
+            <button onClick={send} disabled={sending} style={{ width: '100%', padding: 17, border: 'none', borderRadius: 18, background: '#FF6B4A', color: '#fff', font: "600 17px -apple-system", cursor: 'pointer', boxShadow: '0 12px 26px -10px rgba(255,107,74,.75)' }}>
+              {sending ? 'Sending…' : 'Send invites 🎉'}
+            </button>
+          </>
         )}
       </div>
     </div>

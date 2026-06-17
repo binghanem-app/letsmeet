@@ -272,25 +272,14 @@ function DeleteAccountSheet({ onClose, onDeleted }) {
     if (!ready) return
     setDeleting(true); setErr('')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const id = user.id
-      await Promise.all([
-        supabase.from('plan_messages').delete().eq('sender', id),
-        supabase.from('plan_invitees').delete().eq('invitee', id),
-        supabase.from('plans').delete().eq('host', id),
-        supabase.from('group_members').delete().eq('member', id),
-        supabase.from('groups').delete().eq('owner', id),
-        supabase.from('friend_nicknames').delete().or(`user_id.eq.${id},friend_id.eq.${id}`),
-        supabase.from('friendships').delete().or(`requester.eq.${id},addressee.eq.${id}`),
-        supabase.from('notifications').delete().or(`recipient.eq.${id},actor.eq.${id}`),
-        supabase.from('blocks').delete().or(`blocker.eq.${id},blocked.eq.${id}`),
-        supabase.from('dismissed_suggestions').delete().eq('user_id', id),
-      ])
-      await supabase.from('profiles').delete().eq('id', id)
-      // delete auth user via edge function (requires service role)
-      await supabase.functions.invoke('delete-user')
+      // The edge function deletes all rows + Storage media + the auth user with the
+      // service role, atomically. Don't pre-delete client-side (a partial failure
+      // there would strand the account half-deleted).
+      const { error } = await supabase.functions.invoke('delete-user')
+      if (error) throw error
       onDeleted()
     } catch (e) {
+      console.error('Account deletion failed:', e)
       setErr('Something went wrong. Please try again.')
       setDeleting(false)
     }
@@ -393,38 +382,31 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
   const [showCard, setShowCard] = useState(false)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
-  const [notifPrefs, setNotifPrefs] = useState(() => ({
-    push:           localStorage.getItem('notif_push')            === 'true',
-    planResponses:  localStorage.getItem('notif_plan_responses')  !== 'false',
-    friendRequests: localStorage.getItem('notif_friend_requests') !== 'false',
-    chat:    true,
-    invite:  true,
-  }))
+  const [notifPrefs, setNotifPrefs] = useState({
+    push: true, planResponses: true, friendRequests: true, chat: true, invite: true,
+  })
   const [discoveryOn, setDiscoveryOn] = useState(true)
 
+  // All five prefs are persisted to the profiles table so the send-push edge
+  // function actually honors them (the old localStorage-only toggles did nothing
+  // server-side). Master 'push' off suppresses every push.
   async function toggleNotifPref(key) {
-    const keyMap = { push: 'notif_push', planResponses: 'notif_plan_responses', friendRequests: 'notif_friend_requests' }
-    const supabaseKeys = { chat: 'notif_chat', invite: 'notif_invite' }
-    if (supabaseKeys[key]) {
-      const next = !notifPrefs[key]
-      setNotifPrefs(prev => ({ ...prev, [key]: next }))
-      const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('profiles').update({ [supabaseKeys[key]]: next }).eq('id', user.id)
-      return
+    const dbCols = {
+      push:           'notif_push',
+      chat:           'notif_chat',
+      invite:         'notif_invite',
+      planResponses:  'notif_plan_responses',
+      friendRequests: 'notif_friend_requests',
     }
-    setNotifPrefs(prev => {
-      if (key === 'push') {
-        const pushOn = !prev.push
-        const next = { ...prev, push: pushOn, planResponses: pushOn, friendRequests: pushOn }
-        Object.entries(keyMap).forEach(([k, lk]) => localStorage.setItem(lk, String(next[k])))
-        if (pushOn) { try { Notification?.requestPermission?.() } catch (_) {} }
-        return next
-      }
-      if (!prev.push) return prev // sub-prefs locked while push is off
-      const next = { ...prev, [key]: !prev[key] }
-      localStorage.setItem(keyMap[key], String(next[key]))
-      return next
-    })
+    const col = dbCols[key]
+    if (!col) return
+    const next = !notifPrefs[key]
+    setNotifPrefs(prev => ({ ...prev, [key]: next }))
+    // Turning the master switch on is a natural moment to request OS permission
+    // (harmless no-op inside the native webview, where iOS governs it).
+    if (key === 'push' && next) { try { Notification?.requestPermission?.() } catch (_) {} }
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('profiles').update({ [col]: next }).eq('id', user.id)
   }
   const [toast, setToast] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
@@ -454,11 +436,13 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile({ ...(prof || {}), email: user.email })
       setDiscoveryOn(prof?.phone_discoverable ?? true)
-      setNotifPrefs(prev => ({
-        ...prev,
-        chat:   prof?.notif_chat   ?? true,
-        invite: prof?.notif_invite ?? true,
-      }))
+      setNotifPrefs({
+        push:           prof?.notif_push            ?? true,
+        chat:           prof?.notif_chat            ?? true,
+        invite:         prof?.notif_invite          ?? true,
+        planResponses:  prof?.notif_plan_responses  ?? true,
+        friendRequests: prof?.notif_friend_requests ?? true,
+      })
     } catch (_) {}
   }
 

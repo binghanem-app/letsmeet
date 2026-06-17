@@ -42,7 +42,17 @@ export default function OnboardingScreen({ session, onDone }) {
       .eq('id', session.user.id)
 
     setSaving(false)
-    if (error) { setErr('Could not save. Please try again.'); return }
+    if (error) {
+      // A unique-username violation can race past the pre-check above — guide the
+      // user to change it instead of a dead-end "try again".
+      const m = (error.message || '').toLowerCase()
+      if (error.code === '23505' || m.includes('duplicate') || m.includes('unique')) {
+        setErr('That username is already taken — try another.')
+      } else {
+        setErr('Could not save. Please try again.')
+      }
+      return
+    }
     onDone()
   }
 

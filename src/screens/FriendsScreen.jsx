@@ -952,6 +952,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   const [deniedMap, setDeniedMap] = useState({})
   const [suggestions, setSuggestions] = useState([])
   const [dismissed, setDismissed] = useState(new Set())
+  const [suggestionSent, setSuggestionSent] = useState({})
 
   // If parent signals to open add sheet (e.g. from home bell)
   useEffect(() => {
@@ -1069,6 +1070,22 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
     await supabase.from('dismissed_suggestions').insert({ user_id: session.user.id, dismissed_id: userId })
   }
 
+  async function sendSuggestionRequest(userId) {
+    const status = suggestionSent[userId]
+    if (status) return
+    const { data: existing } = await supabase
+      .from('friendships')
+      .select('id, status')
+      .or(`and(requester.eq.${session.user.id},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${session.user.id})`)
+      .limit(1)
+    if (existing?.length) {
+      setSuggestionSent(s => ({ ...s, [userId]: existing[0].status === 'accepted' ? 'already' : 'pending' }))
+      return
+    }
+    await supabase.from('friendships').insert({ requester: session.user.id, addressee: userId })
+    setSuggestionSent(s => ({ ...s, [userId]: 'sent' }))
+  }
+
   const displayed = activeCircle
     ? friends.filter(f => f.groupIds?.includes(activeCircle))
     : friends
@@ -1171,8 +1188,19 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
                       <div style={{ font: "600 15px -apple-system", color: '#1A1A1A' }}>{name}</div>
                       <div style={{ fontSize: 12.5, color: '#9A9087' }}>{u.username}{u.mutuals > 0 ? ` · ${u.mutuals} mutual` : ''}</div>
                     </div>
+                    {(() => {
+                      const st = suggestionSent[u.id]
+                      return (
+                        <button
+                          onClick={() => sendSuggestionRequest(u.id)}
+                          style={{ border: 'none', borderRadius: 12, padding: '9px 16px', cursor: st ? 'default' : 'pointer', font: "600 13px -apple-system", flexShrink: 0, background: st === 'already' ? '#E4F6EE' : st ? '#F5F2EE' : '#FF6B4A', color: st === 'already' ? '#0E9C6B' : st ? '#7B7268' : '#fff' }}
+                        >
+                          {st === 'already' ? 'Friends' : st ? 'Sent ✓' : 'Add'}
+                        </button>
+                      )
+                    })()}
                     <button onClick={() => dismissSuggestion(u.id)}
-                      style={{ border: 'none', background: 'none', color: '#C4BBB2', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px', marginRight: 4 }}>
+                      style={{ border: 'none', background: 'none', color: '#C4BBB2', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 2px', flexShrink: 0 }}>
                       ×
                     </button>
                   </div>
@@ -1273,6 +1301,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           userId={viewFriendId}
           myId={session.user.id}
           onClose={() => setViewFriendId(null)}
+          onChanged={loadAll}
         />
       )}
       {circleDetail && (

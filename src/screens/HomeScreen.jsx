@@ -48,6 +48,10 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         })
       })
       .on('broadcast', { event: 'plan_invite' }, () => { loadData(true); onNewInvite?.() })
+      .on('broadcast', { event: 'plan_deleted' }, ({ payload }) => {
+        // Host cancelled a plan — drop it from the feed live instead of waiting for a reload.
+        if (payload?.plan_id) setFeed(f => f.filter(p => p.id !== payload.plan_id))
+      })
       .subscribe((status) => { if (status === 'SUBSCRIBED') loadData(true) })
 
     return () => { supabase.removeChannel(feedChannel) }
@@ -203,6 +207,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           recipient: uid,
           actor: session.user.id,
           kind: 'plan_update',
+          plan_id: planId,
           body: `"${placeLabel}" has been cancelled`,
         }))
       )

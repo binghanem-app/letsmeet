@@ -71,9 +71,11 @@ workflows:
         script: cd ios/App && pod install
       - name: Configure push notifications (entitlement + AppDelegate)
         script: |
-          # 1. aps-environment entitlement so iOS issues a production APNs token
+          # 1. aps-environment entitlement so iOS issues a production APNs token,
+          #    plus the Sign in with Apple entitlement for native SIWA.
           plutil -create xml1 ios/App/App/App.entitlements
           plutil -insert aps-environment -string production ios/App/App/App.entitlements
+          plutil -insert com.apple.developer.applesignin -json '["Default"]' ios/App/App/App.entitlements
           echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
           # 2. Point the App target at the entitlements file (xcodeproj gem)
           ruby scripts/add_entitlements.rb
@@ -97,10 +99,6 @@ workflows:
           plutil -replace NSCameraUsageDescription -string "Let's Meet uses your camera to share photos in group chats." ios/App/App/Info.plist
           plutil -insert NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist
-          plutil -insert NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos to your library when you download images from group chats." ios/App/App/Info.plist 2>/dev/null || \
-          plutil -replace NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos to your library when you download images from group chats." ios/App/App/Info.plist
-          plutil -insert NSContactsUsageDescription -string "Let's Meet uses your contacts to help you find friends who are already on the app." ios/App/App/Info.plist 2>/dev/null || \
-          plutil -replace NSContactsUsageDescription -string "Let's Meet uses your contacts to help you find friends who are already on the app." ios/App/App/Info.plist
           plutil -insert NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist
 

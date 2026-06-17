@@ -46,7 +46,8 @@ async function sendPush(
   deviceToken: string,
   title: string,
   body: string,
-  data: Record<string, string>
+  data: Record<string, string>,
+  badge: number
 ): Promise<{ status: number; text: string }> {
   const jwt = await makeApnsJwt()
 
@@ -60,7 +61,7 @@ async function sendPush(
       'content-type':    'application/json',
     },
     body: JSON.stringify({
-      aps: { alert: { title, body }, sound: 'default', badge: 1 },
+      aps: { alert: { title, body }, sound: 'default', badge },
       ...data,
     }),
   })
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
     // Fetch recipient profile (token + notif prefs)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('apns_token, notif_chat, notif_invite')
+      .select('apns_token, notif_push, notif_chat, notif_invite, notif_plan_responses, notif_friend_requests')
       .eq('id', record.recipient)
       .single()
 
@@ -132,16 +133,28 @@ Deno.serve(async (req) => {
       return new Response('Invalid token', { status: 200 })
     }
 
-    // Respect per-kind opt-outs
-    if (record.kind === 'message' && profile.notif_chat  === false) return new Response('Opted out', { status: 200 })
-    if (record.kind === 'invite'  && profile.notif_invite === false) return new Response('Opted out', { status: 200 })
+    // Master push switch off → never send.
+    if (profile.notif_push === false) return new Response('Push off', { status: 200 })
+
+    // Respect per-kind opt-outs.
+    if (record.kind === 'message'     && profile.notif_chat            === false) return new Response('Opted out', { status: 200 })
+    if (record.kind === 'invite'      && profile.notif_invite          === false) return new Response('Opted out', { status: 200 })
+    if ((record.kind === 'rsvp' || record.kind === 'plan_update') && profile.notif_plan_responses === false) return new Response('Opted out', { status: 200 })
+    if (record.kind === 'request'     && profile.notif_friend_requests === false) return new Response('Opted out', { status: 200 })
 
     const title  = titleForKind(record.kind)
     const body   = record.body ?? ''
     const data: Record<string, string> = { type: typeForKind(record.kind) }
     if (record.plan_id) data.plan_id = record.plan_id
 
-    const { status, text } = await sendPush(profile.apns_token, title, body, data)
+    // App-icon badge = recipient's real unread notification count (incl. this one).
+    const { count: unread } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient', record.recipient)
+      .eq('read', false)
+
+    const { status, text } = await sendPush(profile.apns_token, title, body, data, unread ?? 1)
     console.log(`APNs response: ${status} (type=${data.type}) → ${record.recipient} ${text}`)
 
     // APNs 410 = device token no longer valid; clear it so we stop trying.

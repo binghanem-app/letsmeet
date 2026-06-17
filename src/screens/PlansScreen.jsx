@@ -85,8 +85,19 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
     const oldDateStr = plan.date ? plan.date.slice(0, 10) : ''
     const timeChanged = date !== oldDateStr || timeLabel !== (plan.time_label || '')
 
+    // Build a full timestamp from the picked date, preserving the original
+    // time-of-day. Writing the bare "YYYY-MM-DD" string would be parsed as UTC
+    // midnight and render as the previous day in negative-offset timezones.
+    let startsAtIso = null
+    if (date) {
+      const d = new Date(date + 'T12:00:00') // local noon baseline (no day-shift)
+      const orig = plan.date ? new Date(plan.date) : null
+      if (orig && !isNaN(orig.getTime())) d.setHours(orig.getHours(), orig.getMinutes(), orig.getSeconds(), 0)
+      startsAtIso = d.toISOString()
+    }
+
     await supabase.from('plans').update({
-      starts_at: date || null,
+      starts_at: startsAtIso,
       time_label: timeLabel || null,
     }).eq('id', plan.id)
 
@@ -453,6 +464,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const [fullImg, setFullImg]         = useState(null)
   const [reportingMsg, setReportingMsg] = useState(null)
   const [reportDone, setReportDone]   = useState(false)
+  const [reportError, setReportError] = useState(false)
   const chatChannelRef = useRef(null)
   // undefined = still loading, null = no read record, string = ISO timestamp
   const [lastReadAt, setLastReadAt]   = useState(undefined)
@@ -467,7 +479,24 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
   const lastMsgTimestampRef = useRef(null)
   const fileInputRef = useRef(null)
   const knownSenders = useRef(new Set())
+  const blockedIdsRef = useRef(new Set())
   const past = isPast(plan.date)
+
+  // Load the set of users I've blocked or who've blocked me. RLS hides their
+  // messages from the DB read, but realtime broadcasts bypass RLS — so we also
+  // filter them client-side here (App Store Guideline 1.2 block enforcement).
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const { data } = await supabase.from('blocks').select('blocker, blocked').or(`blocker.eq.${myId},blocked.eq.${myId}`)
+      if (!active) return
+      const s = new Set()
+      ;(data || []).forEach(b => s.add(b.blocker === myId ? b.blocked : b.blocker))
+      blockedIdsRef.current = s
+      setMessages(prev => prev.filter(m => !s.has(m.sender)))
+    })()
+    return () => { active = false }
+  }, [myId])
 
   const going   = plan.invitees?.filter(i => i.rsvp === 'going') || []
   const late    = plan.invitees?.filter(i => i.rsvp === 'late')  || []
@@ -498,7 +527,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
     const channel = supabase.channel(`plan-chat-${plan.id}`)
       .on('broadcast', { event: 'new_msg' }, async ({ payload: msg }) => {
-        if (!msg?.id || msg.sender === myId) return
+        if (!msg?.id || msg.sender === myId || blockedIdsRef.current.has(msg.sender)) return
         setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
         lastMsgTimestampRef.current = msg.created_at
         setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
@@ -566,9 +595,11 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       .select('id, sender, body, photo_url, created_at')
       .eq('plan_id', plan.id)
       .order('created_at', { ascending: true })
-    setMessages(data || [])
-    if (!data?.length) return
-    const ids = [...new Set(data.map(m => m.sender))]
+    // Defense-in-depth alongside RLS: never show messages from blocked users.
+    const visible = (data || []).filter(m => !blockedIdsRef.current.has(m.sender))
+    setMessages(visible)
+    if (!visible.length) return
+    const ids = [...new Set(visible.map(m => m.sender))]
     const { data: profiles } = await supabase
       .from('profiles').select('id, first_name, last_name, avatar_color, avatar_url').in('id', ids)
     // Build nickname map from plan data (already nickname-resolved by the planner)
@@ -1026,7 +1057,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
             <div style={{ fontSize: 13, color: '#9A9087', marginBottom: 20 }}>This will be reviewed within 24 hours. The sender won't be notified.</div>
             {['Spam', 'Inappropriate content', 'Harassment', 'Hate speech', 'Other'].map(reason => (
               <div key={reason} onClick={async () => {
-                await supabase.from('reports').insert({
+                const { error } = await supabase.from('reports').insert({
                   reporter: myId,
                   reported: reportingMsg.sender,
                   reason,
@@ -1034,6 +1065,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
                   content_type: reportingMsg.photo_url ? 'photo' : 'message',
                 })
                 setReportingMsg(null)
+                if (error) { console.error('Report insert failed:', error); setReportError(true); setTimeout(() => setReportError(false), 3500); return }
                 setReportDone(true)
                 setTimeout(() => setReportDone(false), 3000)
               }} style={{ padding: '13px 0', borderBottom: '1px solid #F1E8E2', fontSize: 15, color: '#1F2933', cursor: 'pointer' }}>{reason}</div>
@@ -1045,6 +1077,11 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
       {reportDone && (
         <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#1F2933', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 400 }}>
           Report submitted — thank you
+        </div>
+      )}
+      {reportError && (
+        <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#E14F2E', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 400 }}>
+          Couldn't submit report — please try again
         </div>
       )}
     </div>
@@ -1085,13 +1122,15 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
           recipient: uid,
           actor: session.user.id,
           kind: 'plan_update',
+          plan_id: planId,
           body: `"${placeLabel}" has been cancelled`,
         }))
       )
     }
     await supabase.from('plans').delete().eq('id', planId)
     inviteeIds.forEach(uid => {
-      supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } })
+      const ch = supabase.channel(`user-home-${uid}`)
+      ch.send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } }).then(() => supabase.removeChannel(ch))
     })
     load()
     onBack?.()
@@ -1419,11 +1458,24 @@ export function PlanDetailOverlay({ planId, session, onClose, onUpdated }) {
   )
 
   async function deletePlan() {
+    const placeLabel = plan?.place_name || plan?.title || 'The plan'
     const { data: inviteeRows } = await supabase.from('plan_invitees').select('invitee').eq('plan_id', planId)
     const inviteeIds = (inviteeRows || []).map(r => r.invitee)
+    if (inviteeIds.length) {
+      await supabase.from('notifications').insert(
+        inviteeIds.map(uid => ({
+          recipient: uid,
+          actor: session.user.id,
+          kind: 'plan_update',
+          plan_id: planId,
+          body: `"${placeLabel}" has been cancelled`,
+        }))
+      )
+    }
     await supabase.from('plans').delete().eq('id', planId)
     inviteeIds.forEach(uid => {
-      supabase.channel(`user-home-${uid}`).send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } })
+      const ch = supabase.channel(`user-home-${uid}`)
+      ch.send({ type: 'broadcast', event: 'plan_deleted', payload: { plan_id: planId } }).then(() => supabase.removeChannel(ch))
     })
     onClose()
     onUpdated?.()

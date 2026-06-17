@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { Capacitor } from '@capacitor/core'
+
+// Random nonce for Sign in with Apple. Apple receives the SHA-256 hash; Supabase
+// receives the raw value and verifies the hash matches the token's nonce claim.
+function genNonce(len = 32) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const arr = new Uint8Array(len)
+  crypto.getRandomValues(arr)
+  return Array.from(arr, n => chars[n % chars.length]).join('')
+}
+async function sha256Hex(str) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('')
+}
 
 // ─── icon helpers ──────────────────────────────────────────────────────────
 const PeopleIcon = () => (
@@ -48,7 +62,11 @@ function EmailModal({ onClose, onDone }) {
     setLoading(true)
     try {
       if (mode === 'signup') {
-        const { error: err } = await supabase.auth.signUp({ email, password })
+        // Send the confirmation link back to the app's scheme on native so the
+        // user lands back in the app (not stranded in Safari) after confirming.
+        const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'letsmeet:'
+        const emailRedirectTo = isNative ? 'letsmeet://localhost' : window.location.origin
+        const { error: err } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } })
         if (err) throw err
         setSent(true)
       } else {
@@ -226,11 +244,41 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
   async function handleApple() {
     setError('')
     setLoadingApple(true)
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo },
-    })
-    if (err) { setError(err.message); setLoadingApple(false) }
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Native Sign in with Apple (ASAuthorizationAppleIDProvider) — required by
+        // App Store Guideline 4.8 and reliable inside WKWebView, unlike web OAuth.
+        const rawNonce = genNonce()
+        const hashedNonce = await sha256Hex(rawNonce)
+        const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
+        const result = await SignInWithApple.authorize({
+          clientId: 'com.binghanem.letsmeet',
+          redirectURI: 'letsmeet://localhost',
+          scopes: 'email name',
+          nonce: hashedNonce,
+        })
+        const idToken = result?.response?.identityToken
+        if (!idToken) throw new Error('Apple did not return an identity token.')
+        const { error: err } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: idToken,
+          nonce: rawNonce,
+        })
+        if (err) throw err
+        onLogin?.()
+      } else {
+        const { error: err } = await supabase.auth.signInWithOAuth({
+          provider: 'apple',
+          options: { redirectTo },
+        })
+        if (err) throw err
+      }
+    } catch (err) {
+      // User-cancelled native sheet throws too; show nothing jarring for that.
+      const msg = err?.message || ''
+      if (!/cancel/i.test(msg)) setError(msg || 'Apple sign-in failed. Please try again.')
+      setLoadingApple(false)
+    }
   }
 
   return (

@@ -38,7 +38,7 @@ function ResponsiveLayout({ screen, children }) {
 }
 
 // Bottom tab bar — shared across all post-login screens
-function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friendsBadge, plansBadge }) {
+function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friendsBadge }) {
   const tabs = [
     { key: 'home',    label: 'Home',    onClick: onHome,    badge: 0,
       icon: (sel) => sel
@@ -116,12 +116,12 @@ export default function App() {
   const [plansRefresh, setPlansRefresh] = useState(0)
   const [plansBackToList, setPlansBackToList] = useState(0)
   const [cancelledPlanIds, setCancelledPlanIds] = useState(new Set())
-  const [totalUnreadChat, setTotalUnreadChat] = useState(0)
   const [viewedPlanIds, setViewedPlanIds] = useState(() => new Set())
   const [latestMessage, setLatestMessage] = useState(null)
   const [latestInvite, setLatestInvite] = useState(0)
   const friendSubRef       = useRef(null)
   const pushRegisteredRef  = useRef(false)
+  const pushListenersRef   = useRef([])
   const sessionRef         = useRef(null)
 
   async function registerPush(userId) {
@@ -129,23 +129,28 @@ export default function App() {
     pushRegisteredRef.current = true
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
-      PushNotifications.addListener('registration', async ({ value: token }) => {
-        await supabase.from('profiles').update({ apns_token: token }).eq('id', userId)
+      const regListener = await PushNotifications.addListener('registration', async ({ value: token }) => {
+        // Write to whoever is signed in right now, not a stale closured id —
+        // a second user on the same device must save their OWN token.
+        const uid = sessionRef.current?.user?.id || userId
+        await supabase.from('profiles').update({ apns_token: token }).eq('id', uid)
       })
+      pushListenersRef.current.push(regListener)
       const { receive } = await PushNotifications.requestPermissions()
       if (receive !== 'granted') return
       await PushNotifications.register()
-      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const recvListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
         const { type, plan_id: planId } = notification.data || {}
-        if (type === 'chat' || type === 'plan_invite' || type === 'plan_response') {
-          if (planId) {
-            setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 }))
-            setTotalUnreadChat(n => n + 1)
-          }
+        if (type === 'chat') {
+          // Only a real chat message bumps the per-plan unread badge.
+          if (planId) setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 }))
+          setHomeRefresh(r => r + 1)
+        } else if (type === 'plan_invite' || type === 'plan_response') {
           setHomeRefresh(r => r + 1)
           setLatestInvite(n => n + 1)
         }
       })
+      pushListenersRef.current.push(recvListener)
     } catch(e) {
       console.error('registerPush failed:', e)
     }
@@ -224,12 +229,16 @@ export default function App() {
       } else {
         setNeedsOnboarding(false)
         setPendingCount(0)
-        friendSubRef.current?.unsubscribe()
+        if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
+        // Let the next user on this device re-register push with their own token.
+        pushRegisteredRef.current = false
+        pushListenersRef.current.forEach(l => l?.remove?.())
+        pushListenersRef.current = []
       }
     })
     return () => {
       subscription.unsubscribe()
-      friendSubRef.current?.unsubscribe()
+      if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
       document.removeEventListener('visibilitychange', handleVisibility)
       appUrlListener?.remove()
       pushTapListener?.remove()
@@ -246,7 +255,7 @@ export default function App() {
   }
 
   function subscribeFriendRequests(userId) {
-    friendSubRef.current?.unsubscribe()
+    if (friendSubRef.current) supabase.removeChannel(friendSubRef.current)
     friendSubRef.current = supabase
       .channel(`pending-reqs-${userId}`)
       .on('postgres_changes', {
@@ -308,7 +317,7 @@ export default function App() {
               onGoFriends={() => setScreen('friends')}
               onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
               onPlanCancelled={(id) => setCancelledPlanIds(s => new Set([...s, id]))}
-              onNewChatMessage={(planId) => { setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 })); setTotalUnreadChat(n => n + 1) }}
+              onNewChatMessage={(planId) => setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 }))}
               onNewInvite={() => setLatestInvite(n => n + 1)}
               viewedPlanIds={viewedPlanIds}
             />
@@ -322,7 +331,7 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => setScreen('home')} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onUnreadCount={(n) => setTotalUnreadChat(n)} latestMessage={latestMessage} latestInvite={latestInvite} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => setScreen('home')} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} />
           </div>
           <div style={show('pro')}>
             <ProScreen session={session} />

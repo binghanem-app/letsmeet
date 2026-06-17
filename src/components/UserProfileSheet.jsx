@@ -11,7 +11,7 @@ function friendDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
+export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChanged }) {
   const [profile, setProfile]       = useState(null)
   const [loading, setLoading]       = useState(true)
   const [planScore, setPlanScore]   = useState(0)
@@ -66,7 +66,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
       supabase.from('plan_invitees').select('id', { count: 'exact', head: true }).eq('invitee', userId).in('rsvp', ['going', 'late']),
       supabase.from('friendships').select('requester, addressee').or(`requester.eq.${myId},addressee.eq.${myId}`).eq('status', 'accepted'),
       supabase.from('friendships').select('requester, addressee').or(`requester.eq.${userId},addressee.eq.${userId}`).eq('status', 'accepted'),
-      supabase.from('friendships').select('status, created_at').or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`).maybeSingle(),
+      supabase.from('friendships').select('id, status, created_at, requester').or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`).maybeSingle(),
     ])
 
     setProfile(prof)
@@ -95,8 +95,27 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
     // The 'request' notification is created server-side by the
     // on_friendship_request trigger, so no client-side notification insert here.
     await supabase.from('friendships').insert({ requester: myId, addressee: userId, status: 'pending' })
-    setFriendship({ status: 'pending' })
+    setFriendship({ status: 'pending', requester: myId })
     setActing(false)
+    onChanged?.()
+  }
+
+  async function acceptRequest() {
+    if (!friendship?.id) return
+    setActing(true)
+    await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', friendship.id)
+    setFriendship(f => ({ ...f, status: 'accepted' }))
+    setActing(false)
+    onChanged?.()
+  }
+
+  async function declineRequest() {
+    if (!friendship?.id) return
+    setActing(true)
+    await supabase.from('friendships').delete().eq('id', friendship.id)
+    setFriendship(null)
+    setActing(false)
+    onChanged?.()
   }
 
   async function removeFriend() {
@@ -105,6 +124,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
       .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
     setFriendship(null)
     setActing(false)
+    onChanged?.()
   }
 
   const REPORT_REASONS = ['Spam or fake account', 'Inappropriate content', 'Harassment', 'Hate speech', 'Other']
@@ -120,6 +140,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
     await supabase.from('friendships').delete()
       .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)
     await supabase.from('blocks').insert({ blocker: myId, blocked: userId })
+    onChanged?.()
     onClose()
   }
 
@@ -208,9 +229,19 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf }) {
                   {acting ? 'Sending…' : '+ Add friend'}
                 </button>
               )}
-              {!isSelf && friendship?.status === 'pending' && (
+              {!isSelf && friendship?.status === 'pending' && friendship?.requester === myId && (
                 <div style={{ textAlign: 'center', padding: '13px 0', font: "600 14px -apple-system", color: '#9A9087', background: '#F5F2EE', borderRadius: 16 }}>
                   Friend request sent ✓
+                </div>
+              )}
+              {!isSelf && friendship?.status === 'pending' && friendship?.requester === userId && (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={acceptRequest} disabled={acting} style={{ flex: 1, padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px -apple-system", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
+                    {acting ? '…' : 'Accept'}
+                  </button>
+                  <button onClick={declineRequest} disabled={acting} style={{ flex: 1, padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px -apple-system", cursor: 'pointer' }}>
+                    Decline
+                  </button>
                 </div>
               )}
               {!isSelf && friendship?.status === 'accepted' && (
