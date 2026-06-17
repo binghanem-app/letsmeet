@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 
-const GAPI_KEY = import.meta.env.VITE_GAPI_KEY
+// Google Maps/Places key — must live in the client bundle for Maps JS; protect it
+// with HTTP-referrer / iOS-bundle restrictions in Google Cloud, not by hiding it.
+// Fallback keeps place search working when CI doesn't inject VITE_GAPI_KEY.
+const GAPI_KEY = import.meta.env.VITE_GAPI_KEY || 'AIzaSyCNapPdmmlN0RO1vCFijGivCUcqtQLsJdM'
 
 function CategoryIcon({ type, color = '#1F2933', size = 22 }) {
   const s = { width: size, height: size, fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
