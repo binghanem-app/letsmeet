@@ -259,18 +259,8 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
           {/* ── idle state ── */}
           {!showSearch && (
             <>
-              {/* share invite link — top */}
-              <div onClick={() => navigator.share?.({ title: "Let's Meet", url: 'https://letsmeet.app' }) || navigator.clipboard?.writeText('https://letsmeet.app')}
-                style={{ display: 'flex', alignItems: 'center', gap: 13, background: '#fff', border: '1px solid #F1E8E2', borderRadius: 15, padding: '14px 15px', cursor: 'pointer' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FBF0DA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8841A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.5 13.5 7 4M15.5 6.5l-7 4"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ font: "600 15px -apple-system", color: '#1F2933' }}>Invite friends</div>
-                  <div style={{ fontSize: 12.5, color: '#9A9087' }}>Share your link · letsmeet.app</div>
-                </div>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
-              </div>
+              {/* "Invite friends" share card removed until there's a real App
+                  Store link (was a placeholder pointing to https://letsmeet.app). */}
 
               {/* 1 — friend requests */}
               {pendingIn.filter(r => !denied[r.requester]).length > 0 && (
@@ -1095,14 +1085,10 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 28px' }} className="no-scrollbar">
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 14px' }}>
+        {/* Share button removed until there's a real App Store link (was a
+            placeholder pointing to the non-existent https://letsmeet.app). */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 14px' }}>
           <div style={{ font: "700 28px -apple-system", color: '#1A1A1A' }}>Friends</div>
-          <button
-            onClick={() => navigator.share?.({ title: "Let's Meet", url: 'https://letsmeet.app' }) || navigator.clipboard?.writeText('https://letsmeet.app')}
-            style={{ width: 40, height: 40, borderRadius: 12, background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.5 13.5 7 4M15.5 6.5l-7 4"/></svg>
-          </button>
         </div>
 
         {/* Search bar */}
