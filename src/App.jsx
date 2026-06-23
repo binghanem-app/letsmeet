@@ -212,6 +212,12 @@ export default function App() {
             })
             if (!error && data.session) setSession(data.session)
           }
+          // Dismiss the external Safari view opened for Google OAuth so the user
+          // lands straight back in the app instead of staring at a finished page.
+          try {
+            const { Browser } = await import('@capacitor/browser')
+            await Browser.close()
+          } catch { /* browser plugin not open / web build — ignore */ }
         }
       }).then(listener => { appUrlListener = listener }).catch(() => {})
     }).catch(() => {})

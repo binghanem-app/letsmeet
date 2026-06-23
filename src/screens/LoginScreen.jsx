@@ -234,11 +234,42 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
   async function handleGoogle() {
     setError('')
     setLoadingGoogle(true)
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo },
-    })
-    if (err) { setError(err.message); setLoadingGoogle(false) }
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // On native we must NOT let supabase-js navigate the WKWebView to Google:
+        // the OAuth redirect back to letsmeet://localhost would happen *inside* the
+        // webview and never fire the appUrlOpen deep-link listener (so the session is
+        // lost and the user lands back on the login page). Instead get the URL with
+        // skipBrowserRedirect, open it in an external Safari view, and let the
+        // appUrlOpen handler in App.jsx capture the returned tokens + close the browser.
+        const { data, error: err } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo, skipBrowserRedirect: true },
+        })
+        if (err) throw err
+        if (data?.url) {
+          const { Browser } = await import('@capacitor/browser')
+          // If the user dismisses the Safari view (tapped "Done"/cancel) without
+          // completing sign-in, no deep link fires — clear loading so the button
+          // isn't stuck on "Redirecting…" forever with no way to retry.
+          const finished = await Browser.addListener('browserFinished', () => {
+            setLoadingGoogle(false)
+            finished.remove()
+          })
+          await Browser.open({ url: data.url })
+        }
+        // Session is set via the appUrlOpen listener; loading clears on return.
+      } else {
+        const { error: err } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo },
+        })
+        if (err) throw err
+      }
+    } catch (err) {
+      setError(err?.message || 'Google sign-in failed. Please try again.')
+      setLoadingGoogle(false)
+    }
   }
 
   async function handleApple() {
@@ -275,8 +306,12 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
       }
     } catch (err) {
       // User-cancelled native sheet throws too; show nothing jarring for that.
+      // ASAuthorizationError.canceled is code 1001 — the only unambiguous cancel.
+      // Do NOT swallow 1000 ("unknown"): that's a real failure (e.g. missing SIWA
+      // entitlement) the user needs to see, not a cancellation.
       const msg = err?.message || ''
-      if (!/cancel/i.test(msg)) setError(msg || 'Apple sign-in failed. Please try again.')
+      const cancelled = String(err?.code ?? '') === '1001' || /cancel/i.test(msg)
+      if (!cancelled) setError(msg || 'Apple sign-in failed. Please try again.')
       setLoadingApple(false)
     }
   }

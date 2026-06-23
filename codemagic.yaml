@@ -80,6 +80,19 @@ workflows:
           # 2. Point the App target at the entitlements file (xcodeproj gem)
           ruby scripts/add_entitlements.rb
           echo "=== Verify CODE_SIGN_ENTITLEMENTS ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "MISSING — entitlement not set"
+          # HARD GATE: never ship an iPad-capable binary again. TARGETED_DEVICE_FAMILY
+          # must be 1 (iPhone only) in every build config. Apple rejected build #82
+          # under Guideline 4 after reviewing on iPad — fail loudly if this regresses.
+          echo "=== Verify TARGETED_DEVICE_FAMILY (must be 1, iPhone only) ==="
+          # Fail on any iPad-capable value, quoted OR unquoted ("1,2", 1,2, "2", 2).
+          if grep -Eq 'TARGETED_DEVICE_FAMILY = "?(1,2|2)"?;' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "FATAL: project still targets iPad (TARGETED_DEVICE_FAMILY != 1)"; exit 1
+          fi
+          # And positively confirm the iPhone-only value is actually present.
+          if ! grep -Eq 'TARGETED_DEVICE_FAMILY = "?1"?;' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "FATAL: TARGETED_DEVICE_FAMILY=1 missing — add_entitlements.rb did not apply"; exit 1
+          fi
+          grep "TARGETED_DEVICE_FAMILY" ios/App/App.xcodeproj/project.pbxproj
           # 3. Forward APNs registration callbacks to the Capacitor plugin
           python3 scripts/patch_appdelegate.py
           echo "=== Verify AppDelegate methods ===" && grep -c "didRegisterForRemoteNotifications" ios/App/App/AppDelegate.swift || echo "0 — AppDelegate NOT patched"
@@ -99,6 +112,11 @@ workflows:
           plutil -replace NSCameraUsageDescription -string "Let's Meet uses your camera to share photos in group chats." ios/App/App/Info.plist
           plutil -insert NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSPhotoLibraryUsageDescription -string "Let's Meet accesses your photo library so you can share images in group chats." ios/App/App/Info.plist
+          # NSPhotoLibraryAddUsageDescription is REQUIRED by the Capacitor Camera plugin
+          # (it can write captured photos to the library). Without it the camera/gallery
+          # in chat throws "missing NSPhotoLibraryAddUsageDescription" at runtime.
+          plutil -insert NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos you capture to your photo library." ios/App/App/Info.plist 2>/dev/null || \
+          plutil -replace NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos you capture to your photo library." ios/App/App/Info.plist
           plutil -insert NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist
 
