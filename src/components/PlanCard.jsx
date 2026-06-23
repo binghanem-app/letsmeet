@@ -56,6 +56,13 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
 
   const placeName = plan.place_name || plan.place || 'No location'
   const cityName = extractCity(plan.place_address)
+  // The plan's own name is the headline. The venue (+ area) drops to the line
+  // below so a typed title like "Obsession Movie" isn't overwritten by the
+  // map place name. If there's no title, the place name stays the headline and
+  // we don't repeat it on the subtitle — just show the area.
+  const headline = plan.title || placeName
+  const hasPlace = placeName && placeName !== 'No location'
+  const venueLine = [headline !== placeName && hasPlace ? placeName : null, cityName].filter(Boolean).join(' · ')
   const dateVal = plan.starts_at || plan.date
   const past = dateVal && new Date(dateVal) < new Date()
   const isToday = dateVal && new Date(dateVal).toDateString() === new Date().toDateString()
@@ -97,17 +104,17 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {placeName}
+              {headline}
             </div>
-            {cityName && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-                <svg width="11" height="14" viewBox="0 0 9 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {venueLine && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2, minWidth: 0 }}>
+                <svg width="11" height="14" viewBox="0 0 9 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                   <path d="M4.5 0C2.01 0 0 2.01 0 4.5c0 3.375 4.5 7.5 4.5 7.5S9 7.875 9 4.5C9 2.01 6.99 0 4.5 0zm0 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" fill="#B6ADA4"/>
                 </svg>
-                <span style={{ fontSize: 13, color: '#B6ADA4' }}>{cityName}</span>
+                <span style={{ fontSize: 13, color: '#B6ADA4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venueLine}</span>
               </div>
             )}
-            <div style={{ fontSize: 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 600 : 400, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: isToday ? 13.5 : 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 700 : 400, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               {dateStr}
               {past && <span style={{ background: '#ECE6E0', color: '#9A9087', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>Ended</span>}
             </div>
