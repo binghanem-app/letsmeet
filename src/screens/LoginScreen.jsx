@@ -244,7 +244,14 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
         // appUrlOpen handler in App.jsx capture the returned tokens + close the browser.
         const { data, error: err } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo, skipBrowserRedirect: true },
+          options: {
+            redirectTo,
+            skipBrowserRedirect: true,
+            // Force Google's account chooser every time. Without this, the Safari
+            // view reuses Google's cookie and silently re-logs the last account,
+            // making it impossible to switch to a different Gmail.
+            queryParams: { prompt: 'select_account' },
+          },
         })
         if (err) throw err
         if (data?.url) {
@@ -262,7 +269,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
       } else {
         const { error: err } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo },
+          options: { redirectTo, queryParams: { prompt: 'select_account' } },
         })
         if (err) throw err
       }
