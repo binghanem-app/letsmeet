@@ -155,7 +155,7 @@ function StepPlace({ value, onChange }) {
   const [searching, setSearching] = useState(false)
   const [geo, setGeo] = useState(null)
   const [geoLabel, setGeoLabel] = useState('your location')
-  const [typedName, setTypedName] = useState(value?.typed || '')
+  const [typedName, setTypedName] = useState(value?.typed ? (value.name || '') : '')
   const debounce = useRef(null)
   const inputRef = useRef(null)
 
@@ -231,7 +231,11 @@ function StepPlace({ value, onChange }) {
   }
 
   function selectPlace(p) {
-    onChange({ name: p.name, address: p.address, lat: p.lat, lng: p.lng, typed: null })
+    // If the user already typed a custom name (in "Type a name" mode) and then
+    // switched here to attach a map pin, keep THEIR name as the displayed place
+    // and only borrow the map's coordinates + address. Otherwise use the map name.
+    const customName = value?.typed ? value.name : null
+    onChange({ name: customName || p.name, address: p.address, lat: p.lat, lng: p.lng, typed: null })
   }
 
   const isSelected = value && !value.typed
