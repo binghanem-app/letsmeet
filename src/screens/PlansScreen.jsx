@@ -809,7 +809,6 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
             <CategoryIcon type={(CATEGORY_CONFIG[plan.vibe] || {}).iconType} color={(CATEGORY_CONFIG[plan.vibe] || { accent: '#FF6B4A' }).accent} size={28} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
             <div style={{ font: "700 22px/1.3 -apple-system", color: '#1A1A1A', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>{plan.title || plan.place}</div>
             <div style={{ fontSize: 13, color: '#9A9087' }}>
               {(() => {
