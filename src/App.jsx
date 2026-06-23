@@ -142,9 +142,13 @@ export default function App() {
       const recvListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
         const { type, plan_id: planId } = notification.data || {}
         if (type === 'chat') {
-          // Only a real chat message bumps the per-plan unread badge.
+          // The Home + Plans realtime subscriptions already bump the per-plan unread
+          // badge the instant the message lands. Do NOT also setHomeRefresh here: a
+          // full feed reload races with that live increment and clobbers it — the
+          // badge appears, then vanishes ~2s later when the reload's count query
+          // (slightly behind the realtime broadcast) comes back without the new
+          // message. Just nudge the open-plan badge; realtime handles the cards.
           if (planId) setLatestMessage(prev => ({ planId, seq: (prev?.seq || 0) + 1 }))
-          setHomeRefresh(r => r + 1)
         } else if (type === 'plan_invite' || type === 'plan_response') {
           setHomeRefresh(r => r + 1)
           setLatestInvite(n => n + 1)
@@ -337,7 +341,7 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => { setScreen('home'); setOpenPlanId(null) }} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => { setScreen('home'); setOpenPlanId(null) }} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onPlanClosed={(planId) => { if (planId) setViewedPlanIds(s => { if (!s.has(planId)) return s; const n = new Set(s); n.delete(planId); return n }); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} />
           </div>
           <div style={show('pro')}>
             <ProScreen session={session} />

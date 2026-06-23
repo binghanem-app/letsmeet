@@ -447,7 +447,7 @@ function InviteMoreSheet({ plan, myId, onClose, onDone }) {
 
 // ─── Plan detail — full page ──────────────────────────────────────────────────
 
-function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan }) {
+function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan, onMarkedRead }) {
   const isHost = plan.host === myId
   const myInvite = plan.invitees?.find(i => i.invitee === myId)
   const myRsvp = myInvite?.rsvp || (isHost ? 'going' : 'invited')
@@ -550,11 +550,19 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 
     chatChannelRef.current = channel
     return () => {
+      // Leaving the chat = everything seen so far is read. Persist last_read_at,
+      // THEN tell the parent the plan is no longer "open" so its Home badge can
+      // be driven by the read marker again. Without this the plan stays in
+      // viewedPlanIds forever and new messages never re-badge it (the badge would
+      // flash on once via realtime, then a reload would suppress it back to 0).
       if (lastMsgTimestampRef.current) {
         supabase.from('plan_message_reads').upsert(
           { user_id: myId, plan_id: plan.id, last_read_at: lastMsgTimestampRef.current },
           { onConflict: 'user_id,plan_id' }
-        ).then(() => {})
+        ).then(() => onMarkedRead?.(plan.id))
+      } else {
+        // No messages were seen — still un-suppress so a first incoming message badges.
+        onMarkedRead?.(plan.id)
       }
       supabase.removeChannel(channel)
       chatChannelRef.current = null
@@ -1105,7 +1113,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan 
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onUnreadCount, latestMessage, latestInvite }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onPlanClosed, onUnreadCount, latestMessage, latestInvite }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
@@ -1384,6 +1392,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
           }}
           onUpdated={load}
           onDeletePlan={() => deletePlan(selected.id)}
+          onMarkedRead={onPlanClosed}
         />
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 22px 24px' }} className="no-scrollbar">
