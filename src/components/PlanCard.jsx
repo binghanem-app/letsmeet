@@ -103,7 +103,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
             <CategoryIcon type={cat.type} color={cat.color} size={26} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 18px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ font: '700 18px/1.4 -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>
               {headline}
             </div>
             {venueLine && (
@@ -111,7 +111,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
                 <svg width="11" height="14" viewBox="0 0 9 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                   <path d="M4.5 0C2.01 0 0 2.01 0 4.5c0 3.375 4.5 7.5 4.5 7.5S9 7.875 9 4.5C9 2.01 6.99 0 4.5 0zm0 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" fill="#B6ADA4"/>
                 </svg>
-                <span style={{ fontSize: 13, color: '#B6ADA4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venueLine}</span>
+                <span style={{ fontSize: 13, lineHeight: 1.4, color: '#B6ADA4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>{venueLine}</span>
               </div>
             )}
             <div style={{ fontSize: isToday ? 13.5 : 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 700 : 400, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
