@@ -60,7 +60,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
   const past = dateVal && new Date(dateVal) < new Date()
   const isToday = dateVal && new Date(dateVal).toDateString() === new Date().toDateString()
 
-  const cat = CATEGORY_CONFIG[plan.vibe] || { bg: '#EFE8E2', color: '#9A9087', type: null }
+  const cat = CATEGORY_CONFIG[plan.vibe] || { bg: '#FFEFE9', color: '#FF6B4A', type: null }
   const [showConfirm, setShowConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
 
