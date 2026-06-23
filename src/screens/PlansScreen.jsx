@@ -213,6 +213,16 @@ function shortAddr(addr) {
   const parts = addr.split(',')
   return parts.slice(1, 3).map(s => s.trim()).filter(Boolean).join(', ') || parts[0]?.trim() || ''
 }
+// Pull the neighbourhood (area) and city out of a Google formatted address.
+// These are ' - ' separated, ending with the country, e.g.
+// "Level 2, The Dubai Mall - Burj Khalifa - Downtown Dubai - Dubai - UAE".
+function areaCity(addr) {
+  if (!addr) return { area: null, city: null }
+  const parts = addr.split(' - ').map(s => s.trim()).filter(Boolean)
+  if (parts.length >= 3) return { area: parts[parts.length - 3], city: parts[parts.length - 2] }
+  if (parts.length >= 1) return { area: null, city: parts[parts.length === 2 ? 0 : parts.length - 1] }
+  return { area: null, city: null }
+}
 function isPast(iso) {
   if (!iso) return false
   return new Date(iso) < new Date(new Date().toDateString())
@@ -801,21 +811,29 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
             <div style={{ font: "700 22px/1.3 -apple-system", color: '#1A1A1A', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>{plan.title || plan.place}</div>
-            <div style={{ fontSize: 13, color: '#9A9087', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 13, color: '#9A9087' }}>
               {(() => {
-                const addr = shortAddr(plan.place_address)
+                const { area, city } = areaCity(plan.place_address)
+                // Venue name (from a Google pick or a typed place), shown unless it's
+                // identical to the title — then it'd just repeat the headline.
+                const venue = plan.place && plan.place !== plan.title ? plan.place : null
+                const locText = [venue, area, city].filter(Boolean).join(' · ')
                 const when = plan.date ? shortDate(plan.date) + (plan.time_label ? ' · ' + plan.time_label : '') : null
-                if (!addr && !when) return 'Date TBD'
+                if (!locText && !when) return 'Date TBD'
                 return (
                   <>
-                    {addr && (mapsUrl
-                      ? <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#FF6B4A', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                          {addr}
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 3, verticalAlign: '-1px' }}><path d="M7 17 17 7M9 7h8v8"/></svg>
-                        </a>
-                      : <span>{addr}</span>)}
-                    {addr && when ? ' · ' : ''}
-                    {when}
+                    {locText && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{locText}</span>
+                        {mapsUrl && (
+                          <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} aria-label="Open in Maps"
+                             style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 9, background: '#FFF1EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {when && <div style={{ marginTop: locText ? 4 : 0 }}>{when}</div>}
                   </>
                 )
               })()}
