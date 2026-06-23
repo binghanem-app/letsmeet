@@ -253,7 +253,8 @@ function CategoryIcon({ type, color = '#1F2933', size = 22 }) {
   if (type === 'hangout')  return <svg viewBox="0 0 24 24" style={s}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
   if (type === 'outdoors') return <svg viewBox="0 0 24 24" style={s}><path d="M3 20h18M8 20V9l4-6 4 6v11"/><path d="M12 14h.01"/></svg>
   if (type === 'trip')     return <svg viewBox="0 0 24 24" style={s}><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.5.1-.8.5-.6.9l2 4c.2.4.6.6 1 .4l2.5-1.2 2.7 2.7-1.2 2.5c-.2.4 0 .8.4 1l4 2c.4.2.8.1.9-.4Z"/></svg>
-  return null
+  // Custom/typed plans have no preset vibe — show a calendar (matches PlanCard).
+  return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
 }
 
 function CategoryIconBadge({ type, color, bg }) {
@@ -794,12 +795,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
         </div>
         {/* Row 2: emoji + plan info */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CATEGORY_CONFIG[plan.vibe] || { accentBg: '#D0C9C2' }).accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CategoryIcon type={(CATEGORY_CONFIG[plan.vibe] || {}).iconType} color={(CATEGORY_CONFIG[plan.vibe] || { accent: '#9A9087' }).accent} size={28} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CATEGORY_CONFIG[plan.vibe] || { accentBg: '#FFEFE9' }).accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CategoryIcon type={(CATEGORY_CONFIG[plan.vibe] || {}).iconType} color={(CATEGORY_CONFIG[plan.vibe] || { accent: '#FF6B4A' }).accent} size={28} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#FF6B4A', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>{plan.vibe || 'Plan'}</div>
-            <div style={{ font: "700 22px -apple-system", color: '#1A1A1A', lineHeight: 1.2, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.place || plan.title}</div>
+            <div style={{ font: "700 22px/1.3 -apple-system", color: '#1A1A1A', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>{plan.title || plan.place}</div>
             <div style={{ fontSize: 13, color: '#9A9087', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {(() => {
                 const addr = shortAddr(plan.place_address)
