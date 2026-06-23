@@ -80,7 +80,7 @@ function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friends
       })}
 
       {/* FAB */}
-      <div onClick={onCreate} style={{ cursor: 'pointer', marginTop: -16 }}>
+      <div onClick={onCreate} style={{ cursor: 'pointer', marginTop: -6 }}>
         <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(135deg, #FF6B4A, #FF8055)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255,107,74,.4)' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </div>
