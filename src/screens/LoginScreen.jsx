@@ -2,19 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 
-// Random nonce for Sign in with Apple. Apple receives the SHA-256 hash; Supabase
-// receives the raw value and verifies the hash matches the token's nonce claim.
-function genNonce(len = 32) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  const arr = new Uint8Array(len)
-  crypto.getRandomValues(arr)
-  return Array.from(arr, n => chars[n % chars.length]).join('')
-}
-async function sha256Hex(str) {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
-  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('')
-}
-
 // ─── icon helpers ──────────────────────────────────────────────────────────
 const PeopleIcon = () => (
   <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
@@ -284,26 +271,26 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
     setLoadingApple(true)
     try {
       if (Capacitor.isNativePlatform()) {
-        // Native Sign in with Apple (ASAuthorizationAppleIDProvider) — required by
-        // App Store Guideline 4.8 and reliable inside WKWebView, unlike web OAuth.
-        const rawNonce = genNonce()
-        const hashedNonce = await sha256Hex(rawNonce)
-        const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
-        const result = await SignInWithApple.authorize({
-          clientId: 'com.binghanem.letsmeet',
-          redirectURI: 'letsmeet://localhost',
-          scopes: 'email name',
-          nonce: hashedNonce,
-        })
-        const idToken = result?.response?.identityToken
-        if (!idToken) throw new Error('Apple did not return an identity token.')
-        const { error: err } = await supabase.auth.signInWithIdToken({
+        // Web-based Apple OAuth in an external Safari view — same approach as
+        // Google. This deliberately does NOT use native Sign in with Apple: the
+        // native ASAuthorization path failed with error 1000 because the App ID's
+        // SIWA capability was never authorized in the signing profile. Safari
+        // OAuth needs no entitlement and works on iPhone and iPad compat mode.
+        const { data, error: err } = await supabase.auth.signInWithOAuth({
           provider: 'apple',
-          token: idToken,
-          nonce: rawNonce,
+          options: { redirectTo, skipBrowserRedirect: true },
         })
         if (err) throw err
-        onLogin?.()
+        if (data?.url) {
+          const { Browser } = await import('@capacitor/browser')
+          // Clear loading if the user dismisses the Safari view without finishing.
+          const finished = await Browser.addListener('browserFinished', () => {
+            setLoadingApple(false)
+            finished.remove()
+          })
+          await Browser.open({ url: data.url })
+        }
+        // Session is set via the appUrlOpen listener in App.jsx; loading clears on return.
       } else {
         const { error: err } = await supabase.auth.signInWithOAuth({
           provider: 'apple',
@@ -312,13 +299,7 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
         if (err) throw err
       }
     } catch (err) {
-      // User-cancelled native sheet throws too; show nothing jarring for that.
-      // ASAuthorizationError.canceled is code 1001 — the only unambiguous cancel.
-      // Do NOT swallow 1000 ("unknown"): that's a real failure (e.g. missing SIWA
-      // entitlement) the user needs to see, not a cancellation.
-      const msg = err?.message || ''
-      const cancelled = String(err?.code ?? '') === '1001' || /cancel/i.test(msg)
-      if (!cancelled) setError(msg || 'Apple sign-in failed. Please try again.')
+      setError(err?.message || 'Apple sign-in failed. Please try again.')
       setLoadingApple(false)
     }
   }

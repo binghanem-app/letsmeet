@@ -71,14 +71,13 @@ workflows:
         script: cd ios/App && pod install
       - name: Configure push notifications (entitlement + AppDelegate)
         script: |
-          # 1. Write the entitlements file DIRECTLY rather than via `plutil -insert`.
-          #    plutil treats dots in a keypath as separators, so
-          #    `plutil -insert com.apple.developer.applesignin` does NOT create one
-          #    flat key — it nests com > apple > developer > applesignin, leaving
-          #    Sign in with Apple UNENTITLED. The app still builds/installs (push works
-          #    because aps-environment has no dots) but ASAuthorization fails at runtime
-          #    with error 1000. Writing the plist verbatim guarantees the exact flat
-          #    keys: aps-environment (production APNs) + com.apple.developer.applesignin.
+          # 1. Write the entitlements file. Apple sign-in uses the WEB OAuth flow
+          #    (Safari view, like Google) — NOT native ASAuthorization — so we do
+          #    NOT ship the com.apple.developer.applesignin entitlement. The native
+          #    path failed with error 1000 because the App ID's SIWA capability was
+          #    never authorized in the signing profile; web OAuth needs no
+          #    entitlement at all. The only entitlement we need is aps-environment
+          #    (production APNs) for push notifications.
           cat > ios/App/App/App.entitlements <<'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -86,19 +85,17 @@ workflows:
           <dict>
           <key>aps-environment</key>
           <string>production</string>
-          <key>com.apple.developer.applesignin</key>
-          <array>
-          <string>Default</string>
-          </array>
           </dict>
           </plist>
           PLIST
           echo "=== Entitlements file ===" && cat ios/App/App/App.entitlements
-          # HARD GATE: confirm the SIWA entitlement landed as a FLAT key (PlistBuddy
-          # uses ':' separators, so :com.apple.developer.applesignin:0 reads the flat
-          # dotted key). Fail loudly if it's missing/malformed — root cause of error 1000.
-          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.applesignin:0' ios/App/App/App.entitlements | grep -q Default \
-            || { echo "FATAL: Sign in with Apple entitlement missing/malformed — would cause error 1000"; exit 1; }
+          # HARD GATE: confirm push entitlement is present and SIWA is NOT (shipping
+          # an unauthorized SIWA entitlement is exactly what caused error 1000).
+          /usr/libexec/PlistBuddy -c 'Print :aps-environment' ios/App/App/App.entitlements | grep -q production \
+            || { echo "FATAL: aps-environment entitlement missing — push would break"; exit 1; }
+          if grep -q 'applesignin' ios/App/App/App.entitlements; then
+            echo "FATAL: SIWA entitlement present — web OAuth needs none and it causes error 1000"; exit 1
+          fi
           # 2. Point the App target at the entitlements file (xcodeproj gem)
           ruby scripts/add_entitlements.rb
           echo "=== Verify CODE_SIGN_ENTITLEMENTS ===" && grep "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "MISSING — entitlement not set"
