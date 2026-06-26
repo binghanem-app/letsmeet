@@ -59,28 +59,34 @@ export default function OnboardingScreen({ session, onDone }) {
   const canSave = first.trim() && username.trim()
 
   return (
-    <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#FBF7F4', padding: '0 28px' }}>
+    <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#FBF7F4' }}>
 
-      {/* top illustration area */}
-      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 52, paddingBottom: 32 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 24, background: 'linear-gradient(135deg,#FF6B4A,#FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 14px 28px -8px rgba(255,107,74,.5)' }}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-            <circle cx="8.5" cy="9" r="3.4" fill="#fff"/>
-            <circle cx="15.5" cy="9" r="3.4" fill="#fff" opacity=".7"/>
-            <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+      {/* Everything lives in ONE scroll container — including the CTA — so the
+          button is always reachable above the keyboard. The app runs with
+          Keyboard.resize "none" + ios.scrollEnabled false, so a footer button
+          pinned outside the scroll area ends up hidden under the keyboard, which
+          left first-time users unable to finish onboarding (the reviewer's
+          account authenticated but never got a name → "stuck after login"). */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px', WebkitOverflowScrolling: 'touch' }} className="no-scrollbar">
+
+        {/* top illustration area */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 52, paddingBottom: 32 }}>
+          <div style={{ width: 72, height: 72, borderRadius: 24, background: 'linear-gradient(135deg,#FF6B4A,#FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 14px 28px -8px rgba(255,107,74,.5)' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <circle cx="8.5" cy="9" r="3.4" fill="#fff"/>
+              <circle cx="15.5" cy="9" r="3.4" fill="#fff" opacity=".7"/>
+              <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h1 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933', textAlign: 'center' }}>
+            Welcome to Let's Meet
+          </h1>
+          <p style={{ margin: 0, fontSize: 14.5, color: '#9A9087', textAlign: 'center', lineHeight: 1.6 }}>
+            Quick setup — takes 30 seconds.{'\n'}You can change all of this later.
+          </p>
         </div>
-        <h1 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933', textAlign: 'center' }}>
-          Welcome to Let's Meet
-        </h1>
-        <p style={{ margin: 0, fontSize: 14.5, color: '#9A9087', textAlign: 'center', lineHeight: 1.6 }}>
-          Quick setup — takes 30 seconds.{'\n'}You can change all of this later.
-        </p>
-      </div>
 
-      {/* form */}
-      <div style={{ flex: 1, overflowY: 'auto' }} className="no-scrollbar">
-
+        {/* form */}
         <Field label="FIRST NAME">
           <Input
             value={first}
@@ -106,9 +112,11 @@ export default function OnboardingScreen({ session, onDone }) {
               ref={usernameRef}
               value={username}
               onChange={e => { setUsername(e.target.value); setErr('') }}
+              onKeyDown={e => { if (e.key === 'Enter' && canSave && !saving) save() }}
               placeholder="choose_username"
               autoCapitalize="none"
               autoCorrect="off"
+              enterKeyHint="done"
               style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '11px 0' }}
             />
           </div>
@@ -122,10 +130,8 @@ export default function OnboardingScreen({ session, onDone }) {
             {err}
           </div>
         )}
-      </div>
 
-      {/* CTA */}
-      <div style={{ padding: '16px 0 32px', flexShrink: 0 }}>
+        {/* CTA — inside the scroll area so the keyboard can never hide it */}
         <button
           onClick={save}
           disabled={!canSave || saving}
@@ -133,6 +139,9 @@ export default function OnboardingScreen({ session, onDone }) {
         >
           {saving ? 'Saving…' : "Let's go 🎉"}
         </button>
+
+        {/* bottom spacer so the button can scroll clear of the keyboard */}
+        <div style={{ height: 48, flexShrink: 0 }} />
       </div>
     </div>
   )
@@ -158,6 +167,7 @@ function Input({ value, onChange, placeholder, autoFocus, onNext }) {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
+        enterKeyHint={onNext ? 'next' : 'done'}
         onKeyDown={e => e.key === 'Enter' && onNext?.()}
         style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px -apple-system", color: '#1F2933', padding: '13px 0' }}
       />
