@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import PlanCard from '../components/PlanCard'
+import CategoryTile from '../components/CategoryTile'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 
@@ -805,9 +806,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
         </div>
         {/* Row 2: emoji + plan info */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: (CATEGORY_CONFIG[plan.vibe] || { accentBg: '#FFEFE9' }).accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CategoryIcon type={(CATEGORY_CONFIG[plan.vibe] || {}).iconType} color={(CATEGORY_CONFIG[plan.vibe] || { accent: '#FF6B4A' }).accent} size={28} />
-          </div>
+          <CategoryTile vibe={plan.vibe} size={56} radius={16} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "700 22px/1.3 -apple-system", color: '#1A1A1A', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingBottom: 1 }}>{plan.title || plan.place}</div>
             <div style={{ fontSize: 13, color: '#9A9087' }}>

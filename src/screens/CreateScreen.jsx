@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
+import CategoryTile from '../components/CategoryTile'
 
 // Google Maps/Places key — must live in the client bundle for Maps JS; protect it
 // with HTTP-referrer / iOS-bundle restrictions in Google Cloud, not by hiding it.
@@ -128,9 +129,7 @@ function StepName({ value, onChange, onVibeChange }) {
             onClick={() => { onChange(p.label); onVibeChange?.(p.label) }}
             style={{ display: 'flex', alignItems: 'center', gap: 13, background: value === p.label ? '#FFF1EC' : '#fff', border: `1.5px solid ${value === p.label ? '#FF6B4A' : '#F1E8E2'}`, borderRadius: 16, padding: '12px 15px', cursor: 'pointer' }}
           >
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CategoryIcon type={p.type} color={p.color} size={24} />
-            </div>
+            <CategoryTile vibe={p.label} size={42} radius={12} />
             <div style={{ flex: 1 }}>
               <div style={{ font: "600 15px -apple-system", color: value === p.label ? '#FF6B4A' : '#1F2933' }}>{p.label}</div>
               <div style={{ fontSize: 12.5, color: '#9A9087', marginTop: 1 }}>{p.sub}</div>
