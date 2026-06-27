@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import CategoryTile from '../components/CategoryTile'
+import confettiUrl from '../assets/confetti.png'
+import locationIcon from '../assets/icon-location.png'
+import calendarIcon from '../assets/icon-calendar.png'
+import friendsIcon from '../assets/icon-friends.png'
 
 // Google Maps/Places key — must live in the client bundle for Maps JS; protect it
 // with HTTP-referrer / iOS-bundle restrictions in Google Cloud, not by hiding it.
@@ -641,9 +645,9 @@ function StepReview({ title, place, date, hour, minute, ampm, inviteeCount }) {
         </div>
         {/* details */}
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <ReviewRow icon="📍" label="Where" value={placeLabel}/>
-          <ReviewRow icon="📅" label="When" value={`${dateLabel} · ${timeLabel}`}/>
-          <ReviewRow icon="👥" label="Invited" value={inviteeCount === 0 ? 'No one yet — add friends' : `${inviteeCount} friend${inviteeCount === 1 ? '' : 's'}`}/>
+          <ReviewRow img={locationIcon} label="Where" value={placeLabel}/>
+          <ReviewRow img={calendarIcon} label="When" value={`${dateLabel} · ${timeLabel}`}/>
+          <ReviewRow img={friendsIcon} label="Invited" value={inviteeCount === 0 ? 'No one yet — add friends' : `${inviteeCount} friend${inviteeCount === 1 ? '' : 's'}`}/>
         </div>
       </div>
 
@@ -655,10 +659,12 @@ function StepReview({ title, place, date, hour, minute, ampm, inviteeCount }) {
   )
 }
 
-function ReviewRow({ icon, label, value }) {
+function ReviewRow({ icon, img, label, value }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-      <span style={{ fontSize: 18, lineHeight: 1.1, flexShrink: 0 }}>{icon}</span>
+      {img
+        ? <img src={img} alt="" style={{ width: 24, height: 24, objectFit: 'contain', flexShrink: 0 }} />
+        : <span style={{ fontSize: 18, lineHeight: 1.1, flexShrink: 0 }}>{icon}</span>}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', marginBottom: 2 }}>{label.toUpperCase()}</div>
         <div style={{ font: "600 14.5px -apple-system", color: '#1F2933' }}>{value}</div>
@@ -671,10 +677,8 @@ function ReviewRow({ icon, label, value }) {
 function SuccessScreen({ title, inviteeCount, onSeeWhosComing, onBackHome }) {
   return (
     <div className="fade-up" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px', textAlign: 'center' }}>
-      <div style={{ width: 80, height: 80, borderRadius: 26, background: 'linear-gradient(135deg, #FF6B4A, #FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22, boxShadow: '0 16px 32px -10px rgba(255,107,74,.55)' }}>
-        <span style={{ fontSize: 40 }}>🎉</span>
-      </div>
-      <h2 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933' }}>Invite sent!</h2>
+      <img src={confettiUrl} alt="" style={{ width: 130, marginBottom: 14 }} />
+      <h2 style={{ margin: '0 0 8px', font: "600 28px Fredoka, -apple-system", color: '#1F2933' }}>Invite sent!</h2>
       <p style={{ margin: '0 0 6px', font: "600 16px -apple-system", color: '#1F2933' }}>{title}</p>
       <p style={{ margin: '0 0 32px', fontSize: 14, color: '#9A9087', lineHeight: 1.5 }}>
         {inviteeCount > 0 ? `${inviteeCount} friend${inviteeCount === 1 ? '' : 's'} just got the invite.` : 'Your plan is ready.'}<br/>

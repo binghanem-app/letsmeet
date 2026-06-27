@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import welcomeUrl from '../assets/onboarding-welcome.png'
 
 export default function OnboardingScreen({ session, onDone }) {
   const [first, setFirst]     = useState('')
@@ -71,14 +72,8 @@ export default function OnboardingScreen({ session, onDone }) {
 
         {/* top illustration area */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 52, paddingBottom: 32 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 24, background: 'linear-gradient(135deg,#FF6B4A,#FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 14px 28px -8px rgba(255,107,74,.5)' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-              <circle cx="8.5" cy="9" r="3.4" fill="#fff"/>
-              <circle cx="15.5" cy="9" r="3.4" fill="#fff" opacity=".7"/>
-              <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <h1 style={{ margin: '0 0 8px', font: "600 28px -apple-system", color: '#1F2933', textAlign: 'center' }}>
+          <img src={welcomeUrl} alt="" style={{ width: 132, marginBottom: 12 }} />
+          <h1 style={{ margin: '0 0 8px', font: "600 28px Fredoka, -apple-system", color: '#1F2933', textAlign: 'center' }}>
             Welcome to Let's Meet
           </h1>
           <p style={{ margin: 0, fontSize: 14.5, color: '#9A9087', textAlign: 'center', lineHeight: 1.6 }}>

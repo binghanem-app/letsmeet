@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import UserProfileSheet from '../components/UserProfileSheet'
 import AvatarImg from '../components/Avatar'
 import { Capacitor } from '@capacitor/core'
+import noFriendsUrl from '../assets/no-friends.png'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function initials(name = '') {
@@ -1210,11 +1211,13 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
               {[1, 2, 3].map(i => <div key={i} style={{ height: 68, borderRadius: 16, background: '#EFE8E2' }}/>)}
             </div>
           ) : displayed.length === 0 ? (
-            <div style={{ background: '#fff', borderRadius: 16, padding: '28px 20px', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 4px', font: "600 16px -apple-system", color: '#1A1A1A' }}>
+            <div style={{ background: '#fff', borderRadius: 16, padding: '24px 20px 26px', textAlign: 'center' }}>
+              <img src={noFriendsUrl} alt="" style={{ width: 168, maxWidth: '60%', display: 'block', margin: '0 auto 12px' }} />
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#FFEAE2', color: '#FF6B4A', font: '600 14px Fredoka, -apple-system', padding: '8px 16px', borderRadius: 22 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M18.5 19c0-2.6-1.3-4.2-3.2-4.6"/></svg>
                 {activeCircle ? 'No friends in this circle' : 'No friends yet'}
-              </p>
-              <p style={{ margin: 0, fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>
+              </div>
+              <p style={{ margin: '12px 0 0', fontSize: 13.5, color: '#9A9087', lineHeight: 1.5 }}>
                 {activeCircle
                   ? "Tap a friend's ⋯ menu to add them here."
                   : 'Use the search bar to find friends.'}

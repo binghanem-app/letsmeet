@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import PlanCard from '../components/PlanCard'
 import CategoryTile from '../components/CategoryTile'
+import emptyChatUrl from '../assets/empty-chat.png'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 
@@ -956,7 +957,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
           <div style={{ font: "600 15px -apple-system", color: '#1A1A1A', padding: '13px 16px 10px', borderBottom: '1px solid #F5F0EB' }}>Chat</div>
           <div style={{ padding: '10px 12px 12px' }}>
             {messages.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: '#B6ADA4' }}>No messages yet — say hi!</div>
+              <div style={{ textAlign: 'center', padding: '18px 0' }}>
+                <img src={emptyChatUrl} alt="" style={{ width: 92, display: 'block', margin: '0 auto 6px' }} />
+                <div style={{ fontSize: 13, color: '#B6ADA4' }}>No messages yet — say hi!</div>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {messages.map((msg, idx) => {
