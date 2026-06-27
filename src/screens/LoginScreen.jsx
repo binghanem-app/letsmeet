@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
+import logoUrl from '../assets/logo.png'
+import bannerUrl from '../assets/login-banner.png'
 
 // ─── icon helpers ──────────────────────────────────────────────────────────
-const PeopleIcon = () => (
-  <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
-    <circle cx="8.5" cy="9" r="3.4" fill="#fff"/>
-    <circle cx="15.5" cy="9" r="3.4" fill="#fff" opacity=".7"/>
-    <path d="M3 19c0-2.8 2.4-4.6 5.5-4.6S14 16.2 14 19"
-          stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-)
-
 const EmailIcon = () => (
   <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
        stroke="#fff" strokeWidth="2">
@@ -314,64 +307,32 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
       }}
     >
       {/* logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-        <div style={{
-          width: 38, height: 38, borderRadius: 12, background: '#FF6B4A',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 14px rgba(255,107,74,.4)',
-        }}>
-          <PeopleIcon />
-        </div>
-        <span style={{ font: "600 21px -apple-system", color: '#1F2933' }}>Let's Meet</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
+        <img src={logoUrl} alt="Let's Meet" style={{ width: 44, height: 44, filter: 'drop-shadow(0 6px 14px rgba(255,107,74,.4))' }} />
+        <span style={{ font: "600 21px Fredoka, -apple-system", color: '#1F2933' }}>Let's Meet</span>
       </div>
 
       {/* hero */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 22, padding: '14px 0' }}>
 
-        {/* social-proof card */}
+        {/* hero illustration card */}
         <div style={{
-          position: 'relative', height: 172,
           background: '#fff', borderRadius: 28,
           border: '1px solid #F1E8E2',
           boxShadow: '0 18px 40px -22px rgba(20,24,30,.25)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          overflow: 'hidden', padding: '16px 18px 18px',
         }}>
-          {/* decorative circles */}
-          <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: '#FFEFE9' }}/>
-          <div style={{ position: 'absolute', bottom: -40, left: -25, width: 110, height: 110, borderRadius: '50%', background: '#EAF1FF' }}/>
-
-          {/* avatar stack */}
-          <div style={{ display: 'flex', zIndex: 2 }}>
-            {[
-              ['AM', '#5B7CFA'], ['JL', '#12B886'],
-              ['PS', '#F5A623'], ['+9', '#FF6B4A'],
-            ].map(([label, color]) => (
-              <div key={label} style={{
-                width: 50, height: 50, borderRadius: '50%', background: color,
-                border: '3px solid #fff', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', color: '#fff',
-                font: `600 ${label.startsWith('+') ? '15px' : '17px'} -apple-system`,
-                marginLeft: label === 'AM' ? 0 : -14,
-              }}>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          {/* pill */}
-          <div style={{
-            zIndex: 2, background: '#F4F7EE', color: '#0E9C6B',
-            font: "600 13px -apple-system",
-            padding: '7px 14px', borderRadius: 20,
-          }}>
-            50k+ plans made this month
+          <img src={bannerUrl} alt="" style={{ width: '100%', maxHeight: 156, objectFit: 'contain' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#FFEAE2', color: '#FF6B4A', font: '600 13.5px Fredoka, -apple-system', padding: '8px 16px', borderRadius: 22 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF6B4A"><path d="M12 21s-7.5-4.6-10-9.2C.3 8.4 1.6 4.8 5 4.1c2-.4 3.8.5 5 2 1.2-1.5 3-2.4 5-2 3.4.7 4.7 4.3 3 7.7C19.5 16.4 12 21 12 21z"/></svg>
+            Plan meetups in seconds
           </div>
         </div>
 
         {/* headline */}
         <div>
-          <h1 style={{ margin: '0 0 10px', font: "600 33px/1.12 -apple-system", color: '#1F2933', letterSpacing: '-.3px' }}>
+          <h1 style={{ margin: '0 0 10px', font: "600 31px/1.16 Fredoka, -apple-system", color: '#1F2933', letterSpacing: '-.2px' }}>
             Make plans that<br/>actually happen.
           </h1>
           <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.5, color: '#7B7268' }}>
