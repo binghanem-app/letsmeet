@@ -5,6 +5,7 @@ import UserProfileSheet from '../components/UserProfileSheet'
 import PlanCard from '../components/PlanCard'
 import CategoryTile from '../components/CategoryTile'
 import emptyChatUrl from '../assets/empty-chat.png'
+import calendarUrl from '../assets/icon-calendar.png'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 
@@ -1442,7 +1443,7 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
             </div>
           ) : shown.length === 0 ? (
             <div style={{ background: '#fff', border: '1.5px dashed #E7DED7', borderRadius: 20, padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>{tab === 'past' ? '📅' : '🗓️'}</div>
+              <img src={calendarUrl} alt="" style={{ width: 60, display: 'block', margin: '0 auto 10px' }} />
               <p style={{ margin: '0 0 6px', font: "600 17px -apple-system", color: '#1F2933' }}>
                 {tab === 'past' ? 'No past plans' : 'No upcoming plans'}
               </p>
