@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import PlanCard from '../components/PlanCard'
+import noPlansUrl from '../assets/no-plans.png'
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -279,10 +280,13 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
             <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A', animation: 'spin .7s linear infinite' }}/>
           </div>
         ) : feed.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 24px' }}>
-            <div style={{ fontSize: 44, marginBottom: 12 }}>🗓️</div>
-            <p style={{ font: '600 17px -apple-system', color: '#1A1A1A', margin: '0 0 6px' }}>No plans yet</p>
-            <p style={{ fontSize: 14, color: '#9A9087', margin: 0 }}>Tap the banner above to start one.</p>
+          <div style={{ textAlign: 'center', padding: '24px 24px 40px' }}>
+            <img src={noPlansUrl} alt="" style={{ width: 200, maxWidth: '64%', display: 'block', margin: '0 auto 14px' }} />
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#FFEAE2', color: '#FF6B4A', font: '600 14px Fredoka, -apple-system', padding: '8px 16px', borderRadius: 22 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+              No plans yet
+            </div>
+            <p style={{ fontSize: 14, color: '#9A9087', margin: '12px 0 0' }}>Tap the banner above to start one.</p>
           </div>
         ) : (() => {
           const now = new Date()
