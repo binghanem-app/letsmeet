@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import PlanCard from '../components/PlanCard'
 import noPlansUrl from '../assets/no-plans.png'
+import waveUrl from '../assets/wave.png'
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -253,8 +254,9 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           <div style={{ fontSize: 14, color: '#9A9087', marginBottom: 4 }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </div>
-          <div style={{ font: '700 28px -apple-system', color: '#1A1A1A' }}>
-            Hey, {profile?.first_name || 'there'} 👋
+          <div style={{ font: '700 28px -apple-system', color: '#1A1A1A', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Hey, {profile?.first_name || 'there'}</span>
+            <img src={waveUrl} alt="" style={{ width: 30, height: 30, flexShrink: 0 }} />
           </div>
         </div>
 
