@@ -81,8 +81,8 @@ function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friends
       })}
 
       {/* FAB */}
-      <div onClick={onCreate} style={{ cursor: 'pointer', marginTop: -10 }}>
-        <img src={fabUrl} alt="Create" style={{ width: 62, height: 62, display: 'block' }} />
+      <div onClick={onCreate} style={{ cursor: 'pointer', marginTop: -14 }}>
+        <img src={fabUrl} alt="Create" style={{ width: 70, height: 70, display: 'block' }} />
       </div>
 
       {tabs.slice(2).map(t => {
