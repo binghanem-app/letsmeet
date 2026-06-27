@@ -256,7 +256,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           </div>
           <div style={{ font: '700 28px -apple-system', color: '#1A1A1A', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>Hey, {profile?.first_name || 'there'}</span>
-            <img src={waveUrl} alt="" style={{ width: 30, height: 30, flexShrink: 0 }} />
+            <img src={waveUrl} alt="" style={{ width: 30, height: 30, flexShrink: 0, transform: 'rotate(-20deg)' }} />
           </div>
         </div>
 
