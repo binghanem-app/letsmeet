@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import PlanCard from '../components/PlanCard'
 import noPlansUrl from '../assets/no-plans.png'
 import waveUrl from '../assets/wave.png'
+import homeBannerUrl from '../assets/home-banner.png'
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -261,16 +262,12 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
         </div>
 
         {/* Let's Meet Banner */}
-        <div onClick={onStartCreate} style={{ position: 'relative', margin: '0 20px 20px', borderRadius: 20, background: 'linear-gradient(110deg, #FF5E3A, #FF7A52 60%, #FF8E63)', padding: '20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 24px rgba(255,94,58,.28)', cursor: 'pointer', overflow: 'hidden', minHeight: 80 }}>
-          <div style={{ position: 'absolute', right: -20, top: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,.12)' }}/>
-          <div>
-            <div style={{ font: '700 24px -apple-system', color: '#fff', marginBottom: 4 }}>Let's Meet</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,.9)' }}>Start a plan in seconds</div>
-          </div>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          </div>
-        </div>
+        <img
+          src={homeBannerUrl}
+          alt="Make a plan"
+          onClick={onStartCreate}
+          style={{ display: 'block', width: 'calc(100% - 40px)', margin: '0 20px 20px', cursor: 'pointer', filter: 'drop-shadow(0 8px 20px rgba(255,94,58,.26))' }}
+        />
 
         {/* Your plans */}
         <div style={{ padding: '0 20px', marginBottom: 14 }}>
