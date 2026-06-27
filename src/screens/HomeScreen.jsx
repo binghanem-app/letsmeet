@@ -247,7 +247,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#FBF7F4' }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 24px' }} className="no-scrollbar">
 
         {/* Header */}
@@ -266,7 +266,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
           src={homeBannerUrl}
           alt="Make a plan"
           onClick={onStartCreate}
-          style={{ display: 'block', width: 'calc(100% - 40px)', margin: '0 20px 20px', cursor: 'pointer', filter: 'drop-shadow(0 8px 20px rgba(255,94,58,.26))' }}
+          style={{ display: 'block', width: '100%', marginBottom: 16, cursor: 'pointer' }}
         />
 
         {/* Your plans */}

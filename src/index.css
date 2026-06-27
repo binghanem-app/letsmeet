@@ -11,7 +11,7 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #F9F4F0;
+  background: #FBF7F4;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
