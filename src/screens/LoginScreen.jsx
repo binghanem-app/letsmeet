@@ -320,11 +320,11 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
           background: '#fff', borderRadius: 28,
           border: '1px solid #F1E8E2',
           boxShadow: '0 18px 40px -22px rgba(20,24,30,.25)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          overflow: 'hidden', padding: '16px 18px 18px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          overflow: 'hidden', padding: '14px 14px 18px',
         }}>
-          <img src={bannerUrl} alt="" style={{ width: '100%', maxHeight: 156, objectFit: 'contain' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#FFEAE2', color: '#FF6B4A', font: '600 13.5px Fredoka, -apple-system', padding: '8px 16px', borderRadius: 22 }}>
+          <img src={bannerUrl} alt="" style={{ width: '100%', objectFit: 'contain' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#FFEAE2', color: '#FF6B4A', font: '600 13.5px Fredoka, -apple-system', padding: '8px 16px', borderRadius: 22, marginTop: 2 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF6B4A"><path d="M12 21s-7.5-4.6-10-9.2C.3 8.4 1.6 4.8 5 4.1c2-.4 3.8.5 5 2 1.2-1.5 3-2.4 5-2 3.4.7 4.7 4.3 3 7.7C19.5 16.4 12 21 12 21z"/></svg>
             Plan meetups in seconds
           </div>
