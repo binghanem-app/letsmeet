@@ -233,13 +233,13 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
         <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>Add friends</h3>
 
         {/* username search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '4px 14px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', marginBottom: 16 }}>
           <span style={{ font: "700 16px -apple-system", color: '#B6ADA4' }}>@</span>
           <input
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             placeholder="search by username"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '9px 0' }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px -apple-system", color: '#1F2933', padding: '11px 0' }}
           />
           {searching && <div className="spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
           {query && !searching && <span onClick={() => { setQuery(''); setResults([]) }} style={{ fontSize: 18, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
@@ -1093,9 +1093,9 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
         </div>
 
         {/* Search bar */}
-        <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1.5px solid #EFE8E2', borderRadius: 14, padding: '13px 15px', margin: '0 20px 20px', cursor: 'pointer' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-          <span style={{ color: '#B6ADA4', fontSize: 14.5 }}>Search by username…</span>
+        <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 40, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', margin: '0 20px 20px', cursor: 'pointer' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+          <span style={{ color: '#B6ADA4', fontSize: 14 }}>Search by username…</span>
         </div>
 
         {/* Requests section (inline) */}
