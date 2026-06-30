@@ -235,6 +235,21 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+// Quick-reaction set for the press-and-hold menu (iMessage-style).
+const REACT_EMOJIS = ['❤️', '😂', '👍', '😮', '😢', '🙏']
+
+function ChatMenuRow({ label, icon, onClick, danger }) {
+  return (
+    <>
+      <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', font: '400 15px -apple-system', color: danger ? '#E5484D' : '#1A1A1A', cursor: 'pointer' }}>
+        <span>{label}</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={danger ? '#E5484D' : '#5B5048'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
+      </div>
+      <div style={{ height: '0.5px', background: '#EFE6DF' }} />
+    </>
+  )
+}
+
 const CATEGORY_CONFIG = {
   Coffee:     { gradient: 'linear-gradient(90deg,#F5A623,#F7C05A)', accent: '#C8841A', accentBg: '#FBF0DA', iconType: 'coffee'  },
   Dinner:     { gradient: 'linear-gradient(90deg,#A78BFA,#C4B0FF)', accent: '#A78BFA', accentBg: '#F0EBFF', iconType: 'dinner'  },
@@ -479,6 +494,12 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
   const [reportingMsg, setReportingMsg] = useState(null)
   const [reportDone, setReportDone]   = useState(false)
   const [reportError, setReportError] = useState(false)
+  const [reactions, setReactions]     = useState({}) // message_id -> [{user_id, emoji}]
+  const [menuFor, setMenuFor]         = useState(null)
+  const [replyTo, setReplyTo]         = useState(null)
+  const [editing, setEditing]         = useState(null)
+  const pressTimer = useRef(null)
+  const pressPos = useRef({ x: 0, y: 0 })
   const chatChannelRef = useRef(null)
   // undefined = still loading, null = no read record, string = ISO timestamp
   const [lastReadAt, setLastReadAt]   = useState(undefined)
@@ -560,6 +581,15 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
           }
         }
       })
+      // Edits / deletes propagate over postgres_changes (broadcast only covers new msgs).
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_messages', filter: `plan_id=eq.${plan.id}` }, ({ new: m }) => {
+        if (!m) return
+        setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m } : x))
+      })
+      // Any reaction change refetches reactions for the messages on screen.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'plan_message_reactions' }, () => {
+        setMessages(cur => { loadReactions(cur.map(x => x.id)); return cur })
+      })
       .subscribe()
 
     chatChannelRef.current = channel
@@ -614,12 +644,13 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
   async function loadMessages() {
     const { data } = await supabase
       .from('plan_messages')
-      .select('id, sender, body, photo_url, created_at')
+      .select('id, sender, body, photo_url, created_at, reply_to, edited_at, deleted_at')
       .eq('plan_id', plan.id)
       .order('created_at', { ascending: true })
     // Defense-in-depth alongside RLS: never show messages from blocked users.
     const visible = (data || []).filter(m => !blockedIdsRef.current.has(m.sender))
     setMessages(visible)
+    loadReactions(visible.map(m => m.id))
     if (!visible.length) return
     const ids = [...new Set(visible.map(m => m.sender))]
     const { data: profiles } = await supabase
@@ -635,15 +666,74 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
     setMsgProfiles(map)
   }
 
+  async function loadReactions(ids) {
+    if (!ids || !ids.length) { setReactions({}); return }
+    const { data } = await supabase.from('plan_message_reactions').select('message_id, user_id, emoji').in('message_id', ids)
+    const map = {}
+    ;(data || []).forEach(r => { (map[r.message_id] ||= []).push({ user_id: r.user_id, emoji: r.emoji }) })
+    setReactions(map)
+  }
+  async function toggleReaction(messageId, emoji) {
+    const mine = (reactions[messageId] || []).some(r => r.user_id === myId && r.emoji === emoji)
+    setReactions(prev => {
+      const list = (prev[messageId] || []).filter(r => !(r.user_id === myId && r.emoji === emoji))
+      return { ...prev, [messageId]: mine ? list : [...list, { user_id: myId, emoji }] }
+    })
+    if (mine) await supabase.from('plan_message_reactions').delete().eq('message_id', messageId).eq('user_id', myId).eq('emoji', emoji)
+    else await supabase.from('plan_message_reactions').insert({ message_id: messageId, user_id: myId, emoji })
+  }
+  function reactionSummary(messageId) {
+    const list = reactions[messageId] || []
+    if (!list.length) return []
+    const by = {}
+    list.forEach(r => { (by[r.emoji] ||= { emoji: r.emoji, count: 0, mine: false }); by[r.emoji].count++; if (r.user_id === myId) by[r.emoji].mine = true })
+    return Object.values(by)
+  }
+  const msgById = (id) => messages.find(x => x.id === id)
+  async function copyMessage(m) {
+    const text = m.body || ''
+    try { if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return } } catch { /* fall through */ }
+    try {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+    } catch { /* ignore */ }
+  }
+  async function softDelete(m) {
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, deleted_at: new Date().toISOString(), body: null, photo_url: null } : x))
+    await supabase.from('plan_messages').update({ deleted_at: new Date().toISOString(), body: null, photo_url: null }).eq('id', m.id)
+  }
+  function startReply(m) { setReplyTo(m); setEditing(null); setMenuFor(null) }
+  function startEdit(m) { setEditing(m); setReplyTo(null); setMsgBody(m.body || ''); setMenuFor(null) }
+  function onBubbleDown(e, m) {
+    if (m.deleted_at) return
+    const t = e.touches ? e.touches[0] : e
+    pressPos.current = { x: t.clientX, y: t.clientY }
+    clearTimeout(pressTimer.current)
+    pressTimer.current = setTimeout(() => setMenuFor(m), 420)
+  }
+  function onBubbleMove(e) {
+    const t = e.touches ? e.touches[0] : e
+    if (Math.abs(t.clientX - pressPos.current.x) > 10 || Math.abs(t.clientY - pressPos.current.y) > 10) clearTimeout(pressTimer.current)
+  }
+  function cancelPress() { clearTimeout(pressTimer.current) }
+
   async function sendMessage() {
     const body = msgBody.trim()
     if (!body || msgSending) return
+    // Editing an existing message: update in place, broadcast not needed (postgres_changes covers it).
+    if (editing) {
+      const ed = editing; setEditing(null); setMsgBody('')
+      setMessages(prev => prev.map(x => x.id === ed.id ? { ...x, body, edited_at: new Date().toISOString() } : x))
+      await supabase.from('plan_messages').update({ body, edited_at: new Date().toISOString() }).eq('id', ed.id)
+      return
+    }
     setDividerVisible(false)
     setMsgSending(true)
     setMsgBody('')
+    const rt = replyTo?.id || null; setReplyTo(null)
     const { data: newMsg, error: msgErr } = await supabase.from('plan_messages').insert({
-      plan_id: plan.id, sender: myId, body,
-    }).select('id, sender, body, photo_url, created_at').single()
+      plan_id: plan.id, sender: myId, body, reply_to: rt,
+    }).select('id, sender, body, photo_url, created_at, reply_to, edited_at, deleted_at').single()
     if (newMsg) {
       setMessages(prev => [...prev, newMsg])
       setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
@@ -699,9 +789,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
       const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
       if (upErr) { alert(`Upload error: ${upErr.message}`); console.error(upErr); setMsgSending(false); return }
       const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path)
+      const rt = replyTo?.id || null; setReplyTo(null)
       const { data: newMsg } = await supabase.from('plan_messages').insert({
-        plan_id: plan.id, sender: myId, photo_url: publicUrl,
-      }).select('id, sender, body, photo_url, created_at').single()
+        plan_id: plan.id, sender: myId, photo_url: publicUrl, reply_to: rt,
+      }).select('id, sender, body, photo_url, created_at, reply_to, edited_at, deleted_at').single()
       if (newMsg) {
         setMessages(prev => [...prev, newMsg])
         setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
@@ -969,6 +1060,10 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
                   const sender = msgProfiles[msg.sender]
                   const senderName = sender?.name || 'Unknown'
                   const showNewDivider = dividerVisible && idx === frozenDividerIdx.current
+                  const rx = reactionSummary(msg.id)
+                  const quoted = msg.reply_to ? msgById(msg.reply_to) : null
+                  const deleted = !!msg.deleted_at
+                  const quotedName = quoted ? (quoted.sender === myId ? 'You' : (msgProfiles[quoted.sender]?.name || 'Unknown')) : ''
                   return (
                     <Fragment key={msg.id}>
                       {showNewDivider && (
@@ -980,28 +1075,46 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
                       )}
                       <div style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8 }}>
                         {!isMe && <Avatar url={sender?.avatar_url} name={senderName} color={sender?.avatar_color} size={28}/>}
-                        <div style={{ maxWidth: '74%' }}>
+                        <div style={{ maxWidth: '74%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                           {!isMe && <div style={{ fontSize: 11, fontWeight: 600, color: '#9A9087', marginBottom: 3, paddingLeft: 3 }}>{senderName}</div>}
-                          {msg.photo_url ? (
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', width: 160, height: 110, borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
-                              {!isMe && <div onClick={() => setReportingMsg(msg)} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-                              </div>}
+                          {deleted ? (
+                            <div style={{ background: isMe ? '#F3E7E2' : '#ECE6E0', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                              <span style={{ font: 'italic 400 13.5px -apple-system', color: '#9A9087' }}>This message was deleted</span>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                              <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
-                                {msg.body}
-                              </div>
-                              {!isMe && <div onClick={() => setReportingMsg(msg)} style={{ width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, opacity: 0.4 }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#7B7268"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-                              </div>}
+                            <div onPointerDown={e => onBubbleDown(e, msg)} onPointerUp={cancelPress} onPointerMove={onBubbleMove} onPointerLeave={cancelPress} onContextMenu={e => { e.preventDefault(); setMenuFor(msg) }}
+                              style={{ WebkitUserSelect: 'none', userSelect: 'none' }}>
+                              {quoted && (
+                                <div style={{ borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,.6)' : '#FFB59E'}`, background: isMe ? 'rgba(255,107,74,.12)' : '#FBF1ED', borderRadius: 7, padding: '5px 9px', marginBottom: 4 }}>
+                                  <div style={{ font: '700 11.5px -apple-system', color: '#FF6B4A', marginBottom: 1 }}>{quotedName}</div>
+                                  <div style={{ font: '400 12.5px/1.35 -apple-system', color: '#7B7268', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{quoted.deleted_at ? 'Deleted message' : (quoted.photo_url && !quoted.body ? '📷 Photo' : quoted.body)}</div>
+                                </div>
+                              )}
+                              {msg.photo_url ? (
+                                <img src={msg.photo_url} onClick={() => setFullImg(msg.photo_url)} style={{ display: 'block', width: 160, height: 110, borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', cursor: 'pointer', objectFit: 'cover' }}/>
+                              ) : (
+                                <div style={{ background: isMe ? '#FF6B4A' : '#F2EFEC', color: isMe ? '#fff' : '#1F2933', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '10px 14px', font: "500 14px -apple-system", lineHeight: 1.45 }}>
+                                  {msg.body}
+                                </div>
+                              )}
                             </div>
                           )}
-                          <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: 3, textAlign: isMe ? 'right' : 'left', padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
-                            {fmtTime(msg.created_at)}
-                          </div>
+                          {!deleted && rx.length > 0 && (
+                            <div style={{ display: 'flex', gap: 4, marginTop: -6, zIndex: 1, padding: isMe ? '0 4px 0 0' : '0 0 0 4px' }}>
+                              {rx.map(r => (
+                                <div key={r.emoji} onClick={() => toggleReaction(msg.id, r.emoji)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#E7DED7'}`, borderRadius: 11, padding: '1px 7px', cursor: 'pointer' }}>
+                                  <span style={{ fontSize: 12.5 }}>{r.emoji}</span>
+                                  {r.count > 1 && <span style={{ font: '600 11px -apple-system', color: '#7B7268' }}>{r.count}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {!deleted && (
+                            <div style={{ fontSize: 10.5, color: '#B6ADA4', marginTop: rx.length ? 4 : 3, padding: isMe ? '0 4px 0 0' : '0 0 0 3px' }}>
+                              {fmtTime(msg.created_at)}{msg.edited_at ? ' · Edited' : ''}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Fragment>
@@ -1026,6 +1139,22 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
         reader.readAsDataURL(file)
         e.target.value = ''
       }}/>
+
+      {/* reply / edit preview above the input */}
+      {(replyTo || editing) && (
+        <div style={{ background: '#FBF7F4', borderTop: '1px solid #E8E2DA', flexShrink: 0, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 3, alignSelf: 'stretch', background: '#FF6B4A', borderRadius: 3 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 12px -apple-system', color: '#FF6B4A' }}>{editing ? 'Editing message' : `Replying to ${(replyTo.sender === myId ? 'yourself' : (msgProfiles[replyTo.sender]?.name || 'Unknown'))}`}</div>
+            <div style={{ font: '400 13px -apple-system', color: '#7B7268', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {(editing || replyTo).photo_url && !(editing || replyTo).body ? '📷 Photo' : (editing || replyTo).body}
+            </div>
+          </div>
+          <button onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setMsgBody('') } }} style={{ width: 28, height: 28, borderRadius: '50%', background: '#F0EAE4', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
 
       {/* ── chat input ── */}
       <div style={{ padding: '10px 16px 20px', borderTop: '1px solid #E8E2DA', background: '#FBF7F4', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -1087,6 +1216,34 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
           </button>
         </div>
       )}
+
+      {/* press-and-hold message menu: reactions on top, actions on the bottom */}
+      {menuFor && (() => {
+        const mMine = menuFor.sender === myId
+        const hasText = !!menuFor.body
+        return (
+          <div onClick={() => setMenuFor(null)} style={{ position: 'absolute', inset: 0, zIndex: 350, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+              {REACT_EMOJIS.map(em => {
+                const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
+                return <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }} style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
+              })}
+            </div>
+            <div style={{ maxWidth: 250, background: mMine ? '#FF6B4A' : '#F2EFEC', color: mMine ? '#fff' : '#1F2933', borderRadius: mMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: menuFor.photo_url ? 0 : '10px 14px', marginBottom: 12, overflow: 'hidden' }}>
+              {menuFor.photo_url
+                ? <img src={menuFor.photo_url} style={{ display: 'block', width: 200, borderRadius: 14 }} />
+                : <span style={{ font: '500 14px/1.45 -apple-system' }}>{menuFor.body}</span>}
+            </div>
+            <div style={{ background: '#fff', borderRadius: 14, width: 210, overflow: 'hidden', boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+              <ChatMenuRow label="Reply" icon="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-1" onClick={() => startReply(menuFor)} />
+              {hasText && <ChatMenuRow label="Copy" icon="M9 9V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4M15 9H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z" onClick={() => { copyMessage(menuFor); setMenuFor(null) }} />}
+              {mMine && hasText && <ChatMenuRow label="Edit" icon="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" onClick={() => startEdit(menuFor)} />}
+              {mMine && <ChatMenuRow label="Delete" danger icon="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" onClick={() => { softDelete(menuFor); setMenuFor(null) }} />}
+              {!mMine && <ChatMenuRow label="Report" danger icon="M4 21V4h13l-2 4 2 4H4" onClick={() => { const m = menuFor; setMenuFor(null); setReportingMsg(m) }} />}
+            </div>
+          </div>
+        )
+      })()}
 
       {showEdit && (
         <EditPlanSheet plan={plan} onClose={() => setShowEdit(false)} onSaved={() => { onUpdated?.() }} onDelete={onDeletePlan}/>
