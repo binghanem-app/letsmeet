@@ -24,6 +24,7 @@ import MessagesScreen from './screens/MessagesScreen'
 import UserProfileSheet from './components/UserProfileSheet'
 import ProfileScreen from './screens/ProfileScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
+import RecoverPasswordScreen from './screens/RecoverPasswordScreen'
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 import TermsScreen from './screens/TermsScreen'
 
@@ -109,6 +110,7 @@ export default function App() {
   const [session, setSession]           = useState(undefined)
   const [screen, setScreen]             = useState('home')
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
+  const [recoveryMode, setRecoveryMode] = useState(false)
   const [openPlanId, setOpenPlanId]     = useState(null)
   const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
@@ -238,7 +240,12 @@ export default function App() {
               access_token: params.access_token,
               refresh_token: params.refresh_token,
             })
-            if (!error && data.session) setSession(data.session)
+            if (!error && data.session) {
+              // Password-reset links carry type=recovery — drop the user into the
+              // "set a new password" screen instead of straight into the app.
+              if (params.type === 'recovery') setRecoveryMode(true)
+              setSession(data.session)
+            }
           }
           // Dismiss the external Safari view opened for Google OAuth so the user
           // lands straight back in the app instead of staring at a finished page.
@@ -252,6 +259,8 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       sessionRef.current = s
+      // Web/PKCE recovery: supabase-js fires this after processing the reset link.
+      if (_e === 'PASSWORD_RECOVERY') setRecoveryMode(true)
       setSession(s)
       if (s) {
         checkOnboarding(s.user.id)
@@ -338,6 +347,9 @@ export default function App() {
   })
 
   function renderScreen() {
+    // Password recovery overrides everything: the reset-link session is "logged in",
+    // but the user must set a new password before using the app.
+    if (recoveryMode) return <RecoverPasswordScreen onDone={() => { setRecoveryMode(false); setScreen('home') }} />
     if (screen === 'privacy') return <PrivacyPolicyScreen onBack={() => setScreen(session ? 'profile' : 'login')} />
     if (screen === 'terms')   return <TermsScreen onBack={() => setScreen(session ? 'profile' : 'login')} />
     if (!session || screen === 'login') return <LoginScreen onLogin={() => { supabase.auth.getSession().then(({ data }) => setSession(data.session)); setScreen('home') }} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />

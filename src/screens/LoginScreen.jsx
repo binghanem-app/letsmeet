@@ -31,6 +31,24 @@ function EmailModal({ onClose, onDone }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+  const [sentKind, setSentKind] = useState('signup') // 'signup' | 'reset'
+
+  async function sendReset() {
+    setError('')
+    if (!email) { setError('Enter your email address above first.'); return }
+    setLoading(true)
+    try {
+      const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'letsmeet:'
+      const redirectTo = isNative ? 'letsmeet://localhost' : window.location.origin
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+      if (err) throw err
+      setSentKind('reset'); setSent(true)
+    } catch (err) {
+      setError(err.message || 'Could not send the reset email. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -48,7 +66,7 @@ function EmailModal({ onClose, onDone }) {
         const emailRedirectTo = isNative ? 'letsmeet://localhost' : window.location.origin
         const { error: err } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } })
         if (err) throw err
-        setSent(true)
+        setSentKind('signup'); setSent(true)
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
@@ -110,8 +128,13 @@ function EmailModal({ onClose, onDone }) {
               Check your email
             </h3>
             <p style={{ margin: '0 0 24px', fontSize: 14.5, color: '#7B7268', lineHeight: 1.5 }}>
-              We sent a confirmation link to <b style={{ color: '#1F2933' }}>{email}</b>.
-              Click it to finish signing up.
+              {sentKind === 'reset' ? (
+                <>We sent a password reset link to <b style={{ color: '#1F2933' }}>{email}</b>.
+                  Open it to set a new password.</>
+              ) : (
+                <>We sent a confirmation link to <b style={{ color: '#1F2933' }}>{email}</b>.
+                  Click it to finish signing up.</>
+              )}
             </p>
             <button onClick={onClose} style={btnOutline}>Got it</button>
           </div>
@@ -145,6 +168,15 @@ function EmailModal({ onClose, onDone }) {
                 />
               )}
             </div>
+
+            {mode === 'signin' && (
+              <div style={{ textAlign: 'right', marginBottom: 14, marginTop: -4 }}>
+                <button type="button" onClick={sendReset} disabled={loading}
+                  style={{ border: 'none', background: 'none', padding: 0, font: '600 13.5px -apple-system', color: '#FF6B4A', cursor: 'pointer' }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             {error && (
               <p style={{ margin: '0 0 12px', fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>
