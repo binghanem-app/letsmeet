@@ -255,15 +255,6 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChan
                   {acting ? '…' : 'Remove friend'}
                 </button>
               )}
-              <button
-                onClick={async () => {
-                  const text = `@${profile?.username} on Let's Meet`
-                  try { await navigator.share({ title: name, text }) } catch { navigator.clipboard?.writeText(text) }
-                }}
-                style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#1F2933', font: "600 15px -apple-system", cursor: 'pointer' }}
-              >
-                Share profile
-              </button>
               {!isSelf && (
                 <>
                   <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px -apple-system", cursor: 'pointer' }}>
