@@ -92,6 +92,9 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const [emojiPicker, setEmojiPicker] = useState(false) // expanded "+" grid
   const [replyTo, setReplyTo] = useState(null)    // message being replied to
   const [editing, setEditing] = useState(null)    // message being edited
+  const [reportingMsg, setReportingMsg] = useState(null)
+  const [reportDone, setReportDone] = useState(false)
+  const [reportError, setReportError] = useState(false)
   const pressTimer = useRef(null)
   const pressPos = useRef({ x: 0, y: 0 })
   const scrollRef = useRef(null)
@@ -553,10 +556,39 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
               {hasText && <MenuRow label="Copy" icon="M9 9V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4M15 9H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z" onClick={() => { copyMessage(menuFor); setMenuFor(null) }} />}
               {mMine && hasText && <MenuRow label="Edit" icon="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" onClick={() => startEdit(menuFor)} />}
               {mMine && <MenuRow label="Delete" danger icon="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" onClick={() => { softDelete(menuFor); setMenuFor(null) }} />}
+              {!mMine && <MenuRow label="Report" danger icon="M4 21V4h13l-2 4 2 4H4" onClick={() => { const m = menuFor; setMenuFor(null); setReportingMsg(m) }} />}
             </div>
           </div>
         )
       })()}
+
+      {/* report sheet — required for user-generated content (App Store 1.2) */}
+      {reportingMsg && (
+        <div onClick={() => setReportingMsg(null)} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(0,0,0,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom,0px) + 28px)' }}>
+            <div style={{ font: '600 17px -apple-system', color: '#1F2933', marginBottom: 6 }}>Report this {reportingMsg.photo_url ? 'photo' : 'message'}?</div>
+            <div style={{ fontSize: 13, color: '#9A9087', marginBottom: 20 }}>This will be reviewed within 24 hours. {peer.first_name || 'They'} won't be notified.</div>
+            {['Spam', 'Inappropriate content', 'Harassment', 'Hate speech', 'Other'].map(reason => (
+              <div key={reason} onClick={async () => {
+                const rm = reportingMsg; setReportingMsg(null)
+                const { error } = await supabase.from('reports').insert({
+                  reporter: myId, reported: rm.sender, reason,
+                  direct_message_id: rm.id, content_type: rm.photo_url ? 'photo' : 'message',
+                })
+                if (error) { console.error('Report insert failed:', error); setReportError(true); setTimeout(() => setReportError(false), 3500); return }
+                setReportDone(true); setTimeout(() => setReportDone(false), 3000)
+              }} style={{ padding: '13px 0', borderBottom: '1px solid #F1E8E2', fontSize: 15, color: '#1F2933', cursor: 'pointer' }}>{reason}</div>
+            ))}
+            <div onClick={() => setReportingMsg(null)} style={{ marginTop: 14, padding: '13px 0', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#9A9087', cursor: 'pointer' }}>Cancel</div>
+          </div>
+        </div>
+      )}
+      {reportDone && (
+        <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#1F2933', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 95 }}>Report submitted — thank you</div>
+      )}
+      {reportError && (
+        <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#E14F2E', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 95 }}>Couldn't submit report — please try again</div>
+      )}
     </div>
   )
 }
