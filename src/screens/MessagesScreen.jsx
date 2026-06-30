@@ -71,7 +71,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     let alive = true
     ;(async () => {
       const { data } = await supabase.from('direct_messages')
-        .select('id, sender, recipient, body, photo_url, created_at')
+        .select('id, sender, recipient, body, photo_url, created_at, read_at')
         .or(`and(sender.eq.${myId},recipient.eq.${peer.id}),and(sender.eq.${peer.id},recipient.eq.${myId})`)
         .order('created_at', { ascending: true })
       if (!alive) return
@@ -82,16 +82,21 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       findSharedPlan()
     })()
 
-    // live incoming from this peer
+    // All DM rows I can see are RLS-scoped to my own conversations; filter to
+    // this peer. Cover INSERTs (incoming + my own sends from another device) and
+    // UPDATEs (peer marking my messages read → live "· Read").
     const ch = supabase.channel(`dm-thread-${myId}-${peer.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'direct_messages',
-        filter: `recipient=eq.${myId}`,
-      }, ({ new: m }) => {
-        if (m.sender !== peer.id) return
-        setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
-        scrollDown()
-        markRead()
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'direct_messages' }, ({ eventType, new: m }) => {
+        if (!m) return
+        const inConvo = (m.sender === myId && m.recipient === peer.id) || (m.sender === peer.id && m.recipient === myId)
+        if (!inConvo) return
+        if (eventType === 'INSERT') {
+          setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+          scrollDown()
+          if (m.sender === peer.id) markRead()
+        } else if (eventType === 'UPDATE') {
+          setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m } : x))
+        }
       })
       .subscribe()
     channelRef.current = ch
@@ -127,7 +132,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     setSending(true); setBody('')
     const { data: msg } = await supabase.from('direct_messages')
       .insert({ sender: myId, recipient: peer.id, body: text })
-      .select('id, sender, recipient, body, photo_url, created_at').single()
+      .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
     if (msg) { setMessages(prev => [...prev, msg]); scrollDown() }
     setSending(false)
   }
@@ -152,7 +157,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path)
       const { data: msg } = await supabase.from('direct_messages')
         .insert({ sender: myId, recipient: peer.id, photo_url: publicUrl })
-        .select('id, sender, recipient, body, photo_url, created_at').single()
+        .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
       if (msg) { setMessages(prev => [...prev, msg]); scrollDown() }
     } catch (e) { alert(`Photo error: ${e?.message || e}`) }
     setSending(false)
@@ -178,7 +183,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   let lastDay = null
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3', position: 'relative' }}>
       {/* header */}
       <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
         <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -231,7 +236,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
                         ? <img src={m.photo_url} onClick={() => setFullImg(m.photo_url)} style={{ display: 'block', maxWidth: 230, borderRadius: 12, cursor: 'pointer' }} />
                         : <span style={{ font: '400 14px/1.5 -apple-system' }}>{m.body}</span>}
                     </div>
-                    <div style={{ fontSize: 10, color: '#C4BBB2', textAlign: 'right', marginTop: 3 }}>{bubbleTime(m.created_at)}{m.read_at ? ' · Read' : ''}</div>
+                    <div style={{ fontSize: 10, color: '#C4BBB2', textAlign: 'right', marginTop: 3 }}>{bubbleTime(m.created_at)} · {m.read_at ? 'Read' : 'Sent'}</div>
                   </div>
                 </div>
               ) : (
@@ -298,7 +303,22 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   const [search, setSearch] = useState('')
   const [results, setResults] = useState(null)
   const [active, setActive] = useState(null) // peer profile object
+  const [showCompose, setShowCompose] = useState(false)
+  const [friends, setFriends] = useState([])
   const searchTimer = useRef(null)
+
+  useEffect(() => () => clearTimeout(searchTimer.current), [])
+
+  async function openCompose() {
+    setShowCompose(true)
+    const { data: fr } = await supabase.from('friendships')
+      .select('requester, addressee').or(`requester.eq.${myId},addressee.eq.${myId}`).eq('status', 'accepted')
+    const ids = (fr || []).map(f => (f.requester === myId ? f.addressee : f.requester))
+    if (!ids.length) { setFriends([]); return }
+    const { data: profs } = await supabase.from('profiles')
+      .select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
+    setFriends((profs || []).sort((a, b) => fullName(a).localeCompare(fullName(b))))
+  }
 
   async function loadConvos() {
     const { data } = await supabase.rpc('dm_conversations')
@@ -367,11 +387,14 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   const previewText = (r) => r.last_photo && !r.last_body ? '📷 Photo' : (r.last_body || '')
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3', position: 'relative' }}>
       {/* header */}
       <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '8px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, marginTop: 6 }}>
           <span style={{ font: '600 28px Fredoka, -apple-system', letterSpacing: '-.5px', color: '#1A1A1A' }}>Messages</span>
+          <button onClick={openCompose} style={{ width: 40, height: 40, borderRadius: '50%', background: '#FFF1EC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
         </div>
         <div style={{ height: 40, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 9 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
@@ -426,7 +449,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
                     {mineLast ? 'You: ' : ''}{previewText(r)}
                   </span>
                   {unread && (
-                    <span style={{ minWidth: 20, height: 20, borderRadius: 10, background: '#FF6B4A', color: '#fff', font: '700 11px -apple-system', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{r.unread > 99 ? '99+' : r.unread}</span>
+                    <span style={{ minWidth: 22, height: 22, borderRadius: 11, background: '#FF6B4A', color: '#fff', font: '700 11px -apple-system', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{r.unread > 99 ? '99+' : r.unread}</span>
                   )}
                 </div>
               </div>
@@ -434,6 +457,27 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
           )
         })}
       </div>
+
+      {showCompose && (
+        <div onClick={() => setShowCompose(false)} style={{ position: 'absolute', inset: 0, zIndex: 70, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', maxHeight: '75%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '14px 16px 8px', textAlign: 'center' }}>
+              <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 10px' }}/>
+              <div style={{ font: '700 17px -apple-system', color: '#1A1A1A' }}>New message</div>
+            </div>
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '4px 8px calc(env(safe-area-inset-bottom,0px) + 20px)' }}>
+              {friends.length === 0
+                ? <div style={{ textAlign: 'center', padding: '30px 20px', color: '#9A9087', fontSize: 14 }}>Add friends first to start a conversation.</div>
+                : friends.map(f => (
+                  <div key={f.id} onClick={() => { setShowCompose(false); setActive(f) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer' }}>
+                    <AvatarDot profile={f} size={44} online={onlineIds?.has(f.id)} ring="#FBF7F4" />
+                    <div style={{ font: '600 15px -apple-system', color: '#1A1A1A' }}>{fullName(f)}</div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
