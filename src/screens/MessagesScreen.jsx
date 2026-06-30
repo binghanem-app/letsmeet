@@ -73,6 +73,9 @@ function AvatarDot({ profile, size, online, ring = '#fff' }) {
 
 // Quick-reaction set for the press-and-hold menu (iMessage-style).
 const REACT_EMOJIS = ['❤️', '😂', '👍', '😮', '😢', '🙏']
+// Expanded grid shown when the "+" is tapped (no way to open the iOS emoji
+// keyboard from a webview, so we provide our own picker).
+const MORE_EMOJIS = ['❤️','😂','👍','😮','😢','🙏','🔥','🎉','😍','😎','🥳','😅','😭','😡','👏','🙌','💯','✨','🤔','😴','😇','🤩','😘','😋','🤣','😉','🙂','😊','👌','🤝','💪','🫶','👀','🥹','😏','🤗','😱','🤯','🥺','😤','🙃','😆','😜','🤪','💔','🎂','☕','🍕']
 
 // ─── Chat thread ──────────────────────────────────────────────────────────────
 function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) {
@@ -86,6 +89,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const [fullImg, setFullImg] = useState(null)
   const [reactions, setReactions] = useState({}) // message_id -> [{user_id, emoji}]
   const [menuFor, setMenuFor] = useState(null)    // held message (context menu)
+  const [emojiPicker, setEmojiPicker] = useState(false) // expanded "+" grid
   const [replyTo, setReplyTo] = useState(null)    // message being replied to
   const [editing, setEditing] = useState(null)    // message being edited
   const pressTimer = useRef(null)
@@ -442,8 +446,8 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
                   {!deleted && rx.length > 0 && (
                     <div style={{ display: 'flex', gap: 4, marginTop: -7, zIndex: 1, padding: mine ? '0 4px 0 0' : '0 0 0 4px' }}>
                       {rx.map(r => (
-                        <div key={r.emoji} onClick={() => toggleReaction(m.id, r.emoji)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#EFE6DF'}`, borderRadius: 11, padding: '1px 7px', cursor: 'pointer' }}>
+                        <div key={r.emoji} onClick={mine ? undefined : () => toggleReaction(m.id, r.emoji)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#EFE6DF'}`, borderRadius: 11, padding: '1px 7px', cursor: mine ? 'default' : 'pointer' }}>
                           <span style={{ fontSize: 12.5 }}>{r.emoji}</span>
                           {r.count > 1 && <span style={{ font: '600 11px -apple-system', color: '#7B7268' }}>{r.count}</span>}
                         </div>
@@ -516,16 +520,27 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
         const mMine = menuFor.sender === myId
         const hasText = !!menuFor.body
         return (
-          <div onClick={() => setMenuFor(null)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
-              {REACT_EMOJIS.map(em => {
-                const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
-                return (
-                  <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }}
-                    style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
-                )
-              })}
-            </div>
+          <div onClick={() => { setMenuFor(null); setEmojiPicker(false) }} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
+            {/* React only on others' messages — no reacting to your own. */}
+            {!mMine && (emojiPicker ? (
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 10, marginBottom: 12, width: 280, maxHeight: 200, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 4, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }} className="no-scrollbar">
+                {MORE_EMOJIS.map((em, i) => (
+                  <span key={em + i} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null); setEmojiPicker(false) }}
+                    style={{ fontSize: 24, cursor: 'pointer', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{em}</span>
+                ))}
+              </div>
+            ) : (
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+                {REACT_EMOJIS.map(em => {
+                  const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
+                  return (
+                    <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }}
+                      style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
+                  )
+                })}
+                <span onClick={() => setEmojiPicker(true)} style={{ width: 30, height: 30, borderRadius: '50%', background: '#F2EFEC', color: '#9A9087', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>+</span>
+              </div>
+            ))}
 
             <div style={{ maxWidth: 250, background: mMine ? '#FF6B4A' : '#fff', border: mMine ? 'none' : '1px solid #F1E8E2', borderRadius: mMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: menuFor.photo_url ? 4 : '10px 13px', marginBottom: 12, overflow: 'hidden' }}>
               {menuFor.photo_url

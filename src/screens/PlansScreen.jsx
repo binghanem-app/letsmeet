@@ -237,6 +237,7 @@ function fmtTime(iso) {
 
 // Quick-reaction set for the press-and-hold menu (iMessage-style).
 const REACT_EMOJIS = ['❤️', '😂', '👍', '😮', '😢', '🙏']
+const MORE_EMOJIS = ['❤️','😂','👍','😮','😢','🙏','🔥','🎉','😍','😎','🥳','😅','😭','😡','👏','🙌','💯','✨','🤔','😴','😇','🤩','😘','😋','🤣','😉','🙂','😊','👌','🤝','💪','🫶','👀','🥹','😏','🤗','😱','🤯','🥺','😤','🙃','😆','😜','🤪','💔','🎂','☕','🍕']
 
 function ChatMenuRow({ label, icon, onClick, danger }) {
   return (
@@ -496,6 +497,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
   const [reportError, setReportError] = useState(false)
   const [reactions, setReactions]     = useState({}) // message_id -> [{user_id, emoji}]
   const [menuFor, setMenuFor]         = useState(null)
+  const [emojiPicker, setEmojiPicker] = useState(false)
   const [replyTo, setReplyTo]         = useState(null)
   const [editing, setEditing]         = useState(null)
   const pressTimer = useRef(null)
@@ -1102,8 +1104,8 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
                           {!deleted && rx.length > 0 && (
                             <div style={{ display: 'flex', gap: 4, marginTop: -6, zIndex: 1, padding: isMe ? '0 4px 0 0' : '0 0 0 4px' }}>
                               {rx.map(r => (
-                                <div key={r.emoji} onClick={() => toggleReaction(msg.id, r.emoji)}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#E7DED7'}`, borderRadius: 11, padding: '1px 7px', cursor: 'pointer' }}>
+                                <div key={r.emoji} onClick={isMe ? undefined : () => toggleReaction(msg.id, r.emoji)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#E7DED7'}`, borderRadius: 11, padding: '1px 7px', cursor: isMe ? 'default' : 'pointer' }}>
                                   <span style={{ fontSize: 12.5 }}>{r.emoji}</span>
                                   {r.count > 1 && <span style={{ font: '600 11px -apple-system', color: '#7B7268' }}>{r.count}</span>}
                                 </div>
@@ -1222,13 +1224,22 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
         const mMine = menuFor.sender === myId
         const hasText = !!menuFor.body
         return (
-          <div onClick={() => setMenuFor(null)} style={{ position: 'absolute', inset: 0, zIndex: 350, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
-              {REACT_EMOJIS.map(em => {
-                const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
-                return <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }} style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
-              })}
-            </div>
+          <div onClick={() => { setMenuFor(null); setEmojiPicker(false) }} style={{ position: 'absolute', inset: 0, zIndex: 350, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
+            {!mMine && (emojiPicker ? (
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 10, marginBottom: 12, width: 280, maxHeight: 200, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 4, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }} className="no-scrollbar">
+                {MORE_EMOJIS.map((em, i) => (
+                  <span key={em + i} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null); setEmojiPicker(false) }} style={{ fontSize: 24, cursor: 'pointer', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{em}</span>
+                ))}
+              </div>
+            ) : (
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+                {REACT_EMOJIS.map(em => {
+                  const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
+                  return <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }} style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
+                })}
+                <span onClick={() => setEmojiPicker(true)} style={{ width: 30, height: 30, borderRadius: '50%', background: '#F2EFEC', color: '#9A9087', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>+</span>
+              </div>
+            ))}
             <div style={{ maxWidth: 250, background: mMine ? '#FF6B4A' : '#F2EFEC', color: mMine ? '#fff' : '#1F2933', borderRadius: mMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: menuFor.photo_url ? 0 : '10px 14px', marginBottom: 12, overflow: 'hidden' }}>
               {menuFor.photo_url
                 ? <img src={menuFor.photo_url} style={{ display: 'block', width: 200, borderRadius: 14 }} />
