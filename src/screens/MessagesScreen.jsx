@@ -59,6 +59,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const scrollRef = useRef(null)
   const channelRef = useRef(null)
   const fileInputRef = useRef(null)
+  const myNameRef = useRef('Someone')
 
   const scrollDown = () => setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, 60)
 
@@ -67,9 +68,23 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       .eq('sender', peer.id).eq('recipient', myId).is('read_at', null)
   }
 
+  // Insert a notification so the existing push pipeline (on_notification_inserted
+  // → send-push) fires an APNs push to the peer. `actor` = me, which the app
+  // uses as the conversation peer to open on tap. No plan_id for DMs.
+  async function notifyPeer(preview) {
+    try {
+      await supabase.from('notifications').insert({
+        recipient: peer.id, actor: myId, kind: 'dm',
+        body: `${myNameRef.current}: ${preview}`,
+      })
+    } catch { /* best-effort; never block sending on the notification */ }
+  }
+
   useEffect(() => {
     let alive = true
     ;(async () => {
+      supabase.from('profiles').select('first_name').eq('id', myId).maybeSingle()
+        .then(({ data: me }) => { if (me?.first_name) myNameRef.current = me.first_name })
       const { data } = await supabase.from('direct_messages')
         .select('id, sender, recipient, body, photo_url, created_at, read_at')
         .or(`and(sender.eq.${myId},recipient.eq.${peer.id}),and(sender.eq.${peer.id},recipient.eq.${myId})`)
@@ -133,7 +148,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     const { data: msg } = await supabase.from('direct_messages')
       .insert({ sender: myId, recipient: peer.id, body: text })
       .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
-    if (msg) { setMessages(prev => [...prev, msg]); scrollDown() }
+    if (msg) { setMessages(prev => [...prev, msg]); scrollDown(); notifyPeer(text) }
     setSending(false)
   }
 
@@ -158,7 +173,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       const { data: msg } = await supabase.from('direct_messages')
         .insert({ sender: myId, recipient: peer.id, photo_url: publicUrl })
         .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
-      if (msg) { setMessages(prev => [...prev, msg]); scrollDown() }
+      if (msg) { setMessages(prev => [...prev, msg]); scrollDown(); notifyPeer('📷 Photo') }
     } catch (e) { alert(`Photo error: ${e?.message || e}`) }
     setSending(false)
   }

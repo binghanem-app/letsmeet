@@ -206,8 +206,11 @@ export default function App() {
     import('@capacitor/push-notifications').then(({ PushNotifications }) => {
       PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
         const data = notification.data || {}
-        const { type, plan_id: planId } = data
-        if (type === 'chat' || type === 'plan_response' || type === 'plan_invite') {
+        const { type, plan_id: planId, peer } = data
+        if (type === 'dm') {
+          if (peer) setOpenDmPeerId(peer)
+          setScreen('messages')
+        } else if (type === 'chat' || type === 'plan_response' || type === 'plan_invite') {
           if (planId) {
             setOpenPlanId(planId)
             setScreen('plans')
