@@ -115,6 +115,7 @@ export default function App() {
   const [homeRefresh, setHomeRefresh]   = useState(0)
   const [plansRefresh, setPlansRefresh] = useState(0)
   const [plansBackToList, setPlansBackToList] = useState(0)
+  const [messagesToList, setMessagesToList] = useState(0)
   const [cancelledPlanIds, setCancelledPlanIds] = useState(new Set())
   const [viewedPlanIds, setViewedPlanIds] = useState(() => new Set())
   const [latestMessage, setLatestMessage] = useState(null)
@@ -332,7 +333,7 @@ export default function App() {
     onHome:    () => { setScreen('home'); setHomeRefresh(r => r + 1) },
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
-    onMessages: () => setScreen('messages'),
+    onMessages: () => { if (screen === 'messages') setMessagesToList(c => c + 1); setScreen('messages') },
     onProfile: () => setScreen('profile'),
   })
 
@@ -380,6 +381,7 @@ export default function App() {
               onUnreadChange={setDmUnread}
               onOpenProfile={(uid) => setProfileSheetUserId(uid)}
               onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
+              backToListTrigger={messagesToList}
             />
           </div>
           <div style={show('profile')}>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
+import CategoryTile from '../components/CategoryTile'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 import emptyChatUrl from '../assets/empty-chat.png'
@@ -9,6 +10,29 @@ import emptyChatUrl from '../assets/empty-chat.png'
 function fullName(p) {
   if (!p) return 'Unknown'
   return `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username || 'Unknown'
+}
+
+// Date/time formatting for the shared-plan chip — friendly "Tonight · 7:30"-style
+// day label, matching the plan cards.
+function shortDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  return `${months[d.getMonth()]} ${d.getDate()}`
+}
+function dayWord(iso) {
+  if (!iso) return ''
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const target = new Date(iso); target.setHours(0, 0, 0, 0)
+  const days = Math.round((target - today) / 86400000)
+  if (days === 0) return new Date(iso).getHours() >= 17 ? 'Tonight' : 'Today'
+  if (days === 1) return 'Tomorrow'
+  if (days > 1 && days < 7) return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(iso).getDay()]
+  return shortDate(iso)
+}
+function fmtTime(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 // list timestamp: "9:32 AM" today, "Yesterday", weekday this week, else date
@@ -53,13 +77,41 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const [messages, setMessages] = useState([])
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
-  const [sharedPlan, setSharedPlan] = useState(null)
+  const [sharedPlans, setSharedPlans] = useState([])
+  const [plansOpen, setPlansOpen] = useState(false)
   const [showPhotoSheet, setShowPhotoSheet] = useState(false)
   const [fullImg, setFullImg] = useState(null)
   const scrollRef = useRef(null)
   const channelRef = useRef(null)
   const fileInputRef = useRef(null)
   const myNameRef = useRef('Someone')
+
+  // Edge-swipe-right to go back (iOS pop gesture; webviews don't give this free).
+  const swipe = useRef({ active: false, startX: 0, startY: 0, dx: 0 })
+  const [dragX, setDragX] = useState(0)
+  const [swiping, setSwiping] = useState(false)
+  function onSwipeStart(e) {
+    const t = e.touches[0]
+    if (t.clientX > 28) { swipe.current.active = false; return } // only from the left edge
+    swipe.current = { active: true, startX: t.clientX, startY: t.clientY, dx: 0 }
+    setSwiping(true)
+  }
+  function onSwipeMove(e) {
+    if (!swipe.current.active) return
+    const t = e.touches[0]
+    const dx = t.clientX - swipe.current.startX
+    const dy = t.clientY - swipe.current.startY
+    if (dx < Math.abs(dy)) { swipe.current.active = false; setSwiping(false); setDragX(0); return } // vertical → let it scroll
+    swipe.current.dx = Math.max(0, dx)
+    setDragX(swipe.current.dx)
+  }
+  function onSwipeEnd() {
+    if (!swipe.current.active) return
+    swipe.current.active = false
+    setSwiping(false)
+    if (swipe.current.dx > 90) onBack()
+    else setDragX(0)
+  }
 
   const scrollDown = () => setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, 60)
 
@@ -82,6 +134,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
 
   useEffect(() => {
     let alive = true
+    setSharedPlans([]); setPlansOpen(false) // clear stale chip while switching peers
     ;(async () => {
       supabase.from('profiles').select('first_name').eq('id', myId).maybeSingle()
         .then(({ data: me }) => { if (me?.first_name) myNameRef.current = me.first_name })
@@ -118,27 +171,11 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     return () => { alive = false; supabase.removeChannel(ch) }
   }, [peer.id])
 
+  // All active (upcoming/ongoing) plans the two share, most-relevant first, in ONE
+  // round-trip (was 5 chained queries that made the chip pop in ~1s after open).
   async function findSharedPlan() {
-    const [{ data: mine }, { data: theirs }] = await Promise.all([
-      supabase.from('plan_invitees').select('plan_id').eq('invitee', myId),
-      supabase.from('plan_invitees').select('plan_id').eq('invitee', peer.id),
-    ])
-    const mySet = new Set((mine || []).map(r => r.plan_id))
-    const shared = (theirs || []).map(r => r.plan_id).filter(id => mySet.has(id))
-    // also count plans either hosts that the other is on
-    const { data: hostMine } = await supabase.from('plans').select('id').eq('host', myId)
-    const { data: hostTheirs } = await supabase.from('plans').select('id').eq('host', peer.id)
-    ;(hostMine || []).forEach(p => { if ((theirs || []).some(r => r.plan_id === p.id)) shared.push(p.id) })
-    ;(hostTheirs || []).forEach(p => { if ((mine || []).some(r => r.plan_id === p.id)) shared.push(p.id) })
-    if (!shared.length) return
-    const { data: plan } = await supabase.from('plans')
-      .select('id, title, place_name, vibe, starts_at')
-      .in('id', [...new Set(shared)])
-      .not('cancelled', 'is', true)
-      .gte('starts_at', new Date(Date.now() - 12 * 3600000).toISOString())
-      .order('starts_at', { ascending: true })
-      .limit(1).maybeSingle()
-    if (plan) setSharedPlan(plan)
+    const { data } = await supabase.rpc('dm_shared_plan', { peer: peer.id })
+    setSharedPlans(Array.isArray(data) ? data : data ? [data] : [])
   }
 
   async function send() {
@@ -198,7 +235,8 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   let lastDay = null
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3', position: 'relative' }}>
+    <div onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} onTouchCancel={onSwipeEnd}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0', position: 'relative', transform: dragX ? `translateX(${dragX}px)` : undefined, transition: swiping ? 'none' : 'transform .25s ease', boxShadow: dragX ? '-12px 0 24px rgba(20,24,30,.12)' : undefined }}>
       {/* header */}
       <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
         <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -216,21 +254,61 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
         </button>
       </div>
 
-      {/* shared-plan chip */}
-      {sharedPlan && (
-        <div onClick={() => onOpenPlan?.(sharedPlan.id)} style={{ margin: '14px 16px 0', background: '#FFF1EC', border: '1px solid #FFD9CC', borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'linear-gradient(135deg,#FF6B4A,#FF9070)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      {/* shared-plan chip — real plan-card icon + "Venue · When". One plan taps
+          straight in; 2+ collapse behind a "+N" badge that expands to a list. */}
+      {sharedPlans.length > 0 && (() => {
+        const planLine = (p) => {
+          const title = p.title || p.place_name
+          const time = p.time_label || fmtTime(p.starts_at)
+          const when = p.starts_at ? [dayWord(p.starts_at), time].filter(Boolean).join(' ') : null
+          return [title, when].filter(Boolean).join(' · ')
+        }
+        const multi = sharedPlans.length > 1
+        const first = sharedPlans[0]
+        const wrap = { margin: '14px 16px 0', background: '#fff', border: '1px solid #F1E8E2', borderRadius: 18, boxShadow: '0 8px 22px -16px rgba(20,24,30,.4)', overflow: 'hidden' }
+        const rowBase = { display: 'flex', alignItems: 'center', gap: 13, padding: '12px 14px', cursor: 'pointer' }
+        return (
+          <div className="fade-up" style={wrap}>
+            {/* single: whole card opens the plan. multi: content opens the soonest
+                plan, the arrow/+N region toggles the list. */}
+            {!multi ? (
+              <div onClick={() => onOpenPlan?.(first.id)} style={rowBase}>
+                <CategoryTile vibe={first.vibe} size={50} radius={14} />
+                <div style={{ flex: 1, minWidth: 0, font: '700 16px/1.3 -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {planLine(first)}
+                </div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF7A5A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            ) : (
+              <div style={rowBase}>
+                <div onClick={() => onOpenPlan?.(first.id)} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer' }}>
+                  <CategoryTile vibe={first.vibe} size={50} radius={14} />
+                  <div style={{ flex: 1, minWidth: 0, font: '700 16px/1.3 -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {planLine(first)}
+                  </div>
+                </div>
+                <div onClick={() => setPlansOpen(o => !o)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '8px 4px 8px 12px', marginRight: -4, cursor: 'pointer' }}>
+                  {!plansOpen && (
+                    <span style={{ minWidth: 24, height: 22, borderRadius: 11, background: '#FFF1EC', color: '#FF6B4A', font: '700 12px -apple-system', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 7px' }}>+{sharedPlans.length - 1}</span>
+                  )}
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF7A5A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transform: `rotate(${plansOpen ? -90 : 90}deg)`, transition: 'transform .2s ease' }}><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+              </div>
+            )}
+            {/* expanded list: the remaining plans, each opens its plan */}
+            {multi && plansOpen && sharedPlans.slice(1).map(p => (
+              <div key={p.id} onClick={() => onOpenPlan?.(p.id)} style={{ ...rowBase, borderTop: '1px solid #F5F0EB' }}>
+                <CategoryTile vibe={p.vibe} size={42} radius={12} />
+                <div style={{ flex: 1, minWidth: 0, font: '600 15px/1.3 -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {planLine(p)}
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            ))}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 11px -apple-system', letterSpacing: .4, color: '#FF6B4A' }}>SHARED PLAN</div>
-            <div style={{ font: '700 14px -apple-system', color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {sharedPlan.title || sharedPlan.place_name}
-            </div>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9070" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </div>
-      )}
+        )
+      })()}
 
       {/* messages */}
       <div ref={scrollRef} className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 6px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -310,7 +388,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
 const photoOpt = { display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14, background: '#fff', font: '600 15px -apple-system', color: '#1F2933', cursor: 'pointer', marginBottom: 8 }
 
 // ─── Conversation list ────────────────────────────────────────────────────────
-export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerOpened, onUnreadChange, onOpenProfile, onOpenPlan, refreshTrigger }) {
+export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerOpened, onUnreadChange, onOpenProfile, onOpenPlan, refreshTrigger, backToListTrigger }) {
   const myId = session.user.id
   const [convos, setConvos] = useState([])
   const [profiles, setProfiles] = useState({})
@@ -320,7 +398,10 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   const [active, setActive] = useState(null) // peer profile object
   const [showCompose, setShowCompose] = useState(false)
   const [friends, setFriends] = useState([])
+  const [composeSearch, setComposeSearch] = useState('')
   const searchTimer = useRef(null)
+
+  function closeCompose() { setShowCompose(false); setComposeSearch('') }
 
   useEffect(() => () => clearTimeout(searchTimer.current), [])
 
@@ -370,6 +451,15 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
     })()
   }, [openPeerId])
 
+  // Tapping the Messages tab while already on it pops back to the conversation
+  // list (iOS "tap active tab → root"). A plain tab switch keeps `active` intact.
+  useEffect(() => {
+    if (!backToListTrigger) return
+    setActive(null)
+    closeCompose()
+    loadConvos()
+  }, [backToListTrigger])
+
   function openChat(peerId) {
     const p = profiles[peerId]
     if (p) setActive(p)
@@ -402,11 +492,11 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   const previewText = (r) => r.last_photo && !r.last_body ? '📷 Photo' : (r.last_body || '')
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F6F3', position: 'relative' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0', position: 'relative' }}>
       {/* header */}
-      <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '8px 20px 14px' }}>
+      <div style={{ background: '#F9F4F0', flexShrink: 0, padding: '8px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, marginTop: 6 }}>
-          <span style={{ font: '600 28px Fredoka, -apple-system', letterSpacing: '-.5px', color: '#1A1A1A' }}>Messages</span>
+          <span style={{ font: '700 28px -apple-system', color: '#1A1A1A' }}>Messages</span>
           <button onClick={openCompose} style={{ width: 40, height: 40, borderRadius: '50%', background: '#FFF1EC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           </button>
@@ -432,7 +522,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
             const p = profiles[r.peer]
             return (
               <div key={r.message_id} onClick={() => openChat(r.peer)} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 20px', cursor: 'pointer' }}>
-                <AvatarDot profile={p} size={48} online={onlineIds?.has(r.peer)} ring="#F9F6F3" />
+                <AvatarDot profile={p} size={48} online={onlineIds?.has(r.peer)} ring="#F9F4F0" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ font: '600 15px -apple-system', color: '#1A1A1A' }}>{fullName(p)}</div>
                   <div style={{ fontSize: 13, color: '#9A9087', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>{r.is_mine ? 'You: ' : ''}{r.body}</div>
@@ -453,7 +543,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
           const mineLast = r.last_sender === myId
           return (
             <div key={r.peer} onClick={() => openChat(r.peer)} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 20px', cursor: 'pointer', background: unread ? '#FFF7F4' : 'transparent' }}>
-              <AvatarDot profile={p} size={54} online={onlineIds?.has(r.peer)} ring={unread ? '#FFF7F4' : '#F9F6F3'} />
+              <AvatarDot profile={p} size={54} online={onlineIds?.has(r.peer)} ring={unread ? '#FFF7F4' : '#F9F4F0'} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ font: `${unread ? 700 : 600} 16px -apple-system`, color: '#1A1A1A' }}>{fullName(p)}</span>
@@ -473,26 +563,52 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
         })}
       </div>
 
-      {showCompose && (
-        <div onClick={() => setShowCompose(false)} style={{ position: 'absolute', inset: 0, zIndex: 70, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', maxHeight: '75%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '14px 16px 8px', textAlign: 'center' }}>
-              <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 10px' }}/>
-              <div style={{ font: '700 17px -apple-system', color: '#1A1A1A' }}>New message</div>
+      {showCompose && (() => {
+        const q = composeSearch.trim().toLowerCase()
+        const shown = !q ? friends : friends.filter(f =>
+          fullName(f).toLowerCase().includes(q) || (f.username || '').toLowerCase().includes(q))
+        return (
+          <div className="fade-up" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#F9F4F0', display: 'flex', flexDirection: 'column' }}>
+            {/* title bar */}
+            <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '10px 16px 14px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <button onClick={closeCompose} style={{ width: 38, height: 38, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+              <span style={{ flex: 1, font: '700 19px -apple-system', color: '#1A1A1A' }}>New message</span>
             </div>
-            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '4px 8px calc(env(safe-area-inset-bottom,0px) + 20px)' }}>
-              {friends.length === 0
-                ? <div style={{ textAlign: 'center', padding: '30px 20px', color: '#9A9087', fontSize: 14 }}>Add friends first to start a conversation.</div>
-                : friends.map(f => (
-                  <div key={f.id} onClick={() => { setShowCompose(false); setActive(f) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer' }}>
-                    <AvatarDot profile={f} size={44} online={onlineIds?.has(f.id)} ring="#FBF7F4" />
-                    <div style={{ font: '600 15px -apple-system', color: '#1A1A1A' }}>{fullName(f)}</div>
-                  </div>
-                ))}
+            {/* "To:" search */}
+            <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '0 16px 14px' }}>
+              <div style={{ height: 42, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ font: '600 14px -apple-system', color: '#9A9087', flexShrink: 0 }}>To:</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+                <input autoFocus value={composeSearch} onChange={e => setComposeSearch(e.target.value)} placeholder="Search friends" style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: '400 14px -apple-system', color: '#1A1A1A' }} />
+              </div>
+            </div>
+            {/* friends list */}
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(env(safe-area-inset-bottom,0px) + 20px)' }}>
+              {friends.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9A9087', fontSize: 14 }}>Add friends first to start a conversation.</div>
+              ) : shown.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 24px', color: '#9A9087', fontSize: 14 }}>No friends match “{composeSearch.trim()}”.</div>
+              ) : (
+                <>
+                  <div style={{ font: '700 12px -apple-system', letterSpacing: .4, color: '#9A9087', padding: '16px 20px 8px' }}>ALL FRIENDS</div>
+                  {shown.map(f => (
+                    <div key={f.id} onClick={() => { closeCompose(); setActive(f) }} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '10px 20px', cursor: 'pointer' }}>
+                      <AvatarDot profile={f} size={48} online={onlineIds?.has(f.id)} ring="#F9F4F0" />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ font: '600 15px -apple-system', color: '#1A1A1A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fullName(f)}</div>
+                        {f.username && <div style={{ fontSize: 12, color: '#9A9087', marginTop: 1 }}>@{f.username}</div>}
+                      </div>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C4BBB2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
