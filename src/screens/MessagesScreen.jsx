@@ -71,6 +71,9 @@ function AvatarDot({ profile, size, online, ring = '#fff' }) {
   )
 }
 
+// Quick-reaction set for the press-and-hold menu (iMessage-style).
+const REACT_EMOJIS = ['❤️', '😂', '👍', '😮', '😢', '🙏']
+
 // ─── Chat thread ──────────────────────────────────────────────────────────────
 function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) {
   const myId = session.user.id
@@ -81,6 +84,12 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const [plansOpen, setPlansOpen] = useState(false)
   const [showPhotoSheet, setShowPhotoSheet] = useState(false)
   const [fullImg, setFullImg] = useState(null)
+  const [reactions, setReactions] = useState({}) // message_id -> [{user_id, emoji}]
+  const [menuFor, setMenuFor] = useState(null)    // held message (context menu)
+  const [replyTo, setReplyTo] = useState(null)    // message being replied to
+  const [editing, setEditing] = useState(null)    // message being edited
+  const pressTimer = useRef(null)
+  const pressPos = useRef({ x: 0, y: 0 })
   const scrollRef = useRef(null)
   const channelRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -139,11 +148,12 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       supabase.from('profiles').select('first_name').eq('id', myId).maybeSingle()
         .then(({ data: me }) => { if (me?.first_name) myNameRef.current = me.first_name })
       const { data } = await supabase.from('direct_messages')
-        .select('id, sender, recipient, body, photo_url, created_at, read_at')
+        .select('id, sender, recipient, body, photo_url, created_at, read_at, reply_to, edited_at, deleted_at')
         .or(`and(sender.eq.${myId},recipient.eq.${peer.id}),and(sender.eq.${peer.id},recipient.eq.${myId})`)
         .order('created_at', { ascending: true })
       if (!alive) return
       setMessages(data || [])
+      loadReactions((data || []).map(m => m.id))
       scrollDown()
       markRead()
       // shared upcoming plan between the two (the "active card" bridge)
@@ -168,8 +178,82 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       })
       .subscribe()
     channelRef.current = ch
-    return () => { alive = false; supabase.removeChannel(ch) }
+
+    // Live reactions: any change refetches reactions for the messages on screen.
+    const rch = supabase.channel(`dm-react-${myId}-${peer.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dm_reactions' }, () => {
+        setMessages(cur => { loadReactions(cur.map(m => m.id)); return cur })
+      })
+      .subscribe()
+
+    return () => { alive = false; supabase.removeChannel(ch); supabase.removeChannel(rch) }
   }, [peer.id])
+
+  async function loadReactions(ids) {
+    if (!ids || !ids.length) { setReactions({}); return }
+    const { data } = await supabase.from('dm_reactions').select('message_id, user_id, emoji').in('message_id', ids)
+    const map = {}
+    ;(data || []).forEach(r => { (map[r.message_id] ||= []).push({ user_id: r.user_id, emoji: r.emoji }) })
+    setReactions(map)
+  }
+
+  async function toggleReaction(messageId, emoji) {
+    const mine = (reactions[messageId] || []).some(r => r.user_id === myId && r.emoji === emoji)
+    // optimistic
+    setReactions(prev => {
+      const list = (prev[messageId] || []).filter(r => !(r.user_id === myId && r.emoji === emoji))
+      return { ...prev, [messageId]: mine ? list : [...list, { user_id: myId, emoji }] }
+    })
+    if (mine) {
+      await supabase.from('dm_reactions').delete().eq('message_id', messageId).eq('user_id', myId).eq('emoji', emoji)
+    } else {
+      await supabase.from('dm_reactions').insert({ message_id: messageId, user_id: myId, emoji })
+    }
+  }
+
+  async function copyMessage(m) {
+    const text = m.body || ''
+    try {
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return }
+    } catch { /* fall through */ }
+    // Fallback for webviews without the async clipboard API.
+    try {
+      const ta = document.createElement('textarea'); ta.value = text
+      ta.style.position = 'fixed'; ta.style.opacity = '0'
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+    } catch { /* ignore */ }
+  }
+
+  async function softDelete(m) {
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, deleted_at: new Date().toISOString(), body: null, photo_url: null } : x))
+    await supabase.from('direct_messages').update({ deleted_at: new Date().toISOString(), body: null, photo_url: null }).eq('id', m.id)
+  }
+
+  // Press-and-hold a bubble (~420ms, without dragging) → open the reaction/action menu.
+  function onBubbleDown(e, m) {
+    if (m.deleted_at) return
+    const t = e.touches ? e.touches[0] : e
+    pressPos.current = { x: t.clientX, y: t.clientY }
+    clearTimeout(pressTimer.current)
+    pressTimer.current = setTimeout(() => setMenuFor(m), 420)
+  }
+  function onBubbleMove(e) {
+    const t = e.touches ? e.touches[0] : e
+    if (Math.abs(t.clientX - pressPos.current.x) > 10 || Math.abs(t.clientY - pressPos.current.y) > 10) clearTimeout(pressTimer.current)
+  }
+  function cancelPress() { clearTimeout(pressTimer.current) }
+
+  // Collapse a message's raw reactions into [{emoji, count, mine}] for the pills.
+  function reactionSummary(messageId) {
+    const list = reactions[messageId] || []
+    if (!list.length) return []
+    const by = {}
+    list.forEach(r => { (by[r.emoji] ||= { emoji: r.emoji, count: 0, mine: false }); by[r.emoji].count++; if (r.user_id === myId) by[r.emoji].mine = true })
+    return Object.values(by)
+  }
+  const msgById = (id) => messages.find(x => x.id === id)
+  function startReply(m) { setReplyTo(m); setEditing(null); setMenuFor(null) }
+  function startEdit(m) { setEditing(m); setReplyTo(null); setBody(m.body || ''); setMenuFor(null) }
 
   // All active (upcoming/ongoing) plans the two share, most-relevant first, in ONE
   // round-trip (was 5 chained queries that made the chip pop in ~1s after open).
@@ -182,9 +266,18 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     const text = body.trim()
     if (!text || sending) return
     setSending(true); setBody('')
+    // Editing an existing message: update in place instead of inserting.
+    if (editing) {
+      const ed = editing; setEditing(null)
+      setMessages(prev => prev.map(x => x.id === ed.id ? { ...x, body: text, edited_at: new Date().toISOString() } : x))
+      await supabase.from('direct_messages').update({ body: text, edited_at: new Date().toISOString() }).eq('id', ed.id)
+      setSending(false)
+      return
+    }
+    const rt = replyTo?.id || null; setReplyTo(null)
     const { data: msg } = await supabase.from('direct_messages')
-      .insert({ sender: myId, recipient: peer.id, body: text })
-      .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
+      .insert({ sender: myId, recipient: peer.id, body: text, reply_to: rt })
+      .select('id, sender, recipient, body, photo_url, created_at, read_at, reply_to, edited_at, deleted_at').single()
     if (msg) { setMessages(prev => [...prev, msg]); scrollDown(); notifyPeer(text) }
     setSending(false)
   }
@@ -207,9 +300,10 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       const { error: upErr } = await supabase.storage.from('chat-images').upload(path, blob, { contentType: `image/${ext}` })
       if (upErr) { alert(`Upload error: ${upErr.message}`); setSending(false); return }
       const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path)
+      const rt = replyTo?.id || null; setReplyTo(null)
       const { data: msg } = await supabase.from('direct_messages')
-        .insert({ sender: myId, recipient: peer.id, photo_url: publicUrl })
-        .select('id, sender, recipient, body, photo_url, created_at, read_at').single()
+        .insert({ sender: myId, recipient: peer.id, photo_url: publicUrl, reply_to: rt })
+        .select('id, sender, recipient, body, photo_url, created_at, read_at, reply_to, edited_at, deleted_at').single()
       if (msg) { setMessages(prev => [...prev, msg]); scrollDown(); notifyPeer('📷 Photo') }
     } catch (e) { alert(`Photo error: ${e?.message || e}`) }
     setSending(false)
@@ -316,39 +410,73 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
           const mine = m.sender === myId
           const d = dayLabel(m.created_at)
           const showDay = d !== lastDay; lastDay = d
+          const rx = reactionSummary(m.id)
+          const quoted = m.reply_to ? msgById(m.reply_to) : null
+          const deleted = !!m.deleted_at
           return (
             <Fragment key={m.id}>
               {showDay && (
                 <div style={{ alignSelf: 'center', background: '#ECE6E0', color: '#9A9087', font: '500 11px -apple-system', padding: '4px 12px', borderRadius: 20, margin: '6px 0 2px' }}>{d}</div>
               )}
-              {mine ? (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{ maxWidth: 250 }}>
-                    <div style={{ background: '#FF6B4A', color: '#fff', borderRadius: '16px 16px 4px 16px', padding: m.photo_url ? 4 : '10px 13px', overflow: 'hidden' }}>
-                      {m.photo_url
-                        ? <img src={m.photo_url} onClick={() => setFullImg(m.photo_url)} style={{ display: 'block', maxWidth: 230, borderRadius: 12, cursor: 'pointer' }} />
-                        : <span style={{ font: '400 14px/1.5 -apple-system' }}>{m.body}</span>}
+              <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8 }}>
+                {!mine && <Avatar url={peer.avatar_url} name={fullName(peer)} color={peer.avatar_color} size={28} />}
+                <div style={{ maxWidth: mine ? 250 : 230, display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+                  {deleted ? (
+                    <div style={{ background: mine ? '#F3E7E2' : '#F1ECE7', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: '9px 13px' }}>
+                      <span style={{ font: 'italic 400 13.5px/1.4 -apple-system', color: '#9A9087' }}>This message was deleted</span>
                     </div>
-                    <div style={{ fontSize: 10, color: '#C4BBB2', textAlign: 'right', marginTop: 3 }}>{bubbleTime(m.created_at)} · {m.read_at ? 'Read' : 'Sent'}</div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                  <Avatar url={peer.avatar_url} name={fullName(peer)} color={peer.avatar_color} size={28} />
-                  <div style={{ maxWidth: 230 }}>
-                    <div style={{ background: '#fff', border: '1px solid #F1E8E2', borderRadius: '16px 16px 16px 4px', padding: m.photo_url ? 4 : '10px 13px', boxShadow: '0 1px 2px rgba(0,0,0,.06)', overflow: 'hidden' }}>
+                  ) : (
+                    <div onPointerDown={e => onBubbleDown(e, m)} onPointerUp={cancelPress} onPointerMove={onBubbleMove} onPointerLeave={cancelPress} onContextMenu={e => { e.preventDefault(); setMenuFor(m) }}
+                      style={{ background: mine ? '#FF6B4A' : '#fff', border: mine ? 'none' : '1px solid #F1E8E2', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: m.photo_url ? 4 : '8px 13px 10px', boxShadow: mine ? 'none' : '0 1px 2px rgba(0,0,0,.06)', overflow: 'hidden', WebkitUserSelect: 'none', userSelect: 'none' }}>
+                      {quoted && (
+                        <div style={{ borderLeft: `3px solid ${mine ? 'rgba(255,255,255,.6)' : '#FFB59E'}`, background: mine ? 'rgba(255,255,255,.16)' : '#FBF1ED', borderRadius: 7, padding: '5px 9px', margin: m.photo_url ? '4px 4px 2px' : '0 0 6px' }}>
+                          <div style={{ font: '700 11.5px -apple-system', color: mine ? '#fff' : '#FF6B4A', marginBottom: 1 }}>{quoted.sender === myId ? 'You' : (peer.first_name || fullName(peer))}</div>
+                          <div style={{ font: '400 12.5px/1.35 -apple-system', color: mine ? 'rgba(255,255,255,.85)' : '#7B7268', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{quoted.deleted_at ? 'Deleted message' : (quoted.photo_url && !quoted.body ? '📷 Photo' : quoted.body)}</div>
+                        </div>
+                      )}
                       {m.photo_url
-                        ? <img src={m.photo_url} onClick={() => setFullImg(m.photo_url)} style={{ display: 'block', maxWidth: 218, borderRadius: 12, cursor: 'pointer' }} />
-                        : <span style={{ font: '400 14px/1.5 -apple-system', color: '#1A1A1A' }}>{m.body}</span>}
+                        ? <img src={m.photo_url} onClick={() => setFullImg(m.photo_url)} style={{ display: 'block', maxWidth: mine ? 230 : 218, borderRadius: 12, cursor: 'pointer' }} />
+                        : <span style={{ font: '400 14px/1.5 -apple-system', color: mine ? '#fff' : '#1A1A1A' }}>{m.body}</span>}
                     </div>
-                    <div style={{ fontSize: 10, color: '#C4BBB2', marginTop: 3, marginLeft: 2 }}>{bubbleTime(m.created_at)}</div>
-                  </div>
+                  )}
+                  {!deleted && rx.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, marginTop: -7, zIndex: 1, padding: mine ? '0 4px 0 0' : '0 0 0 4px' }}>
+                      {rx.map(r => (
+                        <div key={r.emoji} onClick={() => toggleReaction(m.id, r.emoji)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#EFE6DF'}`, borderRadius: 11, padding: '1px 7px', cursor: 'pointer' }}>
+                          <span style={{ fontSize: 12.5 }}>{r.emoji}</span>
+                          {r.count > 1 && <span style={{ font: '600 11px -apple-system', color: '#7B7268' }}>{r.count}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!deleted && (
+                    <div style={{ fontSize: 10, color: '#C4BBB2', marginTop: rx.length ? 4 : 3, padding: mine ? '0 2px 0 0' : '0 0 0 2px' }}>
+                      {bubbleTime(m.created_at)}{m.edited_at ? ' · Edited' : ''}{mine ? ` · ${m.read_at ? 'Read' : 'Sent'}` : ''}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </Fragment>
           )
         })}
       </div>
+
+      {/* reply / edit preview above the input */}
+      {(replyTo || editing) && (
+        <div style={{ background: '#fff', borderTop: '0.5px solid #EFE6DF', flexShrink: 0, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 3, alignSelf: 'stretch', background: '#FF6B4A', borderRadius: 3 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 12px -apple-system', color: '#FF6B4A' }}>{editing ? 'Editing message' : `Replying to ${replyTo.sender === myId ? 'yourself' : (peer.first_name || fullName(peer))}`}</div>
+            <div style={{ font: '400 13px -apple-system', color: '#7B7268', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {(editing || replyTo).photo_url && !(editing || replyTo).body ? '📷 Photo' : (editing || replyTo).body}
+            </div>
+          </div>
+          <button onClick={() => { setReplyTo(null); setEditing(null); if (editing) setBody('') }} style={{ width: 28, height: 28, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2.4" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
 
       {/* input bar */}
       <div style={{ background: '#fff', boxShadow: '0 -1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '11px 14px calc(env(safe-area-inset-bottom, 0px) + 14px)', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -382,7 +510,51 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
           <img src={fullImg} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         </div>
       )}
+
+      {/* press-and-hold message menu: reactions on top, actions on the bottom */}
+      {menuFor && (() => {
+        const mMine = menuFor.sender === myId
+        const hasText = !!menuFor.body
+        return (
+          <div onClick={() => setMenuFor(null)} style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 16px', alignItems: mMine ? 'flex-end' : 'flex-start' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+              {REACT_EMOJIS.map(em => {
+                const active = (reactions[menuFor.id] || []).some(r => r.user_id === myId && r.emoji === em)
+                return (
+                  <span key={em} onClick={() => { toggleReaction(menuFor.id, em); setMenuFor(null) }}
+                    style={{ fontSize: 22, cursor: 'pointer', borderRadius: '50%', padding: 2, background: active ? '#FFF1EC' : 'transparent' }}>{em}</span>
+                )
+              })}
+            </div>
+
+            <div style={{ maxWidth: 250, background: mMine ? '#FF6B4A' : '#fff', border: mMine ? 'none' : '1px solid #F1E8E2', borderRadius: mMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: menuFor.photo_url ? 4 : '10px 13px', marginBottom: 12, overflow: 'hidden' }}>
+              {menuFor.photo_url
+                ? <img src={menuFor.photo_url} style={{ display: 'block', maxWidth: 220, borderRadius: 12 }} />
+                : <span style={{ font: '400 14px/1.5 -apple-system', color: mMine ? '#fff' : '#1A1A1A' }}>{menuFor.body}</span>}
+            </div>
+
+            <div style={{ background: '#fff', borderRadius: 14, width: 210, overflow: 'hidden', boxShadow: '0 8px 22px -10px rgba(0,0,0,.5)' }}>
+              <MenuRow label="Reply" icon="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-1" onClick={() => startReply(menuFor)} />
+              {hasText && <MenuRow label="Copy" icon="M9 9V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4M15 9H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2z" onClick={() => { copyMessage(menuFor); setMenuFor(null) }} />}
+              {mMine && hasText && <MenuRow label="Edit" icon="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" onClick={() => startEdit(menuFor)} />}
+              {mMine && <MenuRow label="Delete" danger icon="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" onClick={() => { softDelete(menuFor); setMenuFor(null) }} />}
+            </div>
+          </div>
+        )
+      })()}
     </div>
+  )
+}
+
+function MenuRow({ label, icon, onClick, danger }) {
+  return (
+    <>
+      <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', font: '400 15px -apple-system', color: danger ? '#E5484D' : '#1A1A1A', cursor: 'pointer' }}>
+        <span>{label}</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={danger ? '#E5484D' : '#5B5048'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
+      </div>
+      <div style={{ height: '0.5px', background: '#EFE6DF' }} className="menu-sep" />
+    </>
   )
 }
 const photoOpt = { display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14, background: '#fff', font: '600 15px -apple-system', color: '#1F2933', cursor: 'pointer', marginBottom: 8 }
