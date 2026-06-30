@@ -928,7 +928,7 @@ function CircleDetailScreen({ circle, allFriends, session, onClose, onSaved, onD
 }
 
 // ─── FriendsScreen ────────────────────────────────────────────────────────────
-export default function FriendsScreen({ session, onOpenAddFriend, externalAddFriendOpen, onCloseAddFriend }) {
+export default function FriendsScreen({ session, onOpenAddFriend, externalAddFriendOpen, onCloseAddFriend, onOpenDM }) {
   const [friends, setFriends] = useState([])
   const [circles, setCircles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1291,6 +1291,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           myId={session.user.id}
           onClose={() => setViewFriendId(null)}
           onChanged={loadAll}
+          onMessage={onOpenDM ? (uid) => { setViewFriendId(null); onOpenDM(uid) } : undefined}
         />
       )}
       {circleDetail && (

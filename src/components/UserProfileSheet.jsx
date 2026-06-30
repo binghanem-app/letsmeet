@@ -11,7 +11,7 @@ function friendDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChanged }) {
+export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChanged, onMessage }) {
   const [profile, setProfile]       = useState(null)
   const [loading, setLoading]       = useState(true)
   const [planScore, setPlanScore]   = useState(0)
@@ -243,6 +243,12 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChan
                     Decline
                   </button>
                 </div>
+              )}
+              {!isSelf && friendship?.status === 'accepted' && onMessage && (
+                <button onClick={() => onMessage(userId)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 15, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 15px -apple-system", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.6)' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Message
+                </button>
               )}
               {!isSelf && friendship?.status === 'accepted' && (
                 <button onClick={removeFriend} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E7DED7', borderRadius: 16, background: '#fff', color: '#7B7268', font: "600 15px -apple-system", cursor: 'pointer' }}>

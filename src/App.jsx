@@ -20,7 +20,8 @@ import HomeScreen from './screens/HomeScreen'
 import FriendsScreen, { AddFriendSheet } from './screens/FriendsScreen'
 import CreateScreen from './screens/CreateScreen'
 import PlansScreen from './screens/PlansScreen'
-import ProScreen from './screens/ProScreen'
+import MessagesScreen from './screens/MessagesScreen'
+import UserProfileSheet from './components/UserProfileSheet'
 import ProfileScreen from './screens/ProfileScreen'
 import OnboardingScreen from './screens/OnboardingScreen'
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
@@ -30,7 +31,7 @@ import TermsScreen from './screens/TermsScreen'
 function ResponsiveLayout({ screen, children }) {
   return (
     <div style={{ width: '100%', height: '100vh', background: '#FBF7F4', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: screen === 'pro' ? '#1A1A1A' : '#FBF7F4' }}/>
+      <div style={{ height: 'env(safe-area-inset-top, 0px)', background: '#FBF7F4' }}/>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
         {children}
       </div>
@@ -39,7 +40,7 @@ function ResponsiveLayout({ screen, children }) {
 }
 
 // Bottom tab bar — shared across all post-login screens
-function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friendsBadge }) {
+function TabBar({ active, onHome, onFriends, onCreate, onMessages, onProfile, friendsBadge, messagesBadge }) {
   const tabs = [
     { key: 'home',    label: 'Home',    onClick: onHome,    badge: 0,
       icon: (sel) => sel
@@ -51,10 +52,10 @@ function TabBar({ active, onHome, onFriends, onCreate, onPro, onProfile, friends
         ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" fill="#FF6B4A" stroke="none"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8" stroke="#FF6B4A"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6" stroke="#FF6B4A"/><path d="M18.5 19c0-2.6-1.3-4.2-3.2-4.6" stroke="#FF6B4A"/></svg>
         : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M18.5 19c0-2.6-1.3-4.2-3.2-4.6"/></svg>
     },
-    { key: 'pro',     label: 'Pro',     onClick: onPro,     badge: 0,
+    { key: 'messages', label: 'Messages', onClick: onMessages, badge: messagesBadge,
       icon: (sel) => sel
-        ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#FF6B4A" stroke="#FF6B4A"/></svg>
-        : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        ? <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF6B4A" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A9087" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     },
     { key: 'profile', label: 'You',     onClick: onProfile, badge: 0,
       icon: (sel) => sel
@@ -118,7 +119,12 @@ export default function App() {
   const [viewedPlanIds, setViewedPlanIds] = useState(() => new Set())
   const [latestMessage, setLatestMessage] = useState(null)
   const [latestInvite, setLatestInvite] = useState(0)
+  const [dmUnread, setDmUnread]         = useState(0)
+  const [onlineIds, setOnlineIds]       = useState(() => new Set())
+  const [openDmPeerId, setOpenDmPeerId] = useState(null)
+  const [profileSheetUserId, setProfileSheetUserId] = useState(null)
   const friendSubRef       = useRef(null)
+  const presenceRef        = useRef(null)
   const pushRegisteredRef  = useRef(false)
   const pushListenersRef   = useRef([])
   const sessionRef         = useRef(null)
@@ -159,6 +165,20 @@ export default function App() {
     }
   }
 
+  // Realtime presence — track this user as online and expose the live set of
+  // online user ids for the green dots in Messages.
+  function setupPresence(userId) {
+    if (presenceRef.current) return
+    const ch = supabase.channel('presence-online', { config: { presence: { key: userId } } })
+    ch.on('presence', { event: 'sync' }, () => {
+      setOnlineIds(new Set(Object.keys(ch.presenceState())))
+    })
+    ch.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') await ch.track({ online_at: Date.now() })
+    })
+    presenceRef.current = ch
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -167,6 +187,7 @@ export default function App() {
         loadPendingCount(data.session.user.id)
         subscribeFriendRequests(data.session.user.id)
         registerPush(data.session.user.id)
+        setupPresence(data.session.user.id)
       }
     })
     const handleVisibility = () => {
@@ -232,12 +253,16 @@ export default function App() {
         checkOnboarding(s.user.id)
         loadPendingCount(s.user.id)
         subscribeFriendRequests(s.user.id)
+        setupPresence(s.user.id)
         // registerPush on every sign-in; don't call setScreen('home') here
         // because it fires again after camera/gallery use on iOS and resets navigation
         if (_e === 'SIGNED_IN') { registerPush(s.user.id) }
       } else {
         setNeedsOnboarding(false)
         setPendingCount(0)
+        setDmUnread(0)
+        setOnlineIds(new Set())
+        if (presenceRef.current) { supabase.removeChannel(presenceRef.current); presenceRef.current = null }
         if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
         // Let the next user on this device re-register push with their own token.
         pushRegisteredRef.current = false
@@ -248,6 +273,7 @@ export default function App() {
     return () => {
       subscription.unsubscribe()
       if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
+      if (presenceRef.current) { supabase.removeChannel(presenceRef.current); presenceRef.current = null }
       document.removeEventListener('visibilitychange', handleVisibility)
       appUrlListener?.remove()
       pushTapListener?.remove()
@@ -303,7 +329,7 @@ export default function App() {
     onHome:    () => { setScreen('home'); setHomeRefresh(r => r + 1) },
     onFriends: () => setScreen('friends'),
     onCreate:  () => setScreen('create'),
-    onPro:     () => setScreen('pro'),
+    onMessages: () => setScreen('messages'),
     onProfile: () => setScreen('profile'),
   })
 
@@ -332,7 +358,7 @@ export default function App() {
             />
           </div>
           <div style={show('friends')}>
-            <FriendsScreen session={session} externalAddFriendOpen={openAddFriend} onCloseAddFriend={() => setOpenAddFriend(false)} />
+            <FriendsScreen session={session} externalAddFriendOpen={openAddFriend} onCloseAddFriend={() => setOpenAddFriend(false)} onOpenDM={(uid) => { setOpenDmPeerId(uid); setScreen('messages') }} />
           </div>
           {screen === 'create' && (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -342,14 +368,22 @@ export default function App() {
           <div style={show('plans')}>
             <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => { setScreen('home'); setOpenPlanId(null) }} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onPlanClosed={(planId) => { if (planId) setViewedPlanIds(s => { if (!s.has(planId)) return s; const n = new Set(s); n.delete(planId); return n }); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} />
           </div>
-          <div style={show('pro')}>
-            <ProScreen session={session} />
+          <div style={show('messages')}>
+            <MessagesScreen
+              session={session}
+              onlineIds={onlineIds}
+              openPeerId={openDmPeerId}
+              onPeerOpened={() => setOpenDmPeerId(null)}
+              onUnreadChange={setDmUnread}
+              onOpenProfile={(uid) => setProfileSheetUserId(uid)}
+              onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
+            />
           </div>
           <div style={show('profile')}>
             <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
           </div>
         </div>
-        <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} />
+        <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} messagesBadge={dmUnread} />
       </div>
     )
   }
@@ -363,6 +397,17 @@ export default function App() {
           <AddFriendSheet
             session={session}
             onClose={() => setOpenAddFriend(false)}
+          />
+        </div>
+      )}
+      {profileSheetUserId && session && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 75 }}>
+          <UserProfileSheet
+            userId={profileSheetUserId}
+            myId={session.user.id}
+            isSelf={profileSheetUserId === session.user.id}
+            onClose={() => setProfileSheetUserId(null)}
+            onMessage={(uid) => { setProfileSheetUserId(null); setOpenDmPeerId(uid); setScreen('messages') }}
           />
         </div>
       )}
