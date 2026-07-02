@@ -129,19 +129,27 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
   function handleQueryChange(val) {
     setQuery(val)
     clearTimeout(debounce.current)
-    if (!val.trim()) { setResults([]); return }
-    debounce.current = setTimeout(() => search(val.trim()), 350)
+    // Only search once there are ≥2 real characters — one letter shouldn't
+    // dump the whole userbase.
+    const q = val.replace(/^@/, '').replace(/[,()%]/g, '').trim()
+    if (q.length < 2) { setResults([]); return }
+    debounce.current = setTimeout(() => search(q), 350)
   }
 
   async function search(q) {
     setSearching(true)
-    const clean = q.replace(/^@/, '')
+    // Strip anything that would break the PostgREST or() filter, then prefix-match.
+    const clean = q.replace(/^@/, '').replace(/[,()%]/g, '').trim()
+    if (clean.length < 2) { setResults([]); setSearching(false); return }
+    const like = `${clean}%`
     const { data } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, username, avatar_color, avatar_url')
-      .ilike('username', `%${clean}%`)
+      .or(`username.ilike.${like},first_name.ilike.${like},last_name.ilike.${like}`)
+      .not('first_name', 'is', null)   // onboarded users only (hide user_XXXX placeholders)
       .neq('id', session.user.id)
-      .limit(8)
+      .order('username')
+      .limit(12)
     const users = data || []
     setResults(users)
     if (users.length > 0) {
@@ -232,13 +240,13 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
         </div>
         <h3 style={{ margin: '0 0 18px', font: "600 22px -apple-system", color: '#1F2933' }}>Add friends</h3>
 
-        {/* username search */}
+        {/* name / username search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', marginBottom: 16 }}>
-          <span style={{ font: "700 16px -apple-system", color: '#B6ADA4' }}>@</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
           <input
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
-            placeholder="search by username"
+            placeholder="Search by name or username"
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 15px -apple-system", color: '#1F2933', padding: '11px 0' }}
           />
           {searching && <div className="spin" style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #F0E5DE', borderTopColor: '#FF6B4A', flexShrink: 0 }}/>}
@@ -251,7 +259,9 @@ export function AddFriendSheet({ session, onClose, onRequestAccepted }) {
           {showSearch && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {results.length === 0 && !searching && (
-                <p style={{ textAlign: 'center', padding: '22px 10px', color: '#9A9087', fontSize: 14 }}>No one found with that username.</p>
+                <p style={{ textAlign: 'center', padding: '22px 10px', color: '#9A9087', fontSize: 14 }}>
+                  {query.replace(/^@/, '').replace(/[,()%]/g, '').trim().length < 2 ? 'Type at least 2 letters to search.' : 'No one found.'}
+                </p>
               )}
               {results.map(u => <PersonRow key={u.id} u={u} actionSlot={<AddBtn userId={u.id}/>}/>)}
             </div>
@@ -1109,7 +1119,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
         {/* Search bar */}
         <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 40, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', margin: '0 20px 20px', cursor: 'pointer' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-          <span style={{ color: '#B6ADA4', fontSize: 14 }}>Search by username…</span>
+          <span style={{ color: '#B6ADA4', fontSize: 14 }}>Search by name or username…</span>
         </div>
 
         {/* Requests section (inline) */}
