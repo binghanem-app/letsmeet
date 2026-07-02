@@ -190,6 +190,7 @@ export default function App() {
         subscribeFriendRequests(data.session.user.id)
         registerPush(data.session.user.id)
         setupPresence(data.session.user.id)
+        clearNotifBadge(data.session.user.id)
       }
     })
     const handleVisibility = () => {
@@ -198,6 +199,9 @@ export default function App() {
           // Only update session if not already signed in — prevents spurious SIGNED_IN
           // events after camera/gallery use on iOS from resetting the screen to home
           if (data.session && !sessionRef.current) setSession(data.session)
+          // Opening/foregrounding the app = you've seen it → mark notifications read
+          // so the icon badge (send-push counts unread rows) doesn't pile up.
+          if (data.session) clearNotifBadge(data.session.user.id)
         })
       }
     }
@@ -291,6 +295,16 @@ export default function App() {
       pushTapListener?.remove()
     }
   }, [])
+
+  // Mark all of the user's notifications read on app open/foreground. The iOS
+  // icon badge is send-push's count of unread `notifications` rows; nothing else
+  // marked them read, so it grew unbounded (in-app tab badges are separate and
+  // unaffected — those use read_at / plan_message_reads / pending friendships).
+  async function clearNotifBadge(userId) {
+    try {
+      await supabase.from('notifications').update({ read: true }).eq('recipient', userId).eq('read', false)
+    } catch { /* best-effort */ }
+  }
 
   async function loadPendingCount(userId) {
     const { count } = await supabase
