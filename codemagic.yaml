@@ -117,9 +117,12 @@ workflows:
           echo "=== Verify AppDelegate methods ===" && grep -c "didRegisterForRemoteNotifications" ios/App/App/AppDelegate.swift || echo "0 — AppDelegate NOT patched"
       - name: Set up code signing
         script: xcode-project use-profiles
-      - name: Set build number
+      - name: Set version and build number
         script: |
           cd ios/App
+          # Marketing version must be higher than the approved App Store version
+          # (1.0 is approved/closed). Bump here for each new release train.
+          agvtool new-marketing-version 1.0.1
           agvtool new-version -all $(($BUILD_NUMBER + 1))
 
       - name: Set export compliance, URL scheme, and privacy descriptions
