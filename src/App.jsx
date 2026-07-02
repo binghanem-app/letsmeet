@@ -17,7 +17,7 @@ import { supabase } from './lib/supabase'
 import fabUrl from './assets/fab.png'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
-import FriendsScreen, { AddFriendSheet } from './screens/FriendsScreen'
+import FriendsScreen from './screens/FriendsScreen'
 import CreateScreen from './screens/CreateScreen'
 import PlansScreen from './screens/PlansScreen'
 import MessagesScreen from './screens/MessagesScreen'
@@ -112,7 +112,6 @@ export default function App() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [recoveryMode, setRecoveryMode] = useState(false)
   const [openPlanId, setOpenPlanId]     = useState(null)
-  const [openAddFriend, setOpenAddFriend] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [homeRefresh, setHomeRefresh]   = useState(0)
   const [plansRefresh, setPlansRefresh] = useState(0)
@@ -374,7 +373,7 @@ export default function App() {
             />
           </div>
           <div style={show('friends')}>
-            <FriendsScreen session={session} externalAddFriendOpen={openAddFriend} onCloseAddFriend={() => setOpenAddFriend(false)} onOpenDM={(uid) => { setOpenDmPeerId(uid); setScreen('messages') }} />
+            <FriendsScreen session={session} onOpenDM={(uid) => { setOpenDmPeerId(uid); setScreen('messages') }} />
           </div>
           {screen === 'create' && (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -409,14 +408,6 @@ export default function App() {
     <ErrorBoundary>
     <ResponsiveLayout screen={screen}>
       {renderScreen()}
-{openAddFriend && session && screen !== 'friends' && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 70 }}>
-          <AddFriendSheet
-            session={session}
-            onClose={() => setOpenAddFriend(false)}
-          />
-        </div>
-      )}
       {profileSheetUserId && session && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 75 }}>
           <UserProfileSheet

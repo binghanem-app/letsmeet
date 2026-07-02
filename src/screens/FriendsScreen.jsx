@@ -942,7 +942,10 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   const [friends, setFriends] = useState([])
   const [circles, setCircles] = useState([])
   const [loading, setLoading] = useState(true)
-  const [addOpen, setAddOpen] = useState(false)
+  const [query, setQuery] = useState('')          // inline friend search
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const searchDebounce = useRef(null)
   const [createCircleOpen, setCreateCircleOpen] = useState(false)
   const [menuFriend, setMenuFriend] = useState(null)
   const [activeCircle, setActiveCircle] = useState(null)
@@ -955,10 +958,43 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
   const [dismissed, setDismissed] = useState(new Set())
   const [suggestionSent, setSuggestionSent] = useState({})
 
-  // If parent signals to open add sheet (e.g. from home bell)
-  useEffect(() => {
-    if (externalAddFriendOpen) setAddOpen(true)
-  }, [externalAddFriendOpen])
+  // Inline friend search — no popup sheet; results render right on the page.
+  function handleFriendSearch(val) {
+    setQuery(val)
+    clearTimeout(searchDebounce.current)
+    const q = val.replace(/^@/, '').replace(/[,()%]/g, '').trim()
+    if (q.length < 2) { setResults([]); return }
+    searchDebounce.current = setTimeout(() => runFriendSearch(val), 350)
+  }
+  async function runFriendSearch(val) {
+    setSearching(true)
+    const clean = val.replace(/^@/, '').replace(/[,()%]/g, '').trim()
+    if (clean.length < 2) { setResults([]); setSearching(false); return }
+    const like = `${clean}%`
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, username, avatar_color, avatar_url')
+      .or(`username.ilike.${like},first_name.ilike.${like},last_name.ilike.${like}`)
+      .not('first_name', 'is', null)
+      .neq('id', session.user.id)
+      .order('username')
+      .limit(12)
+    const users = data || []
+    setResults(users)
+    if (users.length) {
+      const ids = users.map(u => u.id)
+      const { data: fships } = await supabase.from('friendships')
+        .select('requester, addressee, status')
+        .or(`and(requester.eq.${session.user.id},addressee.in.(${ids.join(',')})),and(requester.in.(${ids.join(',')}),addressee.eq.${session.user.id})`)
+      if (fships?.length) {
+        const m = {}
+        fships.forEach(f => { const other = f.requester === session.user.id ? f.addressee : f.requester; m[other] = f.status === 'accepted' ? 'already' : 'pending' })
+        setSuggestionSent(s => ({ ...s, ...m }))
+      }
+    }
+    setSearching(false)
+  }
+  function clearSearch() { setQuery(''); setResults([]); clearTimeout(searchDebounce.current) }
 
   useEffect(() => {
     if (!session) return
@@ -1116,11 +1152,47 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
           <div style={{ font: "700 28px -apple-system", color: '#1A1A1A' }}>Friends</div>
         </div>
 
-        {/* Search bar */}
-        <div onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 40, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', margin: '0 20px 20px', cursor: 'pointer' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
-          <span style={{ color: '#B6ADA4', fontSize: 14 }}>Search by name or username…</span>
+        {/* Inline search bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, height: 40, background: '#F2EFEC', borderRadius: 13, padding: '0 14px', margin: '0 20px 20px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6ADA4" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+          <input value={query} onChange={e => handleFriendSearch(e.target.value)} placeholder="Search by name or username"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: '400 14px -apple-system', color: '#1A1A1A' }} />
+          {searching && <div className="spin" style={{ width: 15, height: 15, borderRadius: '50%', border: '2px solid #E0D7CF', borderTopColor: '#FF6B4A', flexShrink: 0 }} />}
+          {query && !searching && <span onClick={clearSearch} style={{ color: '#C4BBB2', fontSize: 18, cursor: 'pointer', flexShrink: 0 }}>×</span>}
         </div>
+
+        {/* Search results (inline; replaces the normal page while typing) */}
+        {query.trim().length > 0 ? (
+          <div style={{ padding: '0 20px' }}>
+            {results.length === 0 && !searching ? (
+              <p style={{ textAlign: 'center', padding: '28px 10px', color: '#9A9087', fontSize: 14 }}>
+                {query.replace(/^@/, '').replace(/[,()%]/g, '').trim().length < 2 ? 'Type at least 2 letters to search.' : 'No one found.'}
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {results.map(u => {
+                  const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username
+                  const st = suggestionSent[u.id]
+                  return (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+                      <div onClick={() => setViewFriendId(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                        <AvatarImg url={u.avatar_url} name={name} color={u.avatar_color} size={44} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ font: '600 15px -apple-system', color: '#1A1A1A' }}>{name}</div>
+                          <div style={{ fontSize: 12.5, color: '#9A9087' }}>@{u.username}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => sendSuggestionRequest(u.id)}
+                        style={{ border: 'none', borderRadius: 12, padding: '9px 16px', cursor: st ? 'default' : 'pointer', font: '600 13px -apple-system', flexShrink: 0, background: st === 'already' ? '#E4F6EE' : st ? '#F5F2EE' : '#FF6B4A', color: st === 'already' ? '#0E9C6B' : st ? '#7B7268' : '#fff' }}>
+                        {st === 'already' ? 'Friends' : st ? 'Sent ✓' : 'Add'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ) : (<>
 
         {/* Requests section (inline) */}
         {pendingIn.filter(r => !deniedMap[r.requester]).length > 0 && (
@@ -1281,17 +1353,11 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
             </div>
           )}
         </div>
+        </>)}
 
       </div>
 
       {/* sheets */}
-      {addOpen && (
-        <AddFriendSheet
-          session={session}
-          onClose={() => { setAddOpen(false); onCloseAddFriend?.(); loadAll() }}
-          onRequestAccepted={loadAll}
-        />
-      )}
       {createCircleOpen && (
         <CreateCircleSheet
           session={session}
