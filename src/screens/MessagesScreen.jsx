@@ -618,9 +618,30 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   const [showCompose, setShowCompose] = useState(false)
   const [friends, setFriends] = useState([])
   const [composeSearch, setComposeSearch] = useState('')
+  const [swipedPeer, setSwipedPeer] = useState(null) // conversation row swiped open
+  const rowSwipe = useRef({ id: null, startX: 0, active: false })
   const searchTimer = useRef(null)
 
   function closeCompose() { setShowCompose(false); setComposeSearch('') }
+
+  // Hide a conversation from MY list only (per-user; reappears if they message me).
+  async function hideConversation(peerId) {
+    setSwipedPeer(null)
+    setConvos(prev => prev.filter(c => c.peer !== peerId))
+    await supabase.from('dm_hidden').upsert({ user_id: myId, peer_id: peerId, hidden_at: new Date().toISOString() }, { onConflict: 'user_id,peer_id' })
+  }
+  function onRowSwipeStart(e, peerId) {
+    const t = e.touches ? e.touches[0] : e
+    rowSwipe.current = { id: peerId, startX: t.clientX, active: true }
+  }
+  function onRowSwipeMove(e, peerId) {
+    if (!rowSwipe.current.active || rowSwipe.current.id !== peerId) return
+    const t = e.touches ? e.touches[0] : e
+    const dx = t.clientX - rowSwipe.current.startX
+    if (dx < -30) setSwipedPeer(peerId)          // swipe left → reveal Delete
+    else if (dx > 20 && swipedPeer === peerId) setSwipedPeer(null) // swipe right → close
+  }
+  function onRowSwipeEnd() { rowSwipe.current.active = false }
 
   useEffect(() => () => clearTimeout(searchTimer.current), [])
 
@@ -760,21 +781,32 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
           const p = profiles[r.peer]
           const unread = r.unread > 0
           const mineLast = r.last_sender === myId
+          const open = swipedPeer === r.peer
           return (
-            <div key={r.peer} onClick={() => openChat(r.peer)} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 20px', cursor: 'pointer', background: unread ? '#FFF7F4' : 'transparent' }}>
-              <AvatarDot profile={p} size={54} online={onlineIds?.has(r.peer)} ring={unread ? '#FFF7F4' : '#F9F4F0'} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ font: `${unread ? 700 : 600} 16px -apple-system`, color: '#1A1A1A' }}>{fullName(p)}</span>
-                  <span style={{ font: `${unread ? 600 : 400} 12px -apple-system`, color: unread ? '#FF6B4A' : '#B6ADA4', flexShrink: 0, marginLeft: 8 }}>{listTime(r.last_at)}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                  <span style={{ flex: 1, minWidth: 0, font: `${unread ? 500 : 400} 13px -apple-system`, color: unread ? '#5B5048' : '#9A9087', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {mineLast ? 'You: ' : ''}{previewText(r)}
-                  </span>
-                  {unread && (
-                    <span style={{ minWidth: 22, height: 22, borderRadius: 11, background: '#FF6B4A', color: '#fff', font: '700 11px -apple-system', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{r.unread > 99 ? '99+' : r.unread}</span>
-                  )}
+            <div key={r.peer} style={{ position: 'relative', overflow: 'hidden' }}>
+              {/* Delete button revealed behind the row */}
+              <div onClick={() => hideConversation(r.peer)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 88, background: '#E5484D', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                <span style={{ font: '600 11px -apple-system' }}>Delete</span>
+              </div>
+              <div
+                onClick={() => { if (open) setSwipedPeer(null); else openChat(r.peer) }}
+                onTouchStart={e => onRowSwipeStart(e, r.peer)} onTouchMove={e => onRowSwipeMove(e, r.peer)} onTouchEnd={onRowSwipeEnd}
+                style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 20px', cursor: 'pointer', background: unread ? '#FFF7F4' : '#F9F4F0', transform: open ? 'translateX(-88px)' : 'translateX(0)', transition: 'transform .22s ease' }}>
+                <AvatarDot profile={p} size={54} online={onlineIds?.has(r.peer)} ring={unread ? '#FFF7F4' : '#F9F4F0'} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ font: `${unread ? 700 : 600} 16px -apple-system`, color: '#1A1A1A' }}>{fullName(p)}</span>
+                    <span style={{ font: `${unread ? 600 : 400} 12px -apple-system`, color: unread ? '#FF6B4A' : '#B6ADA4', flexShrink: 0, marginLeft: 8 }}>{listTime(r.last_at)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                    <span style={{ flex: 1, minWidth: 0, font: `${unread ? 500 : 400} 13px -apple-system`, color: unread ? '#5B5048' : '#9A9087', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {mineLast ? 'You: ' : ''}{previewText(r)}
+                    </span>
+                    {unread && (
+                      <span style={{ minWidth: 22, height: 22, borderRadius: 11, background: '#FF6B4A', color: '#fff', font: '700 11px -apple-system', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px', flexShrink: 0 }}>{r.unread > 99 ? '99+' : r.unread}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
