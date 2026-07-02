@@ -95,6 +95,9 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const [reportingMsg, setReportingMsg] = useState(null)
   const [reportDone, setReportDone] = useState(false)
   const [reportError, setReportError] = useState(false)
+  const [reactInfo, setReactInfo] = useState(null) // message whose reactions we're viewing
+  const pillTimer = useRef(null)
+  const pillHandled = useRef(false)
   const pressTimer = useRef(null)
   const pressPos = useRef({ x: 0, y: 0 })
   const scrollRef = useRef(null)
@@ -449,8 +452,11 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
                   {!deleted && rx.length > 0 && (
                     <div style={{ display: 'flex', gap: 4, marginTop: -7, zIndex: 1, padding: mine ? '0 4px 0 0' : '0 0 0 4px' }}>
                       {rx.map(r => (
-                        <div key={r.emoji} onClick={mine ? undefined : () => toggleReaction(m.id, r.emoji)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#EFE6DF'}`, borderRadius: 11, padding: '1px 7px', cursor: mine ? 'default' : 'pointer' }}>
+                        <div key={r.emoji}
+                          onClick={() => { if (pillHandled.current) { pillHandled.current = false; return } setReactInfo(m) }}
+                          onPointerDown={() => { if (!r.mine) return; clearTimeout(pillTimer.current); pillTimer.current = setTimeout(() => { pillHandled.current = true; toggleReaction(m.id, r.emoji) }, 450) }}
+                          onPointerUp={() => clearTimeout(pillTimer.current)} onPointerLeave={() => clearTimeout(pillTimer.current)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: r.mine ? '#FFF1EC' : '#fff', border: `1px solid ${r.mine ? '#FFD9CC' : '#EFE6DF'}`, borderRadius: 11, padding: '1px 7px', cursor: 'pointer' }}>
                           <span style={{ fontSize: 12.5 }}>{r.emoji}</span>
                           {r.count > 1 && <span style={{ font: '600 11px -apple-system', color: '#7B7268' }}>{r.count}</span>}
                         </div>
@@ -588,6 +594,28 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       )}
       {reportError && (
         <div style={{ position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#E14F2E', color: '#fff', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 95 }}>Couldn't submit report — please try again</div>
+      )}
+
+      {/* who reacted — tap a reaction pill */}
+      {reactInfo && (
+        <div onClick={() => setReactInfo(null)} style={{ position: 'absolute', inset: 0, zIndex: 95, background: 'rgba(20,24,30,.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} className="sheet-up" style={{ background: '#FBF7F4', borderRadius: '24px 24px 0 0', padding: '10px 20px calc(env(safe-area-inset-bottom,0px) + 24px)' }}>
+            <div style={{ width: 42, height: 5, borderRadius: 5, background: '#E0D7CF', margin: '0 auto 14px' }} />
+            <div style={{ font: '700 15px -apple-system', color: '#1A1A1A', marginBottom: 12 }}>Reactions</div>
+            {(reactions[reactInfo.id] || []).length === 0 && <div style={{ color: '#9A9087', fontSize: 14, padding: '8px 0 4px' }}>No reactions.</div>}
+            {(reactions[reactInfo.id] || []).map((rr, i) => {
+              const isMine = rr.user_id === myId
+              const who = isMine ? 'You' : (peer.first_name || fullName(peer))
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid #F1E8E2' }}>
+                  <span style={{ fontSize: 22 }}>{rr.emoji}</span>
+                  <span style={{ flex: 1, font: '600 15px -apple-system', color: '#1A1A1A' }}>{who}</span>
+                  {isMine && <button onClick={() => { toggleReaction(reactInfo.id, rr.emoji); setReactInfo(null) }} style={{ border: 'none', background: '#F2EFEC', color: '#E5484D', font: '600 13px -apple-system', padding: '7px 13px', borderRadius: 10, cursor: 'pointer' }}>Remove</button>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
     </div>
   )
