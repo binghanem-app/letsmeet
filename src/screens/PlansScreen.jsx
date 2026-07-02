@@ -138,7 +138,7 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>DATE</div>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              style={{ width: '100%', height: 52, border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '0 14px', fontSize: 15, color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box', textAlign: 'center' }}/>
+              style={{ width: '100%', height: 52, border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '0 14px', fontSize: 15, color: '#1F2933', background: '#fff', outline: 'none', boxSizing: 'border-box', textAlign: 'center', appearance: 'none', WebkitAppearance: 'none' }}/>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
