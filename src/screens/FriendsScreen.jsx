@@ -955,6 +955,20 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
     loadAll()
   }, [session])
 
+  // Live-refresh the lists when friendships change — requests received/accepted
+  // and unfriends now appear instantly instead of only after an app restart.
+  useEffect(() => {
+    if (!session) return
+    const myId = session.user.id
+    let t = null
+    const reload = () => { clearTimeout(t); t = setTimeout(() => { loadFriends(); loadIncoming(); loadSuggestions() }, 250) }
+    const ch = supabase.channel(`friends-live-${myId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `requester=eq.${myId}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `addressee=eq.${myId}` }, reload)
+      .subscribe()
+    return () => { clearTimeout(t); supabase.removeChannel(ch) }
+  }, [session])
+
   async function loadAll() {
     setLoading(true)
     await Promise.all([loadFriends(), loadCircles(), loadIncoming(), loadSuggestions(), loadDismissed()])
