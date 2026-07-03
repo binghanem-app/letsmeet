@@ -28,10 +28,10 @@ const PRESETS = [
   { type: 'coffee',   label: 'Coffee',    sub: 'Quick café catch-up',  bg: '#FBF0DA', color: '#C8841A' },
   { type: 'dinner',   label: 'Dinner',    sub: 'Restaurant, anywhere', bg: '#F0EBFF', color: '#A78BFA' },
   { type: 'movies',   label: 'Movies',    sub: 'Cinema night',         bg: '#FFEFE9', color: '#FF6B4A' },
-  { type: 'hangout',  label: 'Hang out',  sub: "Someone's place",      bg: '#FDEAF3', color: '#EC6A9C' },
-  { type: 'outdoors', label: 'Outdoors',  sub: 'Park, hike, or beach', bg: '#E4F6EE', color: '#0E9C6B' },
-  { type: 'trip',     label: 'Trip',      sub: 'Weekend getaway',      bg: '#EAF1FF', color: '#5B7CFA' },
   { type: 'sports',   label: 'Sports',    sub: 'Game, gym, or match',  bg: '#E0F5F7', color: '#0EA5B5' },
+  { type: 'outdoors', label: 'Outdoors',  sub: 'Park, hike, or beach', bg: '#E4F6EE', color: '#0E9C6B' },
+  { type: 'hangout',  label: 'Hang out',  sub: "Someone's place",      bg: '#FDEAF3', color: '#EC6A9C' },
+  { type: 'trip',     label: 'Trip',      sub: 'Weekend getaway',      bg: '#EAF1FF', color: '#5B7CFA' },
 ]
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
