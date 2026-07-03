@@ -120,13 +120,17 @@ function StepName({ value, onChange, onVibeChange }) {
           ref={inputRef}
           value={value}
           onChange={e => { onChange(e.target.value); onVibeChange?.(null) }}
-          placeholder="e.g. Friday night dinner"
+          placeholder="What's your plan?"
           style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '13px 0' }}
         />
         {value && <span onClick={() => { onChange(''); onVibeChange?.(null) }} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
       </div>
 
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: '#B6ADA4', letterSpacing: .4, marginBottom: 12 }}>YOUR USUAL</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 16px' }}>
+        <div style={{ flex: 1, height: 1, background: '#EFE5DD' }} />
+        <span style={{ font: "600 13px -apple-system", color: '#FF6B4A' }}>or choose one below</span>
+        <div style={{ flex: 1, height: 1, background: '#EFE5DD' }} />
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {PRESETS.map(p => (
           <div
