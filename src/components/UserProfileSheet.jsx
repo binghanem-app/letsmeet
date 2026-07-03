@@ -22,6 +22,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChan
   const [acting, setActing]         = useState(false)
   const [reporting, setReporting]   = useState(false)
   const [reportDone, setReportDone] = useState(false)
+  const [confirmBlock, setConfirmBlock] = useState(false)
   const [dragY, setDragY]           = useState(0)
   const [dragging, setDragging]     = useState(false)
   const dragStartY                  = useRef(0)
@@ -257,9 +258,19 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChan
               )}
               {!isSelf && (
                 <>
-                  <button onClick={blockUser} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px -apple-system", cursor: 'pointer' }}>
-                    {acting ? '…' : 'Block'}
-                  </button>
+                  {confirmBlock ? (
+                    <div style={{ border: '1.5px solid #FAD5CF', background: '#FEF0EE', borderRadius: 16, padding: '13px 14px' }}>
+                      <div style={{ fontSize: 13.5, color: '#E14F2E', fontWeight: 600, marginBottom: 12 }}>Block {name}? They won&apos;t be able to message you, add you, or see your profile.</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={blockUser} disabled={acting} style={{ flex: 1, padding: 11, border: 'none', borderRadius: 12, background: '#E14F2E', color: '#fff', font: "600 14px -apple-system", cursor: 'pointer' }}>{acting ? '…' : 'Block'}</button>
+                        <button onClick={() => setConfirmBlock(false)} disabled={acting} style={{ flex: 1, padding: 11, border: '1.5px solid #E7DED7', borderRadius: 12, background: '#fff', color: '#7B7268', font: "600 14px -apple-system", cursor: 'pointer' }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmBlock(true)} disabled={acting} style={{ width: '100%', padding: 15, border: '1.5px solid #E14F2E', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 15px -apple-system", cursor: 'pointer' }}>
+                      Block
+                    </button>
+                  )}
                   <button
                     onClick={() => { setReporting(true); setReportDone(false) }}
                     style={{ width: '100%', padding: 10, border: 'none', borderRadius: 16, background: 'transparent', color: '#B6ADA4', font: "500 13px -apple-system", cursor: 'pointer' }}

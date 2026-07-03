@@ -382,6 +382,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
   const [selectedGroups, setSelectedGroups] = useState(friend.groupIds || [])
   const [saving, setSaving] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [confirmBlock, setConfirmBlock] = useState(false)
 
   function toggleGroup(gid) {
     setSelectedGroups(prev => prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid])
@@ -513,6 +514,23 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
               </button>
             </div>
           </div>
+        ) : confirmBlock ? (
+          <div style={{ background: '#FFF1EC', border: '1.5px solid #FFD8CC', borderRadius: 18, padding: '16px 18px', marginBottom: 10 }}>
+            <p style={{ margin: '0 0 12px', font: "600 15px -apple-system", color: '#1F2933' }}>
+              Block {displayName}?
+            </p>
+            <p style={{ margin: '0 0 14px', fontSize: 13, color: '#9A9087', lineHeight: 1.5 }}>
+              They'll be removed from your friends and won't be able to message you, add you, or see your profile.
+            </p>
+            <div style={{ display: 'flex', gap: 9 }}>
+              <button onClick={() => setConfirmBlock(false)} style={{ flex: 1, padding: '13px 0', border: '1.5px solid #E7DED7', borderRadius: 14, background: '#fff', color: '#7B7268', font: "600 14px -apple-system", cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={blockFriend} style={{ flex: 1, padding: '13px 0', border: 'none', borderRadius: 14, background: '#E14F2E', color: '#fff', font: "600 14px -apple-system", cursor: 'pointer' }}>
+                Yes, block
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             <button onClick={save} disabled={saving} style={{ width: '100%', padding: 16, border: 'none', borderRadius: 16, background: '#FF6B4A', color: '#fff', font: "600 16px -apple-system", cursor: 'pointer', boxShadow: '0 10px 22px -8px rgba(255,107,74,.7)', marginBottom: 10 }}>
@@ -523,7 +541,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7B7268" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
                 Remove
               </button>
-              <button onClick={blockFriend} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #F3D2CC', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 14.5px -apple-system", cursor: 'pointer' }}>
+              <button onClick={() => setConfirmBlock(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 15, border: '1.5px solid #F3D2CC', borderRadius: 16, background: '#fff', color: '#E14F2E', font: "600 14.5px -apple-system", cursor: 'pointer' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E14F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
                 Block
               </button>
