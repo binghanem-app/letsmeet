@@ -141,6 +141,9 @@ workflows:
           plutil -replace NSPhotoLibraryAddUsageDescription -string "Let's Meet saves photos you capture to your photo library." ios/App/App/Info.plist
           plutil -insert NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist 2>/dev/null || \
           plutil -replace NSLocationWhenInUseUsageDescription -string "Let's Meet uses your location to suggest nearby places when you create a plan." ios/App/App/Info.plist
+          # Portrait-only — the UI isn't designed for landscape, so lock orientation.
+          plutil -replace UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' ios/App/App/Info.plist 2>/dev/null || \
+          plutil -insert UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' ios/App/App/Info.plist
 
 
       - name: Build IPA
