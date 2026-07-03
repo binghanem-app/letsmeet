@@ -122,6 +122,8 @@ export default function App() {
   const [latestMessage, setLatestMessage] = useState(null)
   const [latestInvite, setLatestInvite] = useState(0)
   const [dmUnread, setDmUnread]         = useState(0)
+  const [planDetailOpen, setPlanDetailOpen] = useState(false)
+  const [dmChatOpen, setDmChatOpen]     = useState(false)
   const [onlineIds, setOnlineIds]       = useState(() => new Set())
   const [openDmPeerId, setOpenDmPeerId] = useState(null)
   const [profileSheetUserId, setProfileSheetUserId] = useState(null)
@@ -395,7 +397,7 @@ export default function App() {
             </div>
           )}
           <div style={show('plans')}>
-            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => { setScreen('home'); setOpenPlanId(null) }} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onPlanClosed={(planId) => { if (planId) setViewedPlanIds(s => { if (!s.has(planId)) return s; const n = new Set(s); n.delete(planId); return n }); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} />
+            <PlansScreen session={session} openPlanId={openPlanId} onPlanOpened={() => setOpenPlanId(null)} onBack={() => { setScreen('home'); setOpenPlanId(null) }} refreshTrigger={plansRefresh} backToListTrigger={plansBackToList} cancelledPlanIds={cancelledPlanIds} onPlanViewed={(planId) => { if (planId) setViewedPlanIds(s => new Set([...s, planId])); setHomeRefresh(r => r + 1) }} onPlanClosed={(planId) => { if (planId) setViewedPlanIds(s => { if (!s.has(planId)) return s; const n = new Set(s); n.delete(planId); return n }); setHomeRefresh(r => r + 1) }} latestMessage={latestMessage} latestInvite={latestInvite} onDetailChange={setPlanDetailOpen} />
           </div>
           <div style={show('messages')}>
             <MessagesScreen
@@ -407,13 +409,18 @@ export default function App() {
               onOpenProfile={(uid) => setProfileSheetUserId(uid)}
               onOpenPlan={(id) => { setOpenPlanId(id); setScreen('plans'); setPlansRefresh(r => r + 1) }}
               backToListTrigger={messagesToList}
+              onChatChange={setDmChatOpen}
             />
           </div>
           <div style={show('profile')}>
             <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
           </div>
         </div>
-        <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} messagesBadge={dmUnread} />
+        {/* Hide the bottom tab bar while inside a chat/detail so the message
+            input sits directly above the keyboard (iMessage/WhatsApp style). */}
+        {!((screen === 'plans' && planDetailOpen) || (screen === 'messages' && dmChatOpen)) && (
+          <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} messagesBadge={dmUnread} />
+        )}
       </div>
     )
   }

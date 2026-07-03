@@ -1170,7 +1170,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
       )}
 
       {/* ── chat input ── */}
-      <div style={{ padding: '10px 16px 20px', borderTop: '1px solid #E8E2DA', background: '#FBF7F4', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom, 0px) + 12px)', borderTop: '1px solid #E8E2DA', background: '#FBF7F4', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
         <button
           onClick={() => Capacitor.isNativePlatform() ? setShowPhotoSheet(true) : fileInputRef.current?.click()}
           disabled={msgSending}
@@ -1336,7 +1336,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
 }
 
 // ─── PlansScreen ──────────────────────────────────────────────────────────────
-export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onPlanClosed, onUnreadCount, latestMessage, latestInvite }) {
+export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack, refreshTrigger, backToListTrigger, cancelledPlanIds, onPlanViewed, onPlanClosed, onUnreadCount, latestMessage, latestInvite, onDetailChange }) {
   const [plans, setPlans]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState('upcoming')
@@ -1352,6 +1352,11 @@ export default function PlansScreen({ session, openPlanId, onPlanOpened, onBack,
   // creating one). Show the loading spinner until selectedId catches up — never
   // the orphaned "Your plans" list, and never a stale plan's chat (privacy).
   const opening = !!openPlanId && openPlanId !== selectedId
+
+  // Tell App when a plan detail is open so it can hide the bottom tab bar
+  // (full-screen chat: input sits right above the keyboard, more room).
+  useEffect(() => { onDetailChange?.(!!selectedId || opening) }, [selectedId, opening])
+  useEffect(() => () => onDetailChange?.(false), [])
 
   // Sync total unread count to parent whenever plans change (avoids calling onUnreadCount inside setPlans updaters)
   useEffect(() => {

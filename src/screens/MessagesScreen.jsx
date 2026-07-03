@@ -635,7 +635,7 @@ function MenuRow({ label, icon, onClick, danger }) {
 const photoOpt = { display: 'block', width: '100%', padding: 15, border: 'none', borderRadius: 14, background: '#fff', font: '600 15px -apple-system', color: '#1F2933', cursor: 'pointer', marginBottom: 8 }
 
 // ─── Conversation list ────────────────────────────────────────────────────────
-export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerOpened, onUnreadChange, onOpenProfile, onOpenPlan, refreshTrigger, backToListTrigger }) {
+export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerOpened, onUnreadChange, onOpenProfile, onOpenPlan, refreshTrigger, backToListTrigger, onChatChange }) {
   const myId = session.user.id
   const [convos, setConvos] = useState([])
   const [profiles, setProfiles] = useState({})
@@ -672,6 +672,11 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
   function onRowSwipeEnd() { rowSwipe.current.active = false }
 
   useEffect(() => () => clearTimeout(searchTimer.current), [])
+
+  // Tell App when a DM thread (or the full-page compose) is open so it can hide
+  // the bottom tab bar — the chat input then sits right above the keyboard.
+  useEffect(() => { onChatChange?.(!!active || showCompose) }, [active, showCompose])
+  useEffect(() => () => onChatChange?.(false), [])
 
   async function openCompose() {
     setShowCompose(true)
