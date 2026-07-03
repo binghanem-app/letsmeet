@@ -31,6 +31,7 @@ const PRESETS = [
   { type: 'hangout',  label: 'Hang out',  sub: "Someone's place",      bg: '#FDEAF3', color: '#EC6A9C' },
   { type: 'outdoors', label: 'Outdoors',  sub: 'Park, hike, or beach', bg: '#E4F6EE', color: '#0E9C6B' },
   { type: 'trip',     label: 'Trip',      sub: 'Weekend getaway',      bg: '#EAF1FF', color: '#5B7CFA' },
+  { type: 'sports',   label: 'Sports',    sub: 'Game, gym, or match',  bg: '#E0F5F7', color: '#0EA5B5' },
 ]
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

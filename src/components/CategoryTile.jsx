@@ -4,6 +4,7 @@ import movies from '../assets/categories/movies.png'
 import hangout from '../assets/categories/hangout.png'
 import outdoors from '../assets/categories/outdoors.png'
 import trip from '../assets/categories/trip.png'
+import sports from '../assets/categories/sports.png'
 import custom from '../assets/categories/custom.png'
 
 // Maps a plan's vibe (the preset label) to its illustrated tile. Anything that
@@ -16,6 +17,7 @@ export const CATEGORY_IMG = {
   'Hang out': hangout,
   Outdoors: outdoors,
   Trip: trip,
+  Sports: sports,
 }
 
 export default function CategoryTile({ vibe, size = 50, radius, style }) {
