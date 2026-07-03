@@ -120,7 +120,7 @@ function StepName({ value, onChange, onVibeChange }) {
           ref={inputRef}
           value={value}
           onChange={e => { onChange(e.target.value); onVibeChange?.(null) }}
-          placeholder="What's your plan?"
+          placeholder="Type your own…"
           style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', font: "600 16px -apple-system", color: '#1F2933', padding: '13px 0' }}
         />
         {value && <span onClick={() => { onChange(''); onVibeChange?.(null) }} style={{ fontSize: 19, color: '#C4BBB2', cursor: 'pointer' }}>×</span>}
