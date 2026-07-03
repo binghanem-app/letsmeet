@@ -214,14 +214,10 @@ function BlockedSheet({ myId, onClose }) {
   useEffect(() => { load() }, [])
 
   async function load() {
-    const { data } = await supabase
-      .from('blocks')
-      .select('blocked')
-      .eq('blocker', myId)
-    const ids = (data || []).map(r => r.blocked)
-    if (!ids.length) { setBlocked([]); setLoading(false); return }
-    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, username, avatar_color, avatar_url').in('id', ids)
-    setBlocked((profiles || []).map(p => ({ ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username })))
+    // Via RPC: the profiles RLS hides a blocked person from the blocker, so a
+    // direct profiles query returned nothing and the list looked empty.
+    const { data } = await supabase.rpc('blocked_users')
+    setBlocked((data || []).map(p => ({ ...p, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username || 'Unknown' })))
     setLoading(false)
   }
 
