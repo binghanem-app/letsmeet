@@ -563,27 +563,34 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
       .then(({ data }) => setLastReadAt(data?.last_read_at || null))
     loadMessages()
 
-    const channel = supabase.channel(`plan-chat-${plan.id}`)
-      .on('broadcast', { event: 'new_msg' }, async ({ payload: msg }) => {
-        if (!msg?.id || msg.sender === myId || blockedIdsRef.current.has(msg.sender)) return
-        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
-        lastMsgTimestampRef.current = msg.created_at
-        setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
-        if (!knownSenders.current.has(msg.sender)) {
-          knownSenders.current.add(msg.sender)
-          const { data: p } = await supabase.from('profiles')
-            .select('id, first_name, last_name, avatar_color, avatar_url')
-            .eq('id', msg.sender).single()
-          if (p) {
-            const nickMap = { [plan.host]: plan.hostName }
-            ;(plan.invitees || []).forEach(i => { nickMap[i.invitee] = i.name })
-            setMsgProfiles(prev => ({
-              ...prev,
-              [p.id]: { ...p, name: nickMap[p.id] || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' },
-            }))
-          }
+    // Handle an incoming message from either transport. Dedupes by id, so the
+    // broadcast (fast) and the postgres_changes INSERT (reliable) can both fire.
+    const handleIncoming = async (msg) => {
+      if (!msg?.id || msg.sender === myId || blockedIdsRef.current.has(msg.sender)) return
+      setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+      lastMsgTimestampRef.current = msg.created_at
+      setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight }, 80)
+      if (!knownSenders.current.has(msg.sender)) {
+        knownSenders.current.add(msg.sender)
+        const { data: p } = await supabase.from('profiles')
+          .select('id, first_name, last_name, avatar_color, avatar_url')
+          .eq('id', msg.sender).single()
+        if (p) {
+          const nickMap = { [plan.host]: plan.hostName }
+          ;(plan.invitees || []).forEach(i => { nickMap[i.invitee] = i.name })
+          setMsgProfiles(prev => ({
+            ...prev,
+            [p.id]: { ...p, name: nickMap[p.id] || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' },
+          }))
         }
-      })
+      }
+    }
+
+    const channel = supabase.channel(`plan-chat-${plan.id}`)
+      .on('broadcast', { event: 'new_msg' }, ({ payload: msg }) => handleIncoming(msg))
+      // Reliable backstop: DB-backed delivery so a dropped broadcast can't lose a
+      // message (it would otherwise only appear after leaving and reopening).
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'plan_messages', filter: `plan_id=eq.${plan.id}` }, ({ new: msg }) => handleIncoming(msg))
       // Edits / deletes propagate over postgres_changes (broadcast only covers new msgs).
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_messages', filter: `plan_id=eq.${plan.id}` }, ({ new: m }) => {
         if (!m) return
