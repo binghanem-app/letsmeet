@@ -1001,7 +1001,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
             </svg>
           </div>
           {whosInOpen && (
-            <div style={{ borderTop: '1px solid #F5F0EB', padding: '8px 12px 12px' }}>
+            <div className="no-scrollbar" style={{ borderTop: '1px solid #F5F0EB', padding: '8px 12px 12px', maxHeight: '40vh', overflowY: 'auto' }}>
               {/* Host row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px' }}>
                 <Avatar url={plan.hostAvatarUrl} name={plan.hostName} color={plan.hostColor || '#5B7CFA'} size={28} />
