@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, Fragment } from 'react'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import CategoryTile from '../components/CategoryTile'
+import PullToRefresh from '../components/PullToRefresh'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Capacitor } from '@capacitor/core'
 import emptyChatUrl from '../assets/empty-chat.png'
@@ -782,7 +783,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
       </div>
 
       {/* body */}
-      <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
+      <PullToRefresh onRefresh={loadConvos} className="no-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
             <div className="spin" style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid #E0D7CF', borderTopColor: '#FF6B4A' }}/>
@@ -845,7 +846,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
             </div>
           )
         })}
-      </div>
+      </PullToRefresh>
 
       {showCompose && (() => {
         const q = composeSearch.trim().toLowerCase()

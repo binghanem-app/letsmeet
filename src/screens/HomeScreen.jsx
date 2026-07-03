@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import PlanCard from '../components/PlanCard'
+import PullToRefresh from '../components/PullToRefresh'
 import noPlansUrl from '../assets/no-plans.png'
 import waveUrl from '../assets/wave.png'
 import homeBannerUrl from '../assets/home-banner.png'
@@ -248,7 +249,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#FBF7F4' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 24px' }} className="no-scrollbar">
+      <PullToRefresh onRefresh={() => loadData(true)} style={{ flex: 1, overflowY: 'auto', padding: '0 0 24px' }} className="no-scrollbar">
 
         {/* Header */}
         <div style={{ padding: '16px 20px 14px' }}>
@@ -311,7 +312,7 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
             </div>
           )
         })()}
-      </div>
+      </PullToRefresh>
     </div>
   )
 }

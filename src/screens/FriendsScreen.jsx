@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import UserProfileSheet from '../components/UserProfileSheet'
 import AvatarImg from '../components/Avatar'
+import PullToRefresh from '../components/PullToRefresh'
 import { Capacitor } from '@capacitor/core'
 import noFriendsUrl from '../assets/no-friends.png'
 
@@ -1033,10 +1034,10 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
     return () => { clearTimeout(t); supabase.removeChannel(ch) }
   }, [session])
 
-  async function loadAll() {
-    setLoading(true)
+  async function loadAll(silent = false) {
+    if (!silent) setLoading(true)
     await Promise.all([loadFriends(), loadCircles(), loadIncoming(), loadSuggestions(), loadDismissed()])
-    setLoading(false)
+    if (!silent) setLoading(false)
   }
 
   async function loadCircles() {
@@ -1161,7 +1162,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 28px' }} className="no-scrollbar">
+      <PullToRefresh onRefresh={() => loadAll(true)} style={{ flex: 1, overflowY: 'auto', padding: '0 0 28px' }} className="no-scrollbar">
 
         {/* Header */}
         {/* Share button removed until there's a real App Store link (was a
@@ -1373,7 +1374,7 @@ export default function FriendsScreen({ session, onOpenAddFriend, externalAddFri
         </div>
         </>)}
 
-      </div>
+      </PullToRefresh>
 
       {/* sheets */}
       {createCircleOpen && (
