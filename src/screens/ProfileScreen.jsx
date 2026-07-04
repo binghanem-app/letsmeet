@@ -8,6 +8,31 @@ function initials(name = '') {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
 }
 
+// Downscale + re-encode an avatar to a small JPEG so it loads fast and reliably.
+// Returns null on ANY failure so the caller falls back to uploading the raw file
+// (this can never block an upload).
+async function compressAvatar(file, max = 512, quality = 0.85) {
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image()
+      im.onload = () => resolve(im)
+      im.onerror = reject
+      im.src = URL.createObjectURL(file)
+    })
+    const scale = Math.min(1, max / Math.max(img.width, img.height))
+    const w = Math.max(1, Math.round(img.width * scale))
+    const h = Math.max(1, Math.round(img.height * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    URL.revokeObjectURL(img.src)
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality))
+    return blob && blob.size > 0 ? blob : null
+  } catch {
+    return null
+  }
+}
+
 // ─── Section / Row building blocks ───────────────────────────────────────────
 function Section({ label, children }) {
   return (
@@ -458,12 +483,17 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
     if (!file) return
     const allowed = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowed.includes(file.type)) { showToast('Please choose a JPEG, PNG, or WebP image'); return }
-    if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2 MB'); return }
+    if (file.size > 10 * 1024 * 1024) { showToast('Image must be under 10 MB'); return }
     setUploading(true)
     const { data: { user } } = await supabase.auth.getUser()
-    const ext = file.name.split('.').pop() || 'jpg'
+    // Shrink to a small JPEG for fast/reliable loads; fall back to the raw file
+    // if compression fails for any reason (so it can never block the upload).
+    const compressed = await compressAvatar(file)
+    const blob = compressed || file
+    const ext  = compressed ? 'jpg' : (file.name.split('.').pop() || 'jpg')
+    const contentType = compressed ? 'image/jpeg' : file.type
     const path = `${user.id}.${ext}`
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type })
+    const { error } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true, contentType })
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
       const url = `${publicUrl}?t=${Date.now()}`
