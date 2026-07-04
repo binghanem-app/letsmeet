@@ -76,7 +76,7 @@ function titleForKind(kind: string): string {
   const map: Record<string, string> = {
     message:     'New message 💬',
     invite:      "You're invited! 🎉",
-    rsvp:        'New RSVP',
+    rsvp:        'Plan reply',
     request:     'Friend request 👋',
     reminder:    'Reminder ⏰',
     plan_update: 'Plan update',
