@@ -603,6 +603,16 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
       .subscribe()
 
     chatChannelRef.current = channel
+
+    // Realtime INSERTs that land while the app is suspended in the background are
+    // NOT replayed on resume — refetch on every foreground so a message that
+    // triggered a push (tapped to open this chat) isn't missing until reopen.
+    let resumeListener
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      CapApp.addListener('appStateChange', ({ isActive }) => { if (isActive) loadMessages() })
+        .then(l => { resumeListener = l }).catch(() => {})
+    }).catch(() => {})
+
     return () => {
       // Leaving the chat = everything seen so far is read. Persist last_read_at,
       // THEN tell the parent the plan is no longer "open" so its Home badge can
@@ -620,6 +630,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
       }
       supabase.removeChannel(channel)
       chatChannelRef.current = null
+      resumeListener?.remove?.()
     }
   }, [plan.id])
 

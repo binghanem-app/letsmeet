@@ -155,9 +155,11 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   useEffect(() => {
     let alive = true
     setSharedPlans([]); setPlansOpen(false) // clear stale chip while switching peers
-    ;(async () => {
-      supabase.from('profiles').select('first_name').eq('id', myId).maybeSingle()
-        .then(({ data: me }) => { if (me?.first_name) myNameRef.current = me.first_name })
+
+    supabase.from('profiles').select('first_name').eq('id', myId).maybeSingle()
+      .then(({ data: me }) => { if (me?.first_name) myNameRef.current = me.first_name })
+
+    const load = async () => {
       const { data } = await supabase.from('direct_messages')
         .select('id, sender, recipient, body, photo_url, created_at, read_at, reply_to, edited_at, deleted_at')
         .or(`and(sender.eq.${myId},recipient.eq.${peer.id}),and(sender.eq.${peer.id},recipient.eq.${myId})`)
@@ -167,9 +169,18 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       loadReactions((data || []).map(m => m.id))
       scrollDown()
       markRead()
-      // shared upcoming plan between the two (the "active card" bridge)
-      findSharedPlan()
-    })()
+      findSharedPlan() // shared upcoming plan between the two (the "active card" bridge)
+    }
+    load()
+
+    // Realtime INSERTs that land while the app is suspended in the background are
+    // NOT replayed on resume — so a DM that triggered a push (tapped to open this
+    // chat) can be missing until a manual reload. Re-fetch on every foreground.
+    let resumeListener
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      CapApp.addListener('appStateChange', ({ isActive }) => { if (isActive && alive) load() })
+        .then(l => { resumeListener = l }).catch(() => {})
+    }).catch(() => {})
 
     // All DM rows I can see are RLS-scoped to my own conversations; filter to
     // this peer. Cover INSERTs (incoming + my own sends from another device) and
@@ -197,7 +208,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
       })
       .subscribe()
 
-    return () => { alive = false; supabase.removeChannel(ch); supabase.removeChannel(rch) }
+    return () => { alive = false; supabase.removeChannel(ch); supabase.removeChannel(rch); resumeListener?.remove?.() }
   }, [peer.id])
 
   async function loadReactions(ids) {
