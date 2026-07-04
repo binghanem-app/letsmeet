@@ -682,6 +682,27 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
     const map = {}
     ;(data || []).forEach(r => { (map[r.message_id] ||= []).push({ user_id: r.user_id, emoji: r.emoji }) })
     setReactions(map)
+
+    // Load profiles for anyone who REACTED but hasn't sent a message, otherwise the
+    // "who reacted" sheet resolves them to "Unknown" (msgProfiles is sender-only).
+    const missing = [...new Set((data || []).map(r => r.user_id))]
+      .filter(id => id !== myId && !knownSenders.current.has(id))
+    if (missing.length) {
+      const { data: profiles } = await supabase
+        .from('profiles').select('id, first_name, last_name, avatar_color, avatar_url').in('id', missing)
+      if (profiles?.length) {
+        const nickMap = { [plan.host]: plan.hostName }
+        ;(plan.invitees || []).forEach(i => { nickMap[i.invitee] = i.name })
+        setMsgProfiles(prev => {
+          const next = { ...prev }
+          profiles.forEach(p => {
+            next[p.id] = { ...p, name: nickMap[p.id] || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown' }
+            knownSenders.current.add(p.id)
+          })
+          return next
+        })
+      }
+    }
   }
   async function toggleReaction(messageId, emoji) {
     const mine = (reactions[messageId] || []).some(r => r.user_id === myId && r.emoji === emoji)
