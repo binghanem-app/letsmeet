@@ -1,26 +1,40 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 function initials(name = '') {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
 }
 
 export default function Avatar({ url, name, color, size = 38, style: extra }) {
-  // Track the specific url that failed so a changed prop re-attempts the image
-  // (lists reuse this component). Falls back to initials on broken/blocked URLs
-  // without ever touching DOM siblings.
-  const [failedUrl, setFailedUrl] = useState(null)
-  const base = {
-    width: size, height: size, borderRadius: '50%',
-    flexShrink: 0, ...extra,
-  }
+  // Retry transient image load failures (flaky mobile network) a couple of times
+  // before falling back to initials. Otherwise a single blip permanently downgrades
+  // the avatar to initials until the component remounts — which is why some photos
+  // "sometimes" don't show and reappear after leaving/re-entering a screen.
+  const [failed, setFailed] = useState(false)
+  const [bust, setBust]     = useState(0)   // cache-bust to force a fresh <img> load
+  const retries = useRef(0)
 
-  if (url && failedUrl !== url) {
+  // Reset when the url prop changes (lists reuse this component across users).
+  useEffect(() => { setFailed(false); setBust(0); retries.current = 0 }, [url])
+
+  const base = { width: size, height: size, borderRadius: '50%', flexShrink: 0, ...extra }
+
+  if (url && !failed) {
+    const src = bust ? `${url}${url.includes('?') ? '&' : '?'}retry=${bust}` : url
     return (
       <img
-        src={url}
+        key={src}
+        src={src}
         alt={name || ''}
         style={{ ...base, objectFit: 'cover', display: 'block' }}
-        onError={() => setFailedUrl(url)}
+        onError={() => {
+          if (retries.current < 2) {
+            retries.current += 1
+            const n = retries.current
+            setTimeout(() => setBust(n), 500 * n)   // 0.5s, then 1s
+          } else {
+            setFailed(true)
+          }
+        }}
       />
     )
   }
