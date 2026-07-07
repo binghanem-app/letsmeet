@@ -474,10 +474,16 @@ function SupportSheet({ profile, onClose, onSent }) {
 }
 
 // ─── ProfileScreen ────────────────────────────────────────────────────────────
-export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms }) {
+export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms, onDetailChange }) {
   const [profile, setProfile] = useState(null)
   const [sheet, setSheet] = useState(null) // 'name'|'username'|'phone'|'password'|'blocked'|'delete'|'bio'|'support'
   const [showCard, setShowCard] = useState(false)
+
+  // Tell App when any settings sheet is open so it can hide the bottom tab bar
+  // — otherwise the keyboard pushes it up between the input and the keyboard
+  // itself (same fix already applied to plan/DM chats).
+  useEffect(() => { onDetailChange?.(!!sheet) }, [sheet])
+  useEffect(() => () => onDetailChange?.(false), [])
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState({

@@ -125,6 +125,7 @@ export default function App() {
   const [dmUnread, setDmUnread]         = useState(0)
   const [planDetailOpen, setPlanDetailOpen] = useState(false)
   const [dmChatOpen, setDmChatOpen]     = useState(false)
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false)
   const [onlineIds, setOnlineIds]       = useState(() => new Set())
   const [openDmPeerId, setOpenDmPeerId] = useState(null)
   const [profileSheetUserId, setProfileSheetUserId] = useState(null)
@@ -414,12 +415,13 @@ export default function App() {
             />
           </div>
           <div style={show('profile')}>
-            <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} />
+            <ProfileScreen session={session} onLogout={() => setSession(null)} onPrivacy={() => setScreen('privacy')} onTerms={() => setScreen('terms')} onDetailChange={setProfileSheetOpen} />
           </div>
         </div>
-        {/* Hide the bottom tab bar while inside a chat/detail so the message
-            input sits directly above the keyboard (iMessage/WhatsApp style). */}
-        {!((screen === 'plans' && planDetailOpen) || (screen === 'messages' && dmChatOpen)) && (
+        {/* Hide the bottom tab bar while inside a chat/detail/settings sheet so
+            the keyboard doesn't push it up between the input and itself
+            (iMessage/WhatsApp style). */}
+        {!((screen === 'plans' && planDetailOpen) || (screen === 'messages' && dmChatOpen) || (screen === 'profile' && profileSheetOpen)) && (
           <TabBar active={screen} {...tabNav()} friendsBadge={pendingCount} messagesBadge={dmUnread} />
         )}
       </div>
