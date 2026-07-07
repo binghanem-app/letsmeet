@@ -22,6 +22,12 @@ const GoogleIcon = () => (
   </svg>
 )
 
+const AppleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+    <path d="M16.365 1.43c0 1.14-.462 2.267-1.212 3.088-.78.85-2.048 1.51-3.088 1.428-.137-1.104.44-2.267 1.183-2.99.803-.822 2.176-1.44 3.117-1.526zM20.5 17.24c-.464 1.07-.685 1.55-1.28 2.5-.83 1.32-2 2.97-3.45 2.98-1.29.01-1.62-.84-3.37-.83-1.75.01-2.11.85-3.4.84-1.45-.01-2.56-1.5-3.39-2.82C3.72 16.99 3.25 13.36 4.6 11c.83-1.47 2.32-2.4 3.94-2.42 1.35-.02 2.62.9 3.44.9.82 0 2.36-1.12 3.98-.95.68.03 2.58.27 3.8 2.05-.1.06-2.27 1.32-2.25 3.94.03 3.13 2.75 4.17 2.78 4.18-.03.08-.44 1.47-1.44 2.99z"/>
+  </svg>
+)
+
 // ─── Email modal ────────────────────────────────────────────────────────────
 function EmailModal({ onClose, onDone }) {
   const [mode, setMode] = useState('signin') // 'signin' | 'signup'
@@ -386,11 +392,15 @@ export default function LoginScreen({ onLogin, onPrivacy, onTerms }) {
           Continue with email
         </button>
 
-        {/* Google + Apple sign-in temporarily removed for App Store submission.
-            Offering ONLY email avoids the Sign in with Apple requirement
-            (Guideline 4.8 only applies when other social logins are present).
-            handleGoogle / handleApple are kept below — re-add the two buttons
-            here to restore them in a later update. */}
+        <button onClick={handleGoogle} disabled={loadingGoogle || loadingApple} style={{ ...btnOutline, opacity: loadingApple ? 0.6 : 1 }}>
+          <GoogleIcon/>
+          {loadingGoogle ? 'Redirecting…' : 'Continue with Google'}
+        </button>
+
+        <button onClick={handleApple} disabled={loadingGoogle || loadingApple} style={{ ...btnOutline, background: '#000', border: 'none', color: '#fff', opacity: loadingGoogle ? 0.6 : 1 }}>
+          <AppleIcon/>
+          {loadingApple ? 'Redirecting…' : 'Continue with Apple'}
+        </button>
 
         <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: 12, color: '#A79E95', lineHeight: 1.5 }}>
           By continuing you agree to our{' '}

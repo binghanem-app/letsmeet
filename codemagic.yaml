@@ -120,10 +120,11 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          # Marketing version must be higher than the version already in
-          # review/approved. 1.0.1 is the update awaiting approval, so this
-          # batch ships as 1.0.2. Bump here for each new release train.
-          agvtool new-marketing-version 1.0.2
+          # Marketing version must be higher than the version already live.
+          # 1.0 and 1.0.1 and 1.0.2 are live — this is a real feature release
+          # (Google/Apple login re-added, native-feel polish, live-plan
+          # indicator), so it's a MINOR bump: 1.1.0. Bump here each release.
+          agvtool new-marketing-version 1.1.0
           agvtool new-version -all $(($BUILD_NUMBER + 1))
 
       - name: Set export compliance, URL scheme, and privacy descriptions
