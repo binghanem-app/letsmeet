@@ -397,10 +397,86 @@ function BioSheet({ current, onClose, onSaved }) {
   )
 }
 
+// ─── Help & Support sheet ─────────────────────────────────────────────────────
+const SUPPORT_CATEGORIES = [
+  { val: 'bug',      label: 'Bug report' },
+  { val: 'question', label: 'Question' },
+  { val: 'feedback', label: 'Feedback' },
+  { val: 'other',    label: 'Other' },
+]
+
+function SupportSheet({ profile, onClose, onSent }) {
+  const [category, setCategory] = useState('bug')
+  const [message, setMessage] = useState('')
+  const [email, setEmail] = useState(profile?.email || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function send() {
+    if (!message.trim()) { setError('Please enter a message.'); return }
+    setError('')
+    haptics.tap()
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const name = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || null
+    const { error: err } = await supabase.from('support_messages').insert({
+      user_id: user.id,
+      category,
+      message: message.trim(),
+      reply_email: email.trim() || null,
+      name,
+    })
+    setSaving(false)
+    if (err) { setError('Could not send — please try again.'); return }
+    onSent()
+    onClose()
+  }
+
+  return (
+    <Sheet onClose={onClose}>
+      <SheetTitle>Help & Support</SheetTitle>
+      <SheetSub>Report a bug, ask a question, or send feedback — we'll reply by email.</SheetSub>
+
+      <FieldLabel>CATEGORY</FieldLabel>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        {SUPPORT_CATEGORIES.map(c => {
+          const sel = category === c.val
+          return (
+            <button key={c.val} onClick={() => setCategory(c.val)} style={{ padding: '9px 14px', borderRadius: 12, border: `1.5px solid ${sel ? '#FF6B4A' : '#EBE2DB'}`, background: sel ? '#FFF1EC' : '#fff', color: sel ? '#FF6B4A' : '#7B7268', font: '600 13.5px -apple-system', cursor: 'pointer' }}>
+              {c.label}
+            </button>
+          )
+        })}
+      </div>
+
+      <FieldLabel>MESSAGE</FieldLabel>
+      <div style={{ background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', marginBottom: 14 }}>
+        <textarea
+          autoFocus
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          maxLength={1000}
+          placeholder="Tell us what's going on…"
+          rows={5}
+          style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', font: "600 15px -apple-system", color: '#1F2933', resize: 'none', lineHeight: 1.5 }}
+        />
+        <div style={{ textAlign: 'right', fontSize: 11.5, color: '#C4BBB2', marginTop: 4 }}>{message.length}/1000</div>
+      </div>
+
+      <FieldLabel>YOUR EMAIL (for our reply)</FieldLabel>
+      <TextInput value={email} onChange={setEmail} placeholder="you@email.com" type="email" />
+
+      {error && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#E14F2E', fontWeight: 600 }}>{error}</p>}
+
+      <PrimaryBtn onClick={send} disabled={saving || !message.trim()}>{saving ? 'Sending…' : 'Send'}</PrimaryBtn>
+    </Sheet>
+  )
+}
+
 // ─── ProfileScreen ────────────────────────────────────────────────────────────
 export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms }) {
   const [profile, setProfile] = useState(null)
-  const [sheet, setSheet] = useState(null) // 'name'|'username'|'phone'|'password'|'blocked'|'delete'|'bio'
+  const [sheet, setSheet] = useState(null) // 'name'|'username'|'phone'|'password'|'blocked'|'delete'|'bio'|'support'
   const [showCard, setShowCard] = useState(false)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
@@ -677,6 +753,18 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
           />
         </Section>
 
+        {/* SUPPORT */}
+        <Section label="SUPPORT">
+          <Row
+            iconBg="#5B7CFA"
+            icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>}
+            label="Help & Support"
+            value="Report a bug, ask a question, or send feedback"
+            onPress={() => setSheet('support')}
+            last
+          />
+        </Section>
+
         {/* PRIVACY & SAFETY */}
         <Section label="PRIVACY & SAFETY">
           <Row
@@ -763,6 +851,9 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
       )}
       {sheet === 'delete' && (
         <DeleteAccountSheet onClose={() => setSheet(null)} onDeleted={onLogout}/>
+      )}
+      {sheet === 'support' && (
+        <SupportSheet profile={profile} onClose={() => setSheet(null)} onSent={() => showToast("Thanks — we'll get back to you 👍")}/>
       )}
 
       <Toast msg={toast}/>
