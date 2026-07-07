@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Geolocation } from '@capacitor/geolocation'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import CategoryTile from '../components/CategoryTile'
@@ -168,17 +169,27 @@ function StepPlace({ value, onChange }) {
   const inputRef = useRef(null)
 
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(pos => {
-      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      setGeo(loc)
-      // reverse geocode for label
-      fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${loc.lat},${loc.lng}&key=${GAPI_KEY}`)
-        .then(r => r.json()).then(d => {
-          const comp = d.results?.[0]?.address_components?.find(c => c.types.includes('locality') || c.types.includes('sublocality'))
-          if (comp) setGeoLabel(comp.long_name)
-        }).catch(() => {})
-      loadNearby(loc)
-    })
+    let alive = true
+    ;(async () => {
+      // Native Geolocation plugin — goes through the same CoreLocation
+      // permission iOS remembers permanently after the first answer, unlike
+      // the raw navigator.geolocation web API (which doesn't always persist
+      // the grant reliably inside a WKWebView and can re-prompt every time).
+      try {
+        const pos = await Geolocation.getCurrentPosition()
+        if (!alive) return
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGeo(loc)
+        // reverse geocode for label
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${loc.lat},${loc.lng}&key=${GAPI_KEY}`)
+          .then(r => r.json()).then(d => {
+            const comp = d.results?.[0]?.address_components?.find(c => c.types.includes('locality') || c.types.includes('sublocality'))
+            if (comp && alive) setGeoLabel(comp.long_name)
+          }).catch(() => {})
+        loadNearby(loc)
+      } catch { /* permission denied or unavailable — same silent skip as before */ }
+    })()
+    return () => { alive = false }
   }, [])
 
   async function loadNearby(loc) {
