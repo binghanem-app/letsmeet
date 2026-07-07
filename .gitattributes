@@ -1,1 +1,8 @@
 *.sh text eol=lf
+
+# Xcode project files — CRLF corruption here causes "damaged project" errors.
+*.pbxproj text eol=lf
+*.swift text eol=lf
+*.plist text eol=lf
+*.storyboard text eol=lf
+*.xcworkspacedata text eol=lf
