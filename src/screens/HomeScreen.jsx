@@ -289,9 +289,20 @@ export default function HomeScreen({ session, refreshTrigger, onStartCreate, onG
             <p style={{ fontSize: 14, color: '#9A9087', margin: '12px 0 0' }}>Tap the banner above to start one.</p>
           </div>
         ) : (() => {
-          const now = new Date()
-          const upcoming = feed.filter(p => new Date(p.starts_at) >= now)
-          const pastFeed = feed.filter(p => new Date(p.starts_at) < now)
+          const now = Date.now()
+          // "Live" (started but within the 1h grace — see PlanCard/PlansScreen's
+          // isPast) must be pinned to the very top of Your Plans, not sorted by
+          // raw start time — otherwise an already-started plan (earlier
+          // timestamp than anything not yet started) would just happen to sort
+          // first by luck, but a naive `starts_at < now` split (as before) would
+          // instead shove it straight into the PAST section, contradicting its
+          // own glowing "Live Now" pill.
+          const LIVE_GRACE_MS = 60 * 60 * 1000
+          const byStartAsc  = (a, b) => new Date(a.starts_at) - new Date(b.starts_at)
+          const live      = feed.filter(p => new Date(p.starts_at).getTime() <= now && new Date(p.starts_at).getTime() + LIVE_GRACE_MS > now).sort(byStartAsc)
+          const notStarted = feed.filter(p => new Date(p.starts_at).getTime() > now).sort(byStartAsc)
+          const upcoming  = [...live, ...notStarted]
+          const pastFeed  = feed.filter(p => new Date(p.starts_at).getTime() + LIVE_GRACE_MS <= now).sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at))
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 20px' }}>
               {upcoming.map(plan => (
