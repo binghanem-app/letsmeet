@@ -452,7 +452,6 @@ function SupportSheet({ profile, onClose, onSent }) {
       <FieldLabel>MESSAGE</FieldLabel>
       <div style={{ background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '13px 14px', marginBottom: 14 }}>
         <textarea
-          autoFocus
           value={message}
           onChange={e => setMessage(e.target.value)}
           maxLength={1000}
