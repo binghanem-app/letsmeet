@@ -10,7 +10,7 @@ export default function PrivacyPolicyScreen({ onBack }) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px 40px' }} className="no-scrollbar">
-        <p style={meta}>Last updated: June 2026</p>
+        <p style={meta}>Last updated: July 2026</p>
 
         <P>Welcome to <B>Let's Meet</B>. We take your privacy seriously. This policy explains what information we collect, how we use it, and your rights.</P>
 
@@ -40,7 +40,7 @@ export default function PrivacyPolicyScreen({ onBack }) {
         <UL items={[
           'With other users — only what you choose to share (name, username, plans you invite them to)',
           'With Supabase (our database and auth provider) — data is processed and stored securely in their EU infrastructure',
-          'With Google (if you sign in with Google or use place search) — subject to Google\'s Privacy Policy',
+          'With Google (only when you use place search, to show nearby venues) — subject to Google\'s Privacy Policy',
           'If required by law or to protect the rights and safety of users',
         ]}/>
 
