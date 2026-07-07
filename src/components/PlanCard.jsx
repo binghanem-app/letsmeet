@@ -47,8 +47,15 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
   const hasPlace = placeName && placeName !== 'No location'
   const venueLine = [headline !== placeName && hasPlace ? placeName : null, cityName].filter(Boolean).join(' · ')
   const dateVal = plan.starts_at || plan.date
-  const past = dateVal && new Date(dateVal) < new Date()
+  // "Past" = a previous calendar day (matches PlanDetail's own day-based gate
+  // on edit/cancel/RSVP) — NOT simply "start time already passed". A plan
+  // stays open, clickable, and full-color for its whole day so people can
+  // still open the chat to say they're running late or the venue changed;
+  // only the next day does it grey out. "Live" is the in-between: start time
+  // has passed but it's still today.
+  const past = dateVal && new Date(dateVal) < new Date(new Date().toDateString())
   const isToday = dateVal && new Date(dateVal).toDateString() === new Date().toDateString()
+  const live = dateVal && !past && new Date(dateVal) <= new Date()
 
   const [showConfirm, setShowConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -77,7 +84,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
           <span style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>{plan.unreadCount}</span>
         </div>
       )}
-      <div onClick={past ? undefined : onOpen} style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 3px rgba(0,0,0,.05), 0 8px 22px rgba(0,0,0,.05)', overflow: 'visible', opacity: past ? 0.45 : 1, filter: past ? 'grayscale(40%)' : 'none', cursor: past ? 'default' : 'pointer' }}>
+      <div onClick={past ? undefined : onOpen} className={live ? 'live-glow' : ''} style={{ background: '#fff', borderRadius: 18, boxShadow: live ? undefined : '0 1px 3px rgba(0,0,0,.05), 0 8px 22px rgba(0,0,0,.05)', overflow: 'visible', opacity: past ? 0.45 : 1, filter: past ? 'grayscale(40%)' : 'none', cursor: past ? 'default' : 'pointer' }}>
 
         {/* Main info row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '16px 16px 13px' }}>
@@ -96,6 +103,12 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
             )}
             <div style={{ fontSize: isToday ? 13.5 : 13, color: isToday ? '#0E9C6B' : '#9A9087', marginTop: 2, fontWeight: isToday ? 700 : 400, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               {dateStr}
+              {live && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#E4F6EE', color: '#0E9C6B', fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '2px 9px 2px 7px' }}>
+                  <span className="colon-blink" style={{ width: 6, height: 6, borderRadius: '50%', background: '#0E9C6B', flexShrink: 0 }} />
+                  Live Now
+                </span>
+              )}
               {past && <span style={{ background: '#ECE6E0', color: '#9A9087', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>Ended</span>}
             </div>
             {plan.hostName && !isHost && (

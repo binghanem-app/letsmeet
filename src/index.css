@@ -81,3 +81,10 @@ input, textarea { touch-action: manipulation; }
   -webkit-text-fill-color: transparent;
 }
 .colon-blink { animation: colon-blink 1s ease-in-out infinite; }
+
+/* Soft green "neon" glow for a plan card whose event is currently live. */
+@keyframes liveGlow {
+  0%, 100% { box-shadow: 0 0 0 1.5px rgba(14,156,107,.55), 0 0 18px 2px rgba(14,156,107,.3); }
+  50%      { box-shadow: 0 0 0 1.5px rgba(14,156,107,.85), 0 0 26px 6px rgba(14,156,107,.5); }
+}
+.live-glow { animation: liveGlow 2.2s ease-in-out infinite; }
