@@ -225,9 +225,15 @@ function areaCity(addr) {
   if (parts.length >= 1) return { area: null, city: parts[parts.length === 2 ? 0 : parts.length - 1] }
   return { area: null, city: null }
 }
+// A plan counts as "past" (Past tab, greyed card, edit/cancel/RSVP locked)
+// exactly 1 hour after its start time — not "day over". The 1h window right
+// after starting is the "live" grace period (see PlanCard) where the plan
+// stays in Upcoming so people can still open it to say they're running late
+// or the venue changed.
+const LIVE_GRACE_MS = 60 * 60 * 1000
 function isPast(iso) {
   if (!iso) return false
-  return new Date(iso) < new Date(new Date().toDateString())
+  return new Date(iso).getTime() + LIVE_GRACE_MS <= Date.now()
 }
 function fmtTime(iso) {
   if (!iso) return ''

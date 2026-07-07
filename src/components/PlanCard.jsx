@@ -47,13 +47,14 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
   const hasPlace = placeName && placeName !== 'No location'
   const venueLine = [headline !== placeName && hasPlace ? placeName : null, cityName].filter(Boolean).join(' · ')
   const dateVal = plan.starts_at || plan.date
-  // "Past" = a previous calendar day (matches PlanDetail's own day-based gate
-  // on edit/cancel/RSVP) — NOT simply "start time already passed". A plan
-  // stays open, clickable, and full-color for its whole day so people can
-  // still open the chat to say they're running late or the venue changed;
-  // only the next day does it grey out. "Live" is the in-between: start time
-  // has passed but it's still today.
-  const past = dateVal && new Date(dateVal) < new Date(new Date().toDateString())
+  // "Past" (greyed, locked, moves to the Past tab) kicks in 1 hour AFTER start
+  // — not the instant start time hits (matches PlansScreen's isPast, which
+  // also gates edit/cancel/RSVP in PlanDetail). That 1h window right after
+  // starting is "live": card stays open/full-color/in the Upcoming tab so
+  // people can still open it to say they're running late or the venue
+  // changed, instead of having to start a whole new plan just to talk.
+  const LIVE_GRACE_MS = 60 * 60 * 1000
+  const past = dateVal && new Date(dateVal).getTime() + LIVE_GRACE_MS <= Date.now()
   const isToday = dateVal && new Date(dateVal).toDateString() === new Date().toDateString()
   const live = dateVal && !past && new Date(dateVal) <= new Date()
 
