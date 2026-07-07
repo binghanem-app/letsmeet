@@ -1,5 +1,6 @@
 import { useEffect, Fragment, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { haptics } from '../lib/haptics'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import PlanCard from '../components/PlanCard'
@@ -337,7 +338,7 @@ function RsvpButtons({ current, onChange, saving }) {
         return (
           <button
             key={opt.val}
-            onClick={() => onChange(opt.val)}
+            onClick={() => { if (!sel) haptics.select(); onChange(opt.val) }}
             disabled={saving}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
@@ -751,7 +752,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
     const t = e.touches ? e.touches[0] : e
     pressPos.current = { x: t.clientX, y: t.clientY }
     clearTimeout(pressTimer.current)
-    pressTimer.current = setTimeout(() => setMenuFor(m), 420)
+    pressTimer.current = setTimeout(() => { haptics.select(); setMenuFor(m) }, 420)
   }
   function onBubbleMove(e) {
     const t = e.touches ? e.touches[0] : e
@@ -923,7 +924,7 @@ function PlanDetail({ plan, myId, onClose, onUpdated, startOnRsvp, onDeletePlan,
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#EEEAE4' }}>
+    <div className="slide-in-right" style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#EEEAE4' }}>
 
       {/* ── compact header ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #EFE8E2', flexShrink: 0, padding: '14px 16px 12px' }}>

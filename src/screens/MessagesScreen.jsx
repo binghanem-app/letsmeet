@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
 import { supabase } from '../lib/supabase'
+import { haptics } from '../lib/haptics'
 import Avatar from '../components/Avatar'
 import CategoryTile from '../components/CategoryTile'
 import PullToRefresh from '../components/PullToRefresh'
@@ -107,30 +108,41 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   const myNameRef = useRef('Someone')
 
   // Edge-swipe-right to go back (iOS pop gesture; webviews don't give this free).
+  // The drag itself mutates the DOM directly via swipeElRef — NOT React state —
+  // so tracking the finger never triggers a re-render per touchmove tick (that
+  // was the main source of the "laggy, one-step-behind" feel vs. the system
+  // gesture). State only gets involved for the final settle after release.
   const swipe = useRef({ active: false, startX: 0, startY: 0, dx: 0 })
-  const [dragX, setDragX] = useState(0)
-  const [swiping, setSwiping] = useState(false)
+  const swipeElRef = useRef(null)
   function onSwipeStart(e) {
     const t = e.touches[0]
     if (t.clientX > 28) { swipe.current.active = false; return } // only from the left edge
     swipe.current = { active: true, startX: t.clientX, startY: t.clientY, dx: 0 }
-    setSwiping(true)
+    if (swipeElRef.current) swipeElRef.current.style.transition = 'none'
   }
   function onSwipeMove(e) {
     if (!swipe.current.active) return
     const t = e.touches[0]
     const dx = t.clientX - swipe.current.startX
     const dy = t.clientY - swipe.current.startY
-    if (dx < Math.abs(dy)) { swipe.current.active = false; setSwiping(false); setDragX(0); return } // vertical → let it scroll
+    if (dx < Math.abs(dy)) { swipe.current.active = false; snapBack(); return } // vertical → let it scroll
     swipe.current.dx = Math.max(0, dx)
-    setDragX(swipe.current.dx)
+    if (swipeElRef.current) {
+      swipeElRef.current.style.transform = `translateX(${swipe.current.dx}px)`
+      swipeElRef.current.style.boxShadow = swipe.current.dx ? '-12px 0 24px rgba(20,24,30,.12)' : ''
+    }
+  }
+  function snapBack() {
+    if (!swipeElRef.current) return
+    swipeElRef.current.style.transition = 'transform .25s ease'
+    swipeElRef.current.style.transform = 'translateX(0)'
+    swipeElRef.current.style.boxShadow = ''
   }
   function onSwipeEnd() {
     if (!swipe.current.active) return
     swipe.current.active = false
-    setSwiping(false)
-    if (swipe.current.dx > 90) onBack()
-    else setDragX(0)
+    if (swipe.current.dx > 90) { haptics.swipeCommit(); onBack() }
+    else snapBack()
   }
 
   const scrollDown = () => setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, 60)
@@ -257,7 +269,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
     const t = e.touches ? e.touches[0] : e
     pressPos.current = { x: t.clientX, y: t.clientY }
     clearTimeout(pressTimer.current)
-    pressTimer.current = setTimeout(() => setMenuFor(m), 420)
+    pressTimer.current = setTimeout(() => { haptics.select(); setMenuFor(m) }, 420)
   }
   function onBubbleMove(e) {
     const t = e.touches ? e.touches[0] : e
@@ -351,8 +363,12 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
   let lastDay = null
 
   return (
-    <div onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} onTouchCancel={onSwipeEnd}
-      style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0', position: 'relative', transform: dragX ? `translateX(${dragX}px)` : undefined, transition: swiping ? 'none' : 'transform .25s ease', boxShadow: dragX ? '-12px 0 24px rgba(20,24,30,.12)' : undefined }}>
+    // Outer wrapper owns the one-time slide-in-on-open animation; the inner div
+    // owns the swipe-back drag transform — kept separate so they never fight
+    // over the same `transform` property.
+    <div className="slide-in-right" style={{ height: '100%' }}>
+    <div ref={swipeElRef} onTouchStart={onSwipeStart} onTouchMove={onSwipeMove} onTouchEnd={onSwipeEnd} onTouchCancel={onSwipeEnd}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#F9F4F0', position: 'relative', transition: 'transform .25s ease' }}>
       {/* header */}
       <div style={{ background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,.05)', flexShrink: 0, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
         <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: '#F2EFEC', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -630,6 +646,7 @@ function DMThread({ session, peer, online, onBack, onOpenProfile, onOpenPlan }) 
         </div>
       )}
     </div>
+    </div>
   )
 }
 
@@ -678,7 +695,7 @@ export default function MessagesScreen({ session, onlineIds, openPeerId, onPeerO
     if (!rowSwipe.current.active || rowSwipe.current.id !== peerId) return
     const t = e.touches ? e.touches[0] : e
     const dx = t.clientX - rowSwipe.current.startX
-    if (dx < -30) setSwipedPeer(peerId)          // swipe left → reveal Delete
+    if (dx < -30) { if (swipedPeer !== peerId) haptics.tap(); setSwipedPeer(peerId) }          // swipe left → reveal Delete
     else if (dx > 20 && swipedPeer === peerId) setSwipedPeer(null) // swipe right → close
   }
   function onRowSwipeEnd() { rowSwipe.current.active = false }

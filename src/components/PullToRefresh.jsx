@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { haptics } from '../lib/haptics'
 
 // Pull-down-to-refresh wrapper. Becomes the scrollable container itself, so
 // pass it the same `style`/`className` the original scroll <div> had.
@@ -7,6 +8,7 @@ export default function PullToRefresh({ onRefresh, children, style, className })
   const elRef    = useRef(null)
   const startY   = useRef(null)
   const pulling  = useRef(false)
+  const armed    = useRef(false) // haptic fired once this drag crossed THRESH
   const [pull, setPull]           = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const THRESH = 68
@@ -17,12 +19,18 @@ export default function PullToRefresh({ onRefresh, children, style, className })
     if (refreshing || !atTop()) { pulling.current = false; return }
     startY.current = e.touches[0].clientY
     pulling.current = true
+    armed.current = false
   }
   function onTouchMove(e) {
     if (!pulling.current || refreshing) return
     const dy = e.touches[0].clientY - startY.current
     if (dy > 0 && atTop()) {
-      setPull(Math.min(dy * 0.5, THRESH + 24))   // rubber-band resistance
+      const next = Math.min(dy * 0.5, THRESH + 24)   // rubber-band resistance
+      setPull(next)
+      // Tick right as it crosses the trigger point — matches the native
+      // pull-to-refresh cue that tells you "let go now and it'll refresh".
+      if (next >= THRESH && !armed.current) { armed.current = true; haptics.tap() }
+      else if (next < THRESH) { armed.current = false }
     } else if (dy <= 0) {
       pulling.current = false
       setPull(0)

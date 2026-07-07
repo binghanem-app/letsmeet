@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { haptics } from '../lib/haptics'
 import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 
@@ -421,6 +422,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
     }
     const col = dbCols[key]
     if (!col) return
+    haptics.tap()
     const next = !notifPrefs[key]
     setNotifPrefs(prev => ({ ...prev, [key]: next }))
     // Turning the master switch on is a natural moment to request OS permission
@@ -433,6 +435,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
   const [loggingOut, setLoggingOut] = useState(false)
 
   async function toggleDiscovery() {
+    haptics.tap()
     const next = !discoveryOn
     setDiscoveryOn(next)
     const { data: { user } } = await supabase.auth.getUser()
@@ -441,6 +444,7 @@ export default function ProfileScreen({ session, onLogout, onPrivacy, onTerms })
   }
 
   async function toggleMutualVisibility() {
+    haptics.tap()
     const next = !(profile?.show_in_mutual ?? true)
     setProfile(p => ({ ...p, show_in_mutual: next }))
     const { data: { user } } = await supabase.auth.getUser()

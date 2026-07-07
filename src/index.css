@@ -38,8 +38,23 @@ input, textarea { touch-action: manipulation; }
 
 .fade-up    { animation: fadeUp  .3s ease both; }
 .sheet-up   { animation: sheetUp .28s cubic-bezier(.22,1,.36,1) both; }
+
+/* Mimics UINavigationController's push transition (new screen slides in from
+   the right) — the animation whose absence is the #1 "this feels like a web
+   app" cue on iOS. cubic-bezier approximates Apple's real push curve. */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.slide-in-right { animation: slideInRight .32s cubic-bezier(.32,.72,0,1) both; }
 .spin       { animation: spin .7s linear infinite; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar {
+  -ms-overflow-style: none; scrollbar-width: none;
+  /* Native-feeling momentum scroll, contained to this pane so a pull past the
+     end doesn't rubber-band the parent too (the "webby" nested-scroll feel). */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @keyframes led-spin {

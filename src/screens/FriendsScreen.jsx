@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { haptics } from '../lib/haptics'
 import UserProfileSheet from '../components/UserProfileSheet'
 import AvatarImg from '../components/Avatar'
 import PullToRefresh from '../components/PullToRefresh'
@@ -424,6 +425,7 @@ function FriendMenuSheet({ friend, allGroups, session, onClose, onSaved, onRemov
   }
 
   async function blockFriend() {
+    haptics.warning()
     await supabase.from('blocks').insert({ blocker: session.user.id, blocked: friend.id })
     onRemoved?.()
     onClose()

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { haptics } from '../lib/haptics'
 import Avatar from './Avatar'
 
 function relDate(iso) {
@@ -137,6 +138,7 @@ export default function UserProfileSheet({ userId, myId, onClose, isSelf, onChan
   }
 
   async function blockUser() {
+    haptics.warning()
     setActing(true)
     await supabase.from('friendships').delete()
       .or(`and(requester.eq.${myId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${myId})`)

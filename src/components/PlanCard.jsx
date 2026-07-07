@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CategoryTile from './CategoryTile'
+import { haptics } from '../lib/haptics'
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -155,6 +156,7 @@ export default function PlanCard({ plan, myId, onOpen, onRsvp, onDelete }) {
                     <button key={r.val} disabled={saving} onClick={async e => {
                       e.stopPropagation()
                       if (sel || saving) return
+                      haptics.select()
                       setSaving(true)
                       await onRsvp?.(r.val)
                       setSaving(false)

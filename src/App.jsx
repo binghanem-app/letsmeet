@@ -14,6 +14,7 @@ class ErrorBoundary extends Component {
   }
 }
 import { supabase } from './lib/supabase'
+import { haptics } from './lib/haptics'
 import fabUrl from './assets/fab.png'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
@@ -70,7 +71,7 @@ function TabBar({ active, onHome, onFriends, onCreate, onMessages, onProfile, fr
       {tabs.slice(0, 2).map(t => {
         const sel = active === t.key
         return (
-          <div key={t.key} onClick={t.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', position: 'relative', minWidth: 48 }}>
+          <div key={t.key} onClick={() => { if (!sel) haptics.tap(); t.onClick() }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', position: 'relative', minWidth: 48 }}>
             {t.icon(sel)}
             {t.badge > 0 && (
               <div style={{ position: 'absolute', top: -5, right: -7, background: '#E5484D', borderRadius: 9, minWidth: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', padding: '0 3px' }}>
@@ -83,14 +84,14 @@ function TabBar({ active, onHome, onFriends, onCreate, onMessages, onProfile, fr
       })}
 
       {/* FAB */}
-      <div onClick={onCreate} style={{ cursor: 'pointer', marginTop: -18 }}>
+      <div onClick={() => { haptics.tap(); onCreate() }} style={{ cursor: 'pointer', marginTop: -18 }}>
         <img src={fabUrl} alt="Create" style={{ width: 78, height: 78, display: 'block' }} />
       </div>
 
       {tabs.slice(2).map(t => {
         const sel = active === t.key
         return (
-          <div key={t.key} onClick={t.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', position: 'relative', minWidth: 48 }}>
+          <div key={t.key} onClick={() => { if (!sel) haptics.tap(); t.onClick() }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', position: 'relative', minWidth: 48 }}>
             {t.icon(sel)}
             {t.badge > 0 && (
               <div style={{ position: 'absolute', top: -5, right: -7, background: '#E5484D', borderRadius: 9, minWidth: 17, height: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', padding: '0 3px' }}>
