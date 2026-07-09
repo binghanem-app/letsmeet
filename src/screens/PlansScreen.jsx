@@ -5,6 +5,8 @@ import Avatar from '../components/Avatar'
 import UserProfileSheet from '../components/UserProfileSheet'
 import PlanCard from '../components/PlanCard'
 import CategoryTile from '../components/CategoryTile'
+import WheelPicker from '../components/WheelPicker'
+import { HOURS, MINUTES, AMPM, to24, from24, roundMinuteTo5 } from '../lib/timePicker'
 import emptyChatUrl from '../assets/empty-chat.png'
 import calendarUrl from '../assets/icon-calendar.png'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
@@ -71,14 +73,18 @@ function PlaceSearchMini({ value, onChange }) {
 
 // ─── Edit plan sheet ──────────────────────────────────────────────────────────
 function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
-  const BASE_TIMES = ['Morning','Noon','Afternoon','Evening','Night','Late night',
-    '8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM',
-    '3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM','9:00 PM','10:00 PM']
-  const existingTime = plan.time_label && !BASE_TIMES.includes(plan.time_label) ? plan.time_label : null
-  const TIMES = existingTime ? [existingTime, ...BASE_TIMES] : BASE_TIMES
+  const [date, setDate] = useState(plan.date ? plan.date.slice(0, 10) : '')
 
-  const [date, setDate]         = useState(plan.date ? plan.date.slice(0, 10) : '')
-  const [timeLabel, setTimeLabel] = useState(plan.time_label || '')
+  // Seed the wheel picker from the plan's current starts_at (falls back to a
+  // sane default if the plan somehow has none). Odd/legacy minute values get
+  // rounded to the nearest 5-minute step the wheel actually offers.
+  const orig = plan.date ? new Date(plan.date) : null
+  const validOrig = orig && !isNaN(orig.getTime())
+  const initial = validOrig ? from24(orig.getHours()) : { hour: '12', ampm: 'PM' }
+  const [hour, setHour]   = useState(initial.hour)
+  const [minute, setMinute] = useState(validOrig ? roundMinuteTo5(orig.getMinutes()) : '00')
+  const [ampm, setAmpm]   = useState(initial.ampm)
+
   const [place, setPlace]       = useState(plan.place ? { name: plan.place, address: plan.place_address, lat: plan.place_lat, lng: plan.place_lng } : null)
   const [saving, setSaving]           = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
@@ -86,17 +92,21 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
   async function save() {
     setSaving(true)
 
+    const timeLabel = `${hour}:${minute} ${ampm}`
     const oldDateStr = plan.date ? plan.date.slice(0, 10) : ''
     const timeChanged = date !== oldDateStr || timeLabel !== (plan.time_label || '')
 
-    // Build a full timestamp from the picked date, preserving the original
-    // time-of-day. Writing the bare "YYYY-MM-DD" string would be parsed as UTC
-    // midnight and render as the previous day in negative-offset timezones.
+    // Build the full timestamp from the picked date AND the picked hour/minute
+    // — previously this kept the ORIGINAL time-of-day no matter what the user
+    // selected, so changing the time only updated the cosmetic time_label
+    // string while starts_at (what Home/live-status actually use) never
+    // moved. Writing a bare "YYYY-MM-DD" would parse as UTC midnight and
+    // render as the previous day in negative-offset timezones, hence the
+    // local-noon baseline before setting the real hour/minute.
     let startsAtIso = null
     if (date) {
-      const d = new Date(date + 'T12:00:00') // local noon baseline (no day-shift)
-      const orig = plan.date ? new Date(plan.date) : null
-      if (orig && !isNaN(orig.getTime())) d.setHours(orig.getHours(), orig.getMinutes(), orig.getSeconds(), 0)
+      const d = new Date(date + 'T12:00:00')
+      d.setHours(to24(hour, ampm), parseInt(minute), 0, 0)
       startsAtIso = d.toISOString()
     }
 
@@ -143,11 +153,13 @@ function EditPlanSheet({ plan, onClose, onSaved, onDelete }) {
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#B6ADA4', letterSpacing: .7, marginBottom: 7 }}>TIME</div>
-            <select value={timeLabel} onChange={e => setTimeLabel(e.target.value)}
-              style={{ width: '100%', height: 52, border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '0 14px', fontSize: 15, color: timeLabel ? '#1F2933' : '#B6ADA4', background: '#fff', outline: 'none', appearance: 'none', boxSizing: 'border-box', textAlign: 'center', textAlignLast: 'center' }}>
-              <option value="">No time</option>
-              {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <div style={{ background: '#fff', border: '1.5px solid #EBE2DB', borderRadius: 14, padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <WheelPicker items={HOURS} value={hour} onChange={setHour} width={56}/>
+              <span style={{ font: "700 20px -apple-system", color: '#C4BBB2', padding: '0 4px', marginTop: -4 }}>:</span>
+              <WheelPicker items={MINUTES} value={minute} onChange={setMinute} width={56}/>
+              <div style={{ width: 12 }}/>
+              <WheelPicker items={AMPM} value={ampm} onChange={setAmpm} width={50}/>
+            </div>
           </div>
 
           <button onClick={save} disabled={saving}

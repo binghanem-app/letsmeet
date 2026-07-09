@@ -3,6 +3,8 @@ import { Geolocation } from '@capacitor/geolocation'
 import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import CategoryTile from '../components/CategoryTile'
+import WheelPicker from '../components/WheelPicker'
+import { HOURS, MINUTES, AMPM, to24 } from '../lib/timePicker'
 import confettiUrl from '../assets/confetti.png'
 import locationIcon from '../assets/icon-location.png'
 import calendarIcon from '../assets/icon-calendar.png'
@@ -61,52 +63,6 @@ function isSameDay(a, b) {
 }
 
 // ─── WheelPicker ─────────────────────────────────────────────────────────────
-function WheelPicker({ items, value, onChange, width = 56 }) {
-  const ref = useRef(null)
-  const ITEM_H = 40
-  const idx = items.indexOf(value)
-
-  useEffect(() => {
-    if (ref.current && idx >= 0) ref.current.scrollTop = idx * ITEM_H
-  }, [idx])
-
-  function onScroll() {
-    const i = Math.round(ref.current.scrollTop / ITEM_H)
-    if (items[i] !== undefined) onChange(items[i])
-  }
-
-  return (
-    <div style={{ position: 'relative', width, height: ITEM_H * 3, overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)' }}>
-      {/* selection band — behind scroll items */}
-      <div style={{ position: 'absolute', top: ITEM_H, left: 0, right: 0, height: ITEM_H, background: '#F5F2EE', borderRadius: 10, pointerEvents: 'none', zIndex: 0 }}/>
-      {/* fade top */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ITEM_H, background: 'linear-gradient(to bottom, #FBF7F4, transparent)', pointerEvents: 'none', zIndex: 2 }}/>
-      {/* fade bottom */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: ITEM_H, background: 'linear-gradient(to top, #FBF7F4, transparent)', pointerEvents: 'none', zIndex: 2 }}/>
-      <div
-        ref={ref}
-        onScroll={onScroll}
-        style={{ height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', paddingTop: ITEM_H, paddingBottom: ITEM_H, position: 'relative', zIndex: 1 }}
-        className="no-scrollbar"
-      >
-        {items.map(item => (
-          <div
-            key={item}
-            style={{ height: ITEM_H, display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', font: "600 18px -apple-system", color: '#1F2933', cursor: 'pointer' }}
-            onClick={() => {
-              onChange(item)
-              const i = items.indexOf(item)
-              ref.current.scrollTo({ top: i * ITEM_H, behavior: 'smooth' })
-            }}
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── Step 1 — Plan name ───────────────────────────────────────────────────────
 function StepName({ value, onChange, onVibeChange }) {
   const inputRef = useRef(null)
@@ -376,15 +332,6 @@ function PlaceList({ places, onSelect, selected }) {
 }
 
 // ─── Step 3 — Date & Time ─────────────────────────────────────────────────────
-const HOURS = ['1','2','3','4','5','6','7','8','9','10','11','12']
-const MINUTES = ['00','05','10','15','20','25','30','35','40','45','50','55']
-const AMPM = ['AM','PM']
-
-function to24(h, ap) {
-  const n = parseInt(h)
-  return ap === 'AM' ? (n === 12 ? 0 : n) : (n === 12 ? 12 : n + 12)
-}
-
 function getDefaultTime() {
   const now = new Date()
   const rawNext = Math.ceil((now.getMinutes() + 1) / 5) * 5
