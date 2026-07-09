@@ -120,11 +120,12 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          # Marketing version must be higher than the version already live.
-          # 1.0 and 1.0.1 and 1.0.2 are live — this is a real feature release
-          # (Google/Apple login re-added, native-feel polish, live-plan
-          # indicator), so it's a MINOR bump: 1.1.0. Bump here each release.
-          agvtool new-marketing-version 1.1.0
+          # Marketing version must be higher than the version already
+          # approved/live. 1.1.0 is already approved and its train is closed
+          # (Apple error 90186/90062) — this build only adds bug fixes on top
+          # (Profile-sheet tab-bar fix, Support autofocus fix, Edit Plan time
+          # picker fix), no new features, so it's a PATCH bump: 1.1.1.
+          agvtool new-marketing-version 1.1.1
           agvtool new-version -all $(($BUILD_NUMBER + 1))
 
       - name: Set export compliance, URL scheme, and privacy descriptions
