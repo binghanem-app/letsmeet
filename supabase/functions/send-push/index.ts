@@ -167,11 +167,14 @@ Deno.serve(async (req) => {
       title = senderName
 
       if (record.kind === 'message') {
-        // App formats: `Name in "Plan": "msg"` / `Name sent a photo|GIF in "Plan"`
+        // App formats: `Name in "Plan": "msg"` / `Name sent a photo|GIF|voice message in "Plan"`
         const msg = body.match(/^.* in "(.*)": "([\s\S]*)"$/)
-        const media = body.match(/^.* sent a (photo|GIF) in "(.*)"$/)
+        const media = body.match(/^.* sent a (photo|GIF|voice message) in "(.*)"$/)
         if (msg) { subtitle = msg[1]; body = msg[2] }
-        else if (media) { subtitle = media[2]; body = media[1] === 'photo' ? '📷 Photo' : 'GIF' }
+        else if (media) {
+          subtitle = media[2]
+          body = media[1] === 'photo' ? '📷 Photo' : media[1] === 'GIF' ? 'GIF' : '🎤 Voice message'
+        }
       } else {
         // DM format: `Name: msg` — strip the name (it's the title now).
         const prefix = `${senderName}: `
