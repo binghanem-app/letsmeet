@@ -9,9 +9,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 //   2. deletes every *.m4a under that plan's chat-images/{plan_id}/ prefix
 //      (photos are deliberately KEPT — past-plan chats stay viewable and
 //      photos are the memories; voice notes are ephemeral),
-//   3. marks the affected voice messages as deleted (deleted_at + null
-//      voice_url) so old chats show "This message was deleted" instead of a
-//      bubble with a dead audio URL,
+//   3. nulls voice_url on the affected messages (deleted_at untouched) — the
+//      app renders that combination as "Voice note expired — voice notes last
+//      10 days" (voice_duration_ms still set distinguishes it from a plain
+//      deleted/empty message),
 //   4. stamps plans.media_purged_at so the plan is never re-scanned.
 //
 // PLUS the universal age rule (owner): ANY voice note older than 10 days is
@@ -54,10 +55,12 @@ async function purgeAgedVoice(
     if (rmErr) { console.error(`${table} remove: ${rmErr.message}`); return 0 }
   }
 
-  // Old bubbles show "This message was deleted" instead of a dead player.
+  // voice_url null + deleted_at UNTOUCHED = the app's "expired" marker
+  // (voice_duration_ms still set): bubbles render "Voice note expired -
+  // voice notes last 10 days" instead of the user-delete text.
   const ids = rows.map((r) => r.id)
   await supabase.from(table)
-    .update({ deleted_at: new Date().toISOString(), voice_url: null })
+    .update({ voice_url: null })
     .in('id', ids)
   return paths.length
 }
@@ -102,9 +105,10 @@ Deno.serve(async (_req) => {
         if (rmErr) { console.error(`remove ${p.id}: ${rmErr.message}`); continue }
         filesRemoved += voicePaths.length
 
-        // Old chats show "This message was deleted" rather than a dead player.
+        // voice_url null (deleted_at untouched) = the app's "expired"
+        // marker - bubbles show the expiry notice, not the delete text.
         await supabase.from('plan_messages')
-          .update({ deleted_at: new Date().toISOString(), voice_url: null })
+          .update({ voice_url: null })
           .eq('plan_id', p.id)
           .not('voice_url', 'is', null)
       }
