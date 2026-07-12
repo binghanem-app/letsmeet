@@ -47,7 +47,8 @@ async function sendPush(
   title: string,
   body: string,
   data: Record<string, string>,
-  badge: number
+  badge: number,
+  subtitle?: string
 ): Promise<{ status: number; text: string }> {
   const jwt = await makeApnsJwt()
 
@@ -61,7 +62,7 @@ async function sendPush(
       'content-type':    'application/json',
     },
     body: JSON.stringify({
-      aps: { alert: { title, body }, sound: 'default', badge },
+      aps: { alert: { title, body, ...(subtitle ? { subtitle } : {}) }, sound: 'default', badge },
       ...data,
     }),
   })
@@ -136,16 +137,47 @@ Deno.serve(async (req) => {
     // Master push switch off → never send.
     if (profile.notif_push === false) return new Response('Push off', { status: 200 })
 
-    // Respect per-kind opt-outs.
-    if (record.kind === 'message'     && profile.notif_chat            === false) return new Response('Opted out', { status: 200 })
+    // Respect per-kind opt-outs. ('dm' honors the same Chat Messages toggle —
+    // previously it bypassed all prefs.)
+    if ((record.kind === 'message' || record.kind === 'dm') && profile.notif_chat === false) return new Response('Opted out', { status: 200 })
     if (record.kind === 'invite'      && profile.notif_invite          === false) return new Response('Opted out', { status: 200 })
     if ((record.kind === 'rsvp' || record.kind === 'plan_update') && profile.notif_plan_responses === false) return new Response('Opted out', { status: 200 })
     if (record.kind === 'request'     && profile.notif_friend_requests === false) return new Response('Opted out', { status: 200 })
 
-    const title  = titleForKind(record.kind)
-    const body   = record.body ?? ''
+    let title    = titleForKind(record.kind)
+    let body     = record.body ?? ''
+    let subtitle: string | undefined
     const data: Record<string, string> = { type: typeForKind(record.kind) }
     if (record.plan_id) data.plan_id = record.plan_id
+    // DM deep link: the app opens the thread with data.peer (= the sender).
+    // Without it, tapping a DM push could only land on the Messages tab.
+    if (record.kind === 'dm' && record.actor) data.peer = record.actor
+
+    // Chat pushes read like a chat app (owner): title = SENDER NAME (bold),
+    // body = the actual message. Group chat adds the plan title as subtitle.
+    // The stored notification body keeps its old context-rich format (it also
+    // feeds in-app lists and 1.0), so the message text is EXTRACTED here.
+    if (record.kind === 'dm' || record.kind === 'message') {
+      const { data: actor } = await supabase
+        .from('profiles').select('first_name, last_name')
+        .eq('id', record.actor).single()
+      const senderName = actor
+        ? `${actor.first_name || ''} ${actor.last_name || ''}`.trim() || "Let's Meet"
+        : "Let's Meet"
+      title = senderName
+
+      if (record.kind === 'message') {
+        // App formats: `Name in "Plan": "msg"` / `Name sent a photo|GIF in "Plan"`
+        const msg = body.match(/^.* in "(.*)": "([\s\S]*)"$/)
+        const media = body.match(/^.* sent a (photo|GIF) in "(.*)"$/)
+        if (msg) { subtitle = msg[1]; body = msg[2] }
+        else if (media) { subtitle = media[2]; body = media[1] === 'photo' ? '📷 Photo' : 'GIF' }
+      } else {
+        // DM format: `Name: msg` — strip the name (it's the title now).
+        const prefix = `${senderName}: `
+        if (body.startsWith(prefix)) body = body.slice(prefix.length)
+      }
+    }
 
     // App-icon badge = recipient's real unread notification count (incl. this one).
     const { count: unread } = await supabase
@@ -154,7 +186,7 @@ Deno.serve(async (req) => {
       .eq('recipient', record.recipient)
       .eq('read', false)
 
-    const { status, text } = await sendPush(profile.apns_token, title, body, data, unread ?? 1)
+    const { status, text } = await sendPush(profile.apns_token, title, body, data, unread ?? 1, subtitle)
     console.log(`APNs response: ${status} (type=${data.type}) → ${record.recipient} ${text}`)
 
     // APNs 410 = device token no longer valid; clear it so we stop trying.
