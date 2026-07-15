@@ -13,7 +13,7 @@ class ErrorBoundary extends Component {
     return this.props.children
   }
 }
-import { supabase } from './lib/supabase'
+import { supabase, authIntent } from './lib/supabase'
 import { haptics } from './lib/haptics'
 import fabUrl from './assets/fab.png'
 import LoginScreen from './screens/LoginScreen'
@@ -134,6 +134,7 @@ export default function App() {
   const pushRegisteredRef  = useRef(false)
   const pushListenersRef   = useRef([])
   const sessionRef         = useRef(null)
+  const logoutGraceRef     = useRef(false)
 
   async function registerPush(userId) {
     if (pushRegisteredRef.current) return
@@ -237,7 +238,28 @@ export default function App() {
 
     // Capture OAuth deep link on native (letsmeet://localhost#access_token=...)
     let appUrlListener
+    let appStateListener
     import('@capacitor/app').then(({ App: CapApp }) => {
+      // Native background/foreground → pause/resume supabase's token auto-refresh.
+      // JS timers freeze while the app is suspended, so the refresh timer stalls;
+      // stopping it on background and (re)starting on foreground makes supabase-js
+      // fire an immediate refresh on resume instead of letting the token lapse.
+      CapApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          supabase.auth.startAutoRefresh()
+          // Proactively re-check the session on resume; if it's healthy this also
+          // cancels any recovery grace period that a stale token kicked off.
+          supabase.auth.getSession().then(({ data }) => {
+            if (data.session) {
+              logoutGraceRef.current = false
+              if (!sessionRef.current) { sessionRef.current = data.session; setSession(data.session) }
+              clearNotifBadge(data.session.user.id)
+            }
+          }).catch(() => {})
+        } else {
+          supabase.auth.stopAutoRefresh()
+        }
+      }).then(listener => { appStateListener = listener }).catch(() => {})
       CapApp.addListener('appUrlOpen', async ({ url }) => {
         if (url && url.includes('access_token')) {
           const hash = url.split('#')[1] || ''
@@ -264,12 +286,64 @@ export default function App() {
       }).then(listener => { appUrlListener = listener }).catch(() => {})
     }).catch(() => {})
 
+    // Full teardown for a CONFIRMED logout (intentional sign-out, or an
+    // unrecoverable session after retries are exhausted).
+    const performSignedOutCleanup = () => {
+      sessionRef.current = null
+      setSession(null)
+      setNeedsOnboarding(false)
+      setPendingCount(0)
+      setDmUnread(0)
+      setOnlineIds(new Set())
+      if (presenceRef.current) { supabase.removeChannel(presenceRef.current); presenceRef.current = null }
+      if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
+      // Let the next user on this device re-register push with their own token.
+      pushRegisteredRef.current = false
+      pushListenersRef.current.forEach(l => l?.remove?.())
+      pushListenersRef.current = []
+    }
+
+    // A null session from supabase-js is ambiguous: it fires SIGNED_OUT both for a
+    // real logout AND for a token-refresh that failed (expired/offline on resume,
+    // transient server hiccup). Historically we kicked the user to login on the
+    // first null — a single flaky refresh logged people out. Instead, when we
+    // unexpectedly lose a session we were holding, try to refresh a few times
+    // before giving up. UI state (setSession) is left untouched during the grace
+    // window so the user stays on their current screen.
+    const recoverOrSignOut = async () => {
+      if (logoutGraceRef.current) return   // a recovery loop is already running
+      logoutGraceRef.current = true
+      const delays = [600, 1500, 3000]
+      for (const wait of delays) {
+        await new Promise(r => setTimeout(r, wait))
+        // Another auth event may have restored the session while we waited.
+        if (sessionRef.current) { logoutGraceRef.current = false; return }
+        try {
+          const { data } = await supabase.auth.refreshSession()
+          if (data?.session) {
+            sessionRef.current = data.session
+            setSession(data.session)
+            logoutGraceRef.current = false
+            return
+          }
+        } catch { /* keep retrying */ }
+      }
+      logoutGraceRef.current = false
+      // Retries exhausted — the refresh token is genuinely dead; log out for real.
+      performSignedOutCleanup()
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      sessionRef.current = s
+      const prevSession = sessionRef.current
       // Web/PKCE recovery: supabase-js fires this after processing the reset link.
       if (_e === 'PASSWORD_RECOVERY') setRecoveryMode(true)
-      setSession(s)
+
       if (s) {
+        // Signed in / token refreshed / user updated — a live session cancels any
+        // in-flight recovery grace period.
+        logoutGraceRef.current = false
+        sessionRef.current = s
+        setSession(s)
         checkOnboarding(s.user.id)
         loadPendingCount(s.user.id)
         subscribeFriendRequests(s.user.id)
@@ -277,17 +351,23 @@ export default function App() {
         // registerPush on every sign-in; don't call setScreen('home') here
         // because it fires again after camera/gallery use on iOS and resets navigation
         if (_e === 'SIGNED_IN') { registerPush(s.user.id) }
+        return
+      }
+
+      // s is null from here.
+      sessionRef.current = null
+      if (authIntent.intentionalSignOut) {
+        // Deliberate logout (button / account deletion) — tear down immediately.
+        authIntent.intentionalSignOut = false
+        performSignedOutCleanup()
+      } else if (!prevSession) {
+        // Never had a session (cold start while logged out) — just show login,
+        // no point retrying a refresh we never had a token for.
+        setSession(null)
       } else {
-        setNeedsOnboarding(false)
-        setPendingCount(0)
-        setDmUnread(0)
-        setOnlineIds(new Set())
-        if (presenceRef.current) { supabase.removeChannel(presenceRef.current); presenceRef.current = null }
-        if (friendSubRef.current) { supabase.removeChannel(friendSubRef.current); friendSubRef.current = null }
-        // Let the next user on this device re-register push with their own token.
-        pushRegisteredRef.current = false
-        pushListenersRef.current.forEach(l => l?.remove?.())
-        pushListenersRef.current = []
+        // We were holding a session and unexpectedly lost it — try to recover
+        // before kicking the user out.
+        recoverOrSignOut()
       }
     })
     return () => {
@@ -296,6 +376,7 @@ export default function App() {
       if (presenceRef.current) { supabase.removeChannel(presenceRef.current); presenceRef.current = null }
       document.removeEventListener('visibilitychange', handleVisibility)
       appUrlListener?.remove()
+      appStateListener?.remove()
       pushTapListener?.remove()
     }
   }, [])

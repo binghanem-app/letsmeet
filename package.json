@@ -19,6 +19,7 @@
     "@capacitor/geolocation": "^7.1.8",
     "@capacitor/haptics": "^7.0.5",
     "@capacitor/ios": "^7.6.6",
+    "@capacitor/preferences": "^7.0.4",
     "@capacitor/push-notifications": "^7.0.6",
     "@supabase/supabase-js": "^2.108.1",
     "react": "^19.2.6",
