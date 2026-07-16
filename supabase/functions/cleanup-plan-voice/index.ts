@@ -1,29 +1,46 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// ── Voice-note storage cleanup for expired plans (Lets Meet 2.1) ─────────────
+// ── Voice-note cleanup (Lets Meet 2.1, reworked 2026-07-17) ──────────────────
 //
-// Owner rule: voice notes are throwaway media — once a plan is well past its
-// date, their .m4a files should not keep occupying storage. This function:
-//   1. finds plans whose start time is > 5 days ago and that haven't been
-//      purged yet (plans.media_purged_at is null),
-//   2. deletes every *.m4a under that plan's chat-images/{plan_id}/ prefix
-//      (photos are deliberately KEPT — past-plan chats stay viewable and
-//      photos are the memories; voice notes are ephemeral),
-//   3. nulls voice_url on the affected messages (deleted_at untouched) — the
-//      app renders that combination as "Voice note expired — voice notes last
-//      10 days" (voice_duration_ms still set distinguishes it from a plain
-//      deleted/empty message),
-//   4. stamps plans.media_purged_at so the plan is never re-scanned.
+// Owner rule: voice notes are throwaway media — "ANY voice note older than 10
+// days is purged", DMs and plan chats alike. Purged rows get voice_url nulled
+// with deleted_at UNTOUCHED; voice_duration_ms stays set, and the app renders
+// that combination as "Voice note expired — voice notes last 10 days" rather
+// than the user-deleted text.
 //
-// PLUS the universal age rule (owner): ANY voice note older than 10 days is
-// purged — DMs and plan chats alike — regardless of plan state. Purged rows
-// get voice_url nulled, so they never match the sweep again (no bookkeeping).
+// This function does two passes:
+//   1. BY ROW — any message older than 10 days with a voice_url: delete the
+//      file, null the url. This is what produces the "expired" bubble.
+//   2. BY FILE — delete any .m4a that NO row points at. Without this they are
+//      immortal: nothing references them, so no row-based query can ever find
+//      them. Unreferenced is an exact test, not a guess about age — a file
+//      nothing links to can never be played again, whatever its date.
 //
-// Runs on a schedule (Supabase Dashboard → Integrations → Cron → daily) with
-// the service role. Batched — a backlog just drains over a few days.
-// Requires the `plans.media_purged_at timestamptz` column.
+// Pass 2 exists because the original design was written against a false
+// picture. It used to purge voice for plans ">5 days" past their start —
+// unreachable, because cleanup-expired-plans DELETES every plan 24h after it
+// starts (that function ran hourly in production while existing in no repo, so
+// nobody could see it). The plan's messages cascaded away on day one, and their
+// .m4a files stayed in the bucket forever: 22 orphans / 1.6 MB by the time
+// anyone looked. cleanup-expired-plans now sweeps voice_url alongside
+// photo_url, so no NEW orphans are made; pass 2 collects the legacy ones and
+// any future stray.
+//
+// Scheduled daily (cron `purge-expired-voice`, 03:00) with the service role.
+//
+// LAYOUTS (chat-images):  {plan_id}/x.m4a  ·  dm/{peerA}_{peerB}/x.m4a
+//   · stories/ belongs to cleanup-stories — never touched here.
+//   · NOTHING is deleted on age alone in pass 2: a plan can be made weeks
+//     ahead and its chat opens immediately, so an old file under a live plan
+//     is still someone's unheard voice note. Only "no row points here" is
+//     safe, and pass 1 owns the 10-day clock for files that ARE referenced.
 
+const BUCKET = 'chat-images'
 const BUCKET_MARKER = '/chat-images/'
+const TEN_DAYS_MS = 10 * 24 * 3600 * 1000
+/** Upload-to-insert window: younger files are never treated as orphans. */
+const GRACE_MS = 60 * 60 * 1000
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** Public URL → storage path inside chat-images (null if not ours). */
 function storagePath(url: string | null): string | null {
@@ -51,7 +68,7 @@ async function purgeAgedVoice(
 
   const paths = rows.map((r) => storagePath(r.voice_url)).filter((p): p is string => p !== null)
   if (paths.length > 0) {
-    const { error: rmErr } = await supabase.storage.from('chat-images').remove(paths)
+    const { error: rmErr } = await supabase.storage.from(BUCKET).remove(paths)
     if (rmErr) { console.error(`${table} remove: ${rmErr.message}`); return 0 }
   }
 
@@ -65,6 +82,18 @@ async function purgeAgedVoice(
   return paths.length
 }
 
+/** Remove the given .m4a files, reporting how many actually went. */
+async function removeVoice(
+  supabase: ReturnType<typeof createClient>,
+  paths: string[],
+  label: string
+): Promise<number> {
+  if (paths.length === 0) return 0
+  const { error } = await supabase.storage.from(BUCKET).remove(paths)
+  if (error) { console.error(`remove ${label}: ${error.message}`); return 0 }
+  return paths.length
+}
+
 Deno.serve(async (_req) => {
   try {
     const supabase = createClient(
@@ -72,63 +101,68 @@ Deno.serve(async (_req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Universal 10-day age rule — both chat kinds.
-    const cutoff10d = new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString()
+    // ── Pass 1: by row (produces the "expired" bubble) ──
+    const cutoff10d = new Date(Date.now() - TEN_DAYS_MS).toISOString()
     const agedDm = await purgeAgedVoice(supabase, 'direct_messages', cutoff10d)
     const agedPlan = await purgeAgedVoice(supabase, 'plan_messages', cutoff10d)
 
-    const cutoff = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString()
-    const { data: plans, error } = await supabase
-      .from('plans')
-      .select('id')
-      .not('starts_at', 'is', null)
-      .lt('starts_at', cutoff)
-      .is('media_purged_at', null)
-      .limit(50)
-    if (error) return new Response(error.message, { status: 500 })
-
-    let filesRemoved = 0
-    let plansPurged = 0
-
-    for (const p of plans ?? []) {
-      const { data: files, error: listErr } = await supabase.storage
-        .from('chat-images')
-        .list(p.id, { limit: 1000 })
-      if (listErr) { console.error(`list ${p.id}: ${listErr.message}`); continue }
-
-      const voicePaths = (files ?? [])
-        .filter((f) => f.name.endsWith('.m4a'))
-        .map((f) => `${p.id}/${f.name}`)
-
-      if (voicePaths.length > 0) {
-        const { error: rmErr } = await supabase.storage.from('chat-images').remove(voicePaths)
-        if (rmErr) { console.error(`remove ${p.id}: ${rmErr.message}`); continue }
-        filesRemoved += voicePaths.length
-
-        // voice_url null (deleted_at untouched) = the app's "expired"
-        // marker - bubbles show the expiry notice, not the delete text.
-        await supabase.from('plan_messages')
-          .update({ voice_url: null })
-          .eq('plan_id', p.id)
-          .not('voice_url', 'is', null)
+    // ── Pass 2: by file (collects what no row points at) ──
+    //
+    // Build the set of STILL-REFERENCED files first. Anything in the bucket
+    // that isn't in it is unreachable by definition. The grace window keeps a
+    // file that's mid-upload — object written, row not inserted yet — from
+    // looking like an orphan for the few seconds in between.
+    const live = new Set<string>()
+    for (const table of ['plan_messages', 'direct_messages'] as const) {
+      const { data, error } = await supabase.from(table)
+        .select('voice_url').not('voice_url', 'is', null).limit(10000)
+      if (error) { console.error(`${table} live-set: ${error.message}`); throw error }
+      for (const r of data ?? []) {
+        const p = storagePath(r.voice_url as string)
+        if (p) live.add(p)
       }
+    }
+    const graceMs = Date.now() - GRACE_MS
+    let orphanFilesRemoved = 0
 
-      await supabase.from('plans')
-        .update({ media_purged_at: new Date().toISOString() })
-        .eq('id', p.id)
-      plansPurged += 1
+    /** Sweep one folder's .m4a files, dropping any nothing references. */
+    const sweep = async (prefix: string) => {
+      const { data: files } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1000 })
+      const dead = (files ?? [])
+        .filter((f) => f.name.endsWith('.m4a'))
+        .filter((f) => !f.created_at || new Date(f.created_at).getTime() < graceMs)
+        .map((f) => `${prefix}/${f.name}`)
+        .filter((p) => !live.has(p))
+      orphanFilesRemoved += await removeVoice(supabase, dead, prefix)
     }
 
-    return new Response(
-      JSON.stringify({
-        scanned: plans?.length ?? 0,
-        plansPurged,
-        expiredPlanFilesRemoved: filesRemoved,
-        aged10dDmFilesRemoved: agedDm,
-        aged10dPlanFilesRemoved: agedPlan,
-      }),
-      { headers: { 'content-type': 'application/json' } }
-    )
+    const { data: roots, error: rootErr } = await supabase.storage
+      .from(BUCKET).list('', { limit: 1000 })
+    if (rootErr) console.error(`root list: ${rootErr.message}`)
+
+    for (const entry of roots ?? []) {
+      const folder = entry.name
+      if (!folder || folder === 'stories') continue   // stories = cleanup-stories' job
+      if (folder === 'dm') {
+        const { data: pairs } = await supabase.storage.from(BUCKET).list('dm', { limit: 1000 })
+        for (const pair of pairs ?? []) {
+          if (pair.name) await sweep(`dm/${pair.name}`)
+        }
+      } else if (UUID_RE.test(folder)) {
+        await sweep(folder)                            // a plan folder
+      }
+    }
+
+    const summary = {
+      aged10dDmFilesRemoved: agedDm,
+      aged10dPlanFilesRemoved: agedPlan,
+      orphanFilesRemoved,
+      liveVoiceFiles: live.size,
+    }
+    console.log('cleanup-plan-voice:', JSON.stringify(summary))
+    return new Response(JSON.stringify(summary), {
+      headers: { 'content-type': 'application/json' },
+    })
   } catch (err) {
     console.error(err)
     return new Response(String(err), { status: 500 })
