@@ -90,7 +90,7 @@
   );
 
   const show = id => {
-    for (const s of ["reset","done","bad","busy"]) document.getElementById(s).classList.add("hide");
+    for (const s of ["reset","done","confirmed","bad","busy"]) document.getElementById(s).classList.add("hide");
     document.getElementById(id).classList.remove("hide");
   };
 
