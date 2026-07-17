@@ -73,3 +73,9 @@ create unique index if not exists points_ledger_purchase_req_idx
 --   doesn't care whose name is on the app).
 --
 --   select pg_get_functiondef('public.souq_buy_glow(text,int,uuid)'::regprocedure);
+
+-- ── 2026-07-17 later: FIRE + THUNDER (souq_glow_fire_thunder, applied live) ─
+-- perk check widened to glow_fire / glow_thunder; prices merged into
+-- souq_config ({"glow_fire":{"3":300,"7":500},"glow_thunder":{"3":350,"7":600}});
+-- my_souq 'active' filter generalised to perk like 'glow\_%' (was hardcoded to
+-- the original two — a bought fire would have shown as no active glow).
