@@ -79,3 +79,9 @@ create unique index if not exists points_ledger_purchase_req_idx
 -- souq_config ({"glow_fire":{"3":300,"7":500},"glow_thunder":{"3":350,"7":600}});
 -- my_souq 'active' filter generalised to perk like 'glow\_%' (was hardcoded to
 -- the original two — a bought fire would have shown as no active glow).
+
+-- ── 2026-07-17 latest: fire + thunder REMOVED (souq_remove_fire_thunder) ────
+-- Owner saw them on device: "not good". Constraint back to the two shipped
+-- effects, premium prices dropped from config. Nobody had bought either
+-- (checked before tightening). App side reverted in letsmeet2 a782935.
+-- my_souq keeps the generalised glow\_% active filter — correct either way.
