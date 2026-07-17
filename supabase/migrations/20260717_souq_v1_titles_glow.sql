@@ -21,7 +21,7 @@ create table if not exists public.souq_config (
 insert into public.souq_config (key, value) values
   ('prices', '{"glow_flow":{"3":200,"7":350},"glow_pulse":{"3":150,"7":250}}'),
   ('tiers',  '{"host":[3,5,10],"show":[5,15,30],"bring":[1,3,5]}'),
-  ('glow_colors', '["#D69528","#26C6DA","#E255A1"]')
+  ('glow_colors', '["#D69528","#26C6DA","#E255A1","#E5484D","#7C5BD9","#0E9C6B"]')  -- expanded live 2026-07-17 (owner: +red)
 on conflict (key) do nothing;
 alter table public.souq_config enable row level security;
 create policy "config readable" on public.souq_config for select
