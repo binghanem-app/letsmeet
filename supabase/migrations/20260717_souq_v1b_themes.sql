@@ -1,0 +1,30 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- SOUQ v1b · PLAN THEMES  ·  APPLIED LIVE 2026-07-17 via MCP
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Consumables (owner: "used for one time only, need more? earn more").
+-- Full flow design: letsmeet2 resource/souq-decisions.md §8.2a.
+--   buy in Souq → pocket COLLECTION → create-time pill applies to ONE plan →
+--   consumed. Cancelling a themed plan returns the THEME to the pocket (not
+--   points): trg_souq_theme_on_cancel (BEFORE UPDATE OF cancelled) frees the
+--   perk row and sheds plans.theme in the same write.
+--
+-- Schema: plans.theme text (the key, e.g. 'desert_dusk') · user_perks widened
+-- (perk like 'theme\_%', duration_days 0, applied_plan uuid) · souq_config
+-- gains theme_prices (10 × 250) + theme_gate {"track":"host","need":3}.
+--
+-- RPCs (live defs are the authority; grants match the v1 set):
+--   souq_buy_theme(key, req)   — idempotent (dup BEFORE balance, the v1
+--       lesson), HOST-GATED at theme_gate.need. ⚠ DEBUG BYPASS: the creator
+--       uuid skips the gate (nobody has 3 qualifying hosted plans yet, owner
+--       included — he must be able to test). REMOVE once real users unlock.
+--   souq_apply_theme(perk_id, plan_id) — owned+unspent theme, host-owned
+--       uncancelled plan, plans.theme must be null (one theme per plan).
+--   my_souq() v3 — adds theme_prices + theme_need; 'active' now filters to
+--       glow perks so an applied theme can never masquerade as a glow.
+--
+-- Verified in rolled-back txns: buy (gate-bypassed) · dup req → {ok,dup} ·
+-- apply to fake plan → BAD_PLAN · apply to own plan sets plans.theme ·
+-- cancel → plans.theme null AND perk back in pocket (count checked).
+--
+-- Incidental discovery while testing: the owner's committed balance is 270,
+-- not 470 — he has been buying glows ON DEVICE. The store works live.
