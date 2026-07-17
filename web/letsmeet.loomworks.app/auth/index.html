@@ -62,6 +62,13 @@
     <p class="sub">You're all set — open Lets Meet on your phone and sign in with your new password.</p>
   </div>
 
+  <!-- state: email confirmed (signup landings also arrive on this page) -->
+  <div id="confirmed" class="hide">
+    <div class="big">🎉</div>
+    <h1>Email confirmed</h1>
+    <p class="sub">You're all set — open Lets Meet on your phone and sign in.</p>
+  </div>
+
   <!-- state: error / no token -->
   <div id="bad" class="hide">
     <div class="big">🔗</div>
@@ -94,11 +101,16 @@
     // explicit error from GoTrue (expired/used link)
     if (hash.get("error") || qs.get("error")) { show("bad"); return; }
 
-    // implicit-flow recovery: #access_token=...&refresh_token=...&type=recovery
-    // supabase-js (detectSessionInUrl) picks it up itself; give it a beat.
+    // This page catches EVERY auth email landing. The token type routes it:
+    // recovery → the reset form; signup/magiclink/invite → "email confirmed".
+    const kind = hash.get("type") || qs.get("type") || "";
     for (let i = 0; i < 20; i++) {
       const { data } = await supa.auth.getSession();
-      if (data.session) { show("reset"); return; }
+      if (data.session) {
+        if (kind === "recovery") { show("reset"); }
+        else { await supa.auth.signOut(); show("confirmed"); }
+        return;
+      }
       await new Promise(r => setTimeout(r, 150));
     }
     show("bad");
