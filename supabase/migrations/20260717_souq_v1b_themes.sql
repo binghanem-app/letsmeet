@@ -4,9 +4,10 @@
 -- Consumables (owner: "used for one time only, need more? earn more").
 -- Full flow design: letsmeet2 resource/souq-decisions.md §8.2a.
 --   buy in Souq → pocket COLLECTION → create-time pill applies to ONE plan →
---   consumed. Cancelling a themed plan returns the THEME to the pocket (not
---   points): trg_souq_theme_on_cancel (BEFORE UPDATE OF cancelled) frees the
---   perk row and sheds plans.theme in the same write.
+--   CONSUMED PERMANENTLY. Owner ruling (same day): cancelling does NOT return
+--   the theme — closes the cancel/re-dress loop (one purchase, infinite
+--   themed plans). trg_souq_theme_on_cancel was applied live then DROPPED
+--   (souq_themes_consumed_no_return).
 --
 -- Schema: plans.theme text (the key, e.g. 'desert_dusk') · user_perks widened
 -- (perk like 'theme\_%', duration_days 0, applied_plan uuid) · souq_config
