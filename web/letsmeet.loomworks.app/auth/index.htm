@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lets Meet · account</title>
+<!--
+  The page Supabase always assumed you had.
+  Served at https://letsmeet.loomworks.app/auth/  ·  set as the Site URL.
+
+  WHY THIS EXISTS (2026-07-17): the Site URL was still Supabase's factory
+  default, http://localhost:3000. Supabase does not host a landing page for
+  email links — it verifies the token and REDIRECTS to your Site URL, expecting
+  your site to finish the job. Nothing was there. So every email link the
+  product has ever sent ended on "site can't be reached":
+    · 5 accounts (2 Jul – 10 Jul) confirmed nothing and NEVER signed in — every
+      email signup since 2 July, lost at the threshold.
+    · 2 password resets died the same way.
+  Apple/Google sign-in was unaffected (those pass their own redirect), which is
+  exactly why it went unnoticed for two weeks.
+
+  It handles every shape of link GoTrue can send:
+    · #access_token=...       (implicit — what this project's client uses)
+    · ?code=...               (PKCE)
+    · ?token_hash=...&type=   (newer verify links)
+    · ?error=...              (expired/used link — say so plainly)
+  Then: recovery -> set a new password. Anything else -> "you're in, open the app".
+
+  2026-07-18: committed to the repo at last (it lived only on the FTP server —
+  discovered when a rewrite nearly replaced it with a lesser page). The 2.0
+  app's reset now POSTs GoTrue /recover with redirect_to THIS page, so the
+  reset flow finally sends visitors here.
+-->
+<style>
+  :root{ --bg:#FAF8F4; --surface:#fff; --ink:#231F1A; --muted:#8A8578; --faint:#B8B2A8;
+         --amber:#F5A623; --deep:#D5891F; --line:#EFE9E1; --red:#D95555; --green:#0E9C6B; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141210; --surface:#1D1A17; --ink:#EDE6DC; --muted:#9E9385; --faint:#6E6559; --line:#2E2A24; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .box{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);
+    border-radius:20px;padding:28px 24px;text-align:center}
+  img{width:62px;height:62px;border-radius:16px;margin-bottom:16px}
+  h1{font-size:20px;margin:0 0 8px}
+  p{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 18px}
+  label{display:block;text-align:left;font-size:11px;font-weight:800;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+    padding:12px;color:var(--ink);font-size:15px;margin-bottom:12px;font-family:inherit}
+  input:focus{outline:2px solid var(--deep);outline-offset:1px;border-color:transparent}
+  button{width:100%;background:var(--amber);color:#241a08;border:0;border-radius:12px;padding:13px;
+    font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
+  button:disabled{opacity:.5;cursor:default}
+  .a{display:inline-block;margin-top:14px;color:var(--deep);font-size:13.5px;font-weight:700;text-decoration:none}
+  .msg{font-size:13px;line-height:1.5;margin-top:12px;display:none;text-align:left;
+    padding:10px 12px;border-radius:10px}
+  .msg.bad{display:block;background:rgba(217,85,85,.1);color:var(--red)}
+  .msg.good{display:block;background:rgba(14,156,107,.1);color:var(--green)}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <img src="../logo.png" alt="Lets Meet">
+
+  <div id="loading">
+    <h1>One moment…</h1>
+    <p>Checking your link.</p>
+  </div>
+
+  <form id="pwForm" class="hide">
+    <h1>Set a new password</h1>
+    <p>Almost done — pick a password and you're back in.</p>
+    <label for="pw">New password</label>
+    <input id="pw" type="password" autocomplete="new-password" minlength="8" required>
+    <label for="pw2">Confirm it</label>
+    <input id="pw2" type="password" autocomplete="new-password" minlength="8" required>
+    <button id="save" type="submit">Save password</button>
+  </form>
+
+  <div id="done" class="hide">
+    <h1 id="doneTitle">You're all set</h1>
+    <p id="doneBody">Your email is confirmed. Open Lets Meet and sign in.</p>
+    <a class="a" href="https://apps.apple.com/app/id6779955941">Open Lets Meet ↗</a>
+  </div>
+
+  <div id="dead" class="hide">
+    <h1>This link has expired</h1>
+    <p>Email links are single-use and time-limited. Ask for a new one from the app and it'll work.</p>
+    <a class="a" href="https://apps.apple.com/app/id6779955941">Open Lets Meet ↗</a>
+  </div>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Anon key: public by design, ships in every copy of the app. RLS gates access.
+const supabase = createClient(
+  'https://wmexrzdrsrbahprczmsv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtZXhyemRyc3JiYWhwcmN6bXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODQ2MTYsImV4cCI6MjA5Njc2MDYxNn0.jGJBnJBWfY-XzRdfn884L-syIdKSuxbqoPpWF9Vwdgc',
+  { auth: { detectSessionInUrl: true, flowType: 'implicit' } }
+)
+
+const $ = (id) => document.getElementById(id)
+const show = (id) => { $('loading').classList.add('hide'); $(id).classList.remove('hide') }
+const say = (t, cls) => { $('msg').textContent = t; $('msg').className = 'msg ' + cls }
+
+const hash  = new URLSearchParams(location.hash.slice(1))
+const query = new URLSearchParams(location.search)
+// GoTrue reports failures on either side of the # depending on the flow.
+const err   = hash.get('error_description') || hash.get('error') ||
+              query.get('error_description') || query.get('error')
+const type  = hash.get('type') || query.get('type')
+
+async function start() {
+  if (err) { show('dead'); say(decodeURIComponent(err).replace(/\+/g, ' '), 'bad'); return }
+
+  // 1) PKCE links: ?code=
+  const code = query.get('code')
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) { show('dead'); say(error.message, 'bad'); return }
+  }
+
+  // 2) Newer verify links: ?token_hash=&type=
+  const tokenHash = query.get('token_hash')
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    if (error) { show('dead'); say(error.message, 'bad'); return }
+  }
+
+  // 3) Implicit links (#access_token=) are picked up by detectSessionInUrl.
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) { show('dead'); return }
+
+  if (type === 'recovery') { show('pwForm'); $('pw').focus(); return }
+
+  // Signup confirmation, email change, magic link — all just "you're verified".
+  if (type === 'email_change') {
+    $('doneTitle').textContent = 'Email updated'
+    $('doneBody').textContent  = 'Your new address is confirmed. Open Lets Meet to carry on.'
+  }
+  show('done')
+}
+
+$('pwForm').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  if ($('pw').value !== $('pw2').value) return say("Those two don't match.", 'bad')
+  $('save').disabled = true
+  const { error } = await supabase.auth.updateUser({ password: $('pw').value })
+  $('save').disabled = false
+  if (error) return say(error.message, 'bad')
+  $('pwForm').classList.add('hide')
+  $('doneTitle').textContent = 'Password saved'
+  $('doneBody').textContent  = 'You can sign in with it now.'
+  show('done')
+  say('Password updated.', 'good')
+})
+
+start()
+</script>
+</body>
+</html>
