@@ -110,3 +110,9 @@ grant execute on function public.profile_titles(uuid) to authenticated;
 -- hosted = created − cancelled, attended = plans whose FINAL rsvp was
 -- going/late. Live def:
 --   select pg_get_functiondef('public.plan_stats(uuid)'::regprocedure);
+
+-- ── plan_stats v2 (same day): POINTS economy (owner) ────────────────────────
+-- 100 host-a-plan-that-happened / 50 going / 25 late / 0 cant-or-silent.
+-- "Happened" = never cancelled AND (row already deleted by 24h cleanup OR
+-- concluded start+1h). Returns (hosted, attended, points); old builds sum
+-- the first two and ignore points. Live def via pg_get_functiondef.
