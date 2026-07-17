@@ -85,3 +85,12 @@ create unique index if not exists points_ledger_purchase_req_idx
 -- effects, premium prices dropped from config. Nobody had bought either
 -- (checked before tightening). App side reverted in letsmeet2 a782935.
 -- my_souq keeps the generalised glow\_% active filter — correct either way.
+
+-- ── 2026-07-17: glow RECOLOUR + fair REPLACE (souq_glow_recolor_and_replace) ─
+-- Owner: a live glow shouldn't lock you in for the whole week.
+--   souq_recolor_glow(color) — recolour the live glow, free, no time change.
+--   souq_activate_glow now takes p_replace bool: when a glow is already live,
+--     replace=true returns it to the pocket with its remaining WHOLE days
+--     (ceil, min 1 — never exploitable, total wear ≤ purchased) then starts
+--     the new one. Old 2-arg overload DROPPED (ambiguous). duration_days check
+--     loosened to 0..7 so a partial remainder (e.g. 5) is storable.
