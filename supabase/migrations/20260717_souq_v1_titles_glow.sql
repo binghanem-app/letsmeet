@@ -94,3 +94,10 @@ create unique index if not exists points_ledger_purchase_req_idx
 --     (ceil, min 1 — never exploitable, total wear ≤ purchased) then starts
 --     the new one. Old 2-arg overload DROPPED (ambiguous). duration_days check
 --     loosened to 0..7 so a partial remainder (e.g. 5) is storable.
+
+-- ── 2026-07-18: recolour REMOVED, replace = FORFEIT (owner reversal) ────────
+-- Free recolour invited colour-spam ("try them all in one sitting"); the
+-- fair-replace pocket-return reopened it (two pocketed glows toggling = free
+-- recolours). souq_recolor_glow dropped; souq_activate_glow p_replace now
+-- ENDS the live glow (expires_at = now()), nothing returns. One glow, one
+-- colour; changing = buying again. Scarcity is the point.
