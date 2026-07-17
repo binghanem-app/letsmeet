@@ -102,3 +102,11 @@ end $$;
 
 revoke all on function public.profile_titles(uuid) from public, anon;
 grant execute on function public.profile_titles(uuid) to authenticated;
+
+-- ── plan_stats (added same day): the profile "Plan score" ───────────────────
+-- The app called this RPC since 2.2 and fell back to 0/0 because it was never
+-- created — the score tile showed 0 for everyone. Counts from app_events so
+-- the score is LIFETIME (plans table resets daily via the 24h deletion):
+-- hosted = created − cancelled, attended = plans whose FINAL rsvp was
+-- going/late. Live def:
+--   select pg_get_functiondef('public.plan_stats(uuid)'::regprocedure);
