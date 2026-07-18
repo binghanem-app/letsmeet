@@ -1,0 +1,9 @@
+-- "Do it again" — re-fireable plan history. APPLIED LIVE 2026-07-18 via MCP.
+-- Table recent_plans has NO FK to plans, so it survives cleanup-expired-plans
+-- (same principle as points_ledger/app_events). record_recent_plan(...) upserts
+-- on plan create (dedupe by vibe+place_name, keep newest 5); my_recent_plans()
+-- returns the rows + each invitee's current name/avatar for the "who came"
+-- line. App: Create step 1 shows a collapsed "Do it again" section BELOW the
+-- category list (owner: never above — don't confuse new users), absent when
+-- history is empty; a row fills vibe+place, pre-checks the same people, jumps
+-- to the date step. Verified: dedupe replaces (not stacks), prune keeps 5.
