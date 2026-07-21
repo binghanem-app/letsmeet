@@ -29,3 +29,10 @@
 --
 -- Incidental discovery while testing: the owner's committed balance is 270,
 -- not 470 — he has been buying glows ON DEVICE. The store works live.
+
+-- ── 2026-07-18 PRE-LAUNCH: debug stripped ──────────────────────────────────
+-- souq_buy_theme creator gate-bypass REMOVED (souq_remove_creator_theme_gate_
+-- bypass) — themes are Host-3 for everyone now. Also cleared live: creator's
+-- fake debug_grant points + the purchases they funded + seeded recent_plans
+-- (balance back to a real 250). App-side hatches removed in letsmeet2 (tutorial
+-- replay long-press, glow debug cycle, client gate-bypass mirror).
